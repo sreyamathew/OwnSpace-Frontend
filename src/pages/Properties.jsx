@@ -167,7 +167,7 @@ const Properties = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary-600 to-primary-800 text-white py-16">
+      <section className="bg-gradient-to-br from-gray-900 to-gray-800 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
@@ -205,7 +205,7 @@ const Properties = () => {
                   <option value="villa">Villa</option>
                   <option value="condo">Condo</option>
                 </select>
-                <button className="bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors duration-200">
+                <button className="bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors duration-200">
                   Search
                 </button>
               </div>
@@ -372,10 +372,10 @@ const Properties = () => {
                   </div>
                   
                   <div className="mt-4 flex space-x-2">
-                    <button className="flex-1 bg-primary-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-700 transition-colors duration-200">
+                    <button className="flex-1 bg-gray-900 text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-800 transition-colors duration-200">
                       View Details
                     </button>
-                    <button className="flex-1 border border-primary-600 text-primary-600 py-2 px-4 rounded-lg font-medium hover:bg-primary-50 transition-colors duration-200">
+                    <button className="flex-1 border border-gray-900 text-gray-900 py-2 px-4 rounded-lg font-medium hover:bg-gray-100 transition-colors duration-200">
                       Schedule Visit
                     </button>
                   </div>
@@ -386,7 +386,7 @@ const Properties = () => {
 
           {/* Load More */}
           <div className="text-center mt-12">
-            <button className="bg-primary-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors duration-200">
+            <button className="bg-gray-900 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors duration-200">
               Load More Properties
             </button>
           </div>
