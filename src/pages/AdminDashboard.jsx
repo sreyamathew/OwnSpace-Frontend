@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
   ShoppingCart, 
@@ -11,8 +12,11 @@ import {
   BarChart3,
   PieChart,
   Activity,
-  FileText
+  FileText,
+  LogOut,
+  User
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import AdminSidebar from '../components/AdminSidebar';
 import StatsCard from '../components/StatsCard';
 import SalesChart from '../components/SalesChart';
@@ -21,8 +25,15 @@ import AgentPerformance from '../components/AgentPerformance';
 import MonthlyTarget from '../components/MonthlyTarget';
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [dateRange, setDateRange] = useState('Mar 6, 2025 - Mar 12, 2025');
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   // Mock data - In real app, this would come from API
   const dashboardStats = {
@@ -73,8 +84,8 @@ const AdminDashboard = () => {
         <div className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-gray-600 mt-1">Welcome back! Here's what's happening with your properties.</p>
+              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+              <p className="text-gray-600 mt-1">Welcome back, {user?.name}! Here's what's happening with your properties.</p>
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2 bg-gray-100 rounded-lg px-3 py-2">
@@ -87,6 +98,20 @@ const AdminDashboard = () => {
               >
                 <Download className="h-4 w-4" />
                 <span>Export</span>
+              </button>
+              <button
+                onClick={() => navigate('/admin/profile')}
+                className="flex items-center space-x-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                <User className="h-4 w-4" />
+                <span>Profile</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
               </button>
             </div>
           </div>

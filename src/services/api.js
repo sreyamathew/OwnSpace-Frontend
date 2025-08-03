@@ -160,6 +160,21 @@ export const authAPI = {
     }
   },
 
+  // Register agent (Admin only)
+  registerAgent: async (agentData) => {
+    try {
+      const response = await apiRequest('/auth/register-agent', {
+        method: 'POST',
+        body: JSON.stringify(agentData),
+        includeAuth: true,
+      });
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Clear auth data
   clearAuthData: () => {
     localStorage.removeItem('token');

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authAPI } from '../services/api';
 import { 
   User, 
   Mail, 
@@ -118,18 +119,53 @@ const AgentRegistration = () => {
     setSuccessMessage('');
 
     try {
-      // Mock API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Prepare agent data
+      const agentData = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        licenseNumber: formData.licenseNumber,
+        agency: formData.agency,
+        experience: formData.experience,
+        specialization: formData.specialization,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        bio: formData.bio
+      };
+
+      const response = await authAPI.registerAgent(agentData);
       
-      setSuccessMessage('Agent registered successfully! Redirecting...');
-      
-      setTimeout(() => {
-        navigate('/admin/agents');
-      }, 1500);
+      if (response.success) {
+        setSuccessMessage('Agent registered successfully! The agent can now login with their credentials.');
+        
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          password: '',
+          confirmPassword: '',
+          licenseNumber: '',
+          agency: '',
+          experience: '',
+          specialization: '',
+          address: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          bio: '',
+          profileImage: null,
+          licenseDocument: null,
+          agreeToTerms: false
+        });
+      }
     } catch (error) {
       console.error('Registration error:', error);
       setErrors({
-        general: 'Registration failed. Please try again.'
+        general: error.message || 'Registration failed. Please try again.'
       });
     } finally {
       setIsLoading(false);

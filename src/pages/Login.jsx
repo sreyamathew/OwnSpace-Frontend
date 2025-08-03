@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Mail,
@@ -11,9 +11,11 @@ import {
   Loader
 } from 'lucide-react';
 import { authAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login, isAuthenticated, isAdmin, isAgent } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -23,6 +25,19 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (isAdmin()) {
+        navigate('/admin/dashboard');
+      } else if (isAgent()) {
+        navigate('/agent/dashboard');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [isAuthenticated, isAdmin, isAgent, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -81,9 +96,19 @@ const Login = () => {
       if (response.success) {
         setSuccessMessage('Login successful! Redirecting...');
 
-        // Redirect to home page after successful login
+        // Update auth context
+        login(response.data.user, response.data.token);
+
+        // Check user type and redirect accordingly
+        const userType = response.data.user.userType;
         setTimeout(() => {
-          navigate('/');
+          if (userType === 'admin') {
+            navigate('/admin/dashboard');
+          } else if (userType === 'agent') {
+            navigate('/agent/dashboard');
+          } else {
+            navigate('/');
+          }
         }, 1500);
       }
     } catch (error) {
@@ -269,21 +294,10 @@ const Login = () => {
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-gray-50 text-gray-500">Demo Accounts</span>
+                  <span className="px-2 bg-gray-50 text-gray-500"></span>
                 </div>
               </div>
 
-              <div className="mt-4 space-y-2">
-                <button className="w-full text-left p-2 text-xs bg-blue-50 border border-blue-200 rounded text-blue-700 hover:bg-blue-100 transition-colors duration-200">
-                  <strong>Investor:</strong> investor@demo.com / password123
-                </button>
-                <button className="w-full text-left p-2 text-xs bg-green-50 border border-green-200 rounded text-green-700 hover:bg-green-100 transition-colors duration-200">
-                  <strong>Agent:</strong> agent@demo.com / password123
-                </button>
-                <button className="w-full text-left p-2 text-xs bg-purple-50 border border-purple-200 rounded text-purple-700 hover:bg-purple-100 transition-colors duration-200">
-                  <strong>Admin:</strong> admin@demo.com / password123
-                </button>
-              </div>
             </div>
           </div>
         </div>

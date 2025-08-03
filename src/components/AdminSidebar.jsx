@@ -175,7 +175,7 @@ const AdminSidebar = () => {
       expandable: true,
       subItems: [
         { label: 'Settings', path: '/admin/settings' },
-        { label: 'Profile', path: '/admin/pages/profile' }
+        { label: 'Profile', path: '/admin/profile' }
       ]
     }
   ];

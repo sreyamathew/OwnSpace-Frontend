@@ -1,10 +1,29 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Home, Building, Users, Phone, LogIn, UserPlus, Info, Settings } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, Home, Building, Users, Phone, LogIn, UserPlus, Info, Settings, LogOut, LayoutDashboard, User, Heart, History, ChevronDown } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const ContactNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef(null);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, user, logout, isAdmin, isAgent, isLoading } = useAuth();
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const navigation = [
     { name: 'Home', href: '/', icon: Home },
@@ -15,6 +34,15 @@ const ContactNavbar = () => {
   ];
 
   const isActive = (path) => location.pathname === path;
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const isBuyer = () => {
+    return user && user.userType === 'buyer';
+  };
 
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-50">
@@ -60,14 +88,116 @@ const ContactNavbar = () => {
               })}
             </div>
 
-            {/* Try Now Button */}
-            <div className="flex items-center">
-              <Link
-                to="/register"
-                className="bg-black text-white px-6 py-2 rounded-sm text-sm font-light transition-all duration-200 hover:bg-gray-800"
-              >
-                try now
-              </Link>
+            {/* Auth Buttons */}
+            <div className="flex items-center space-x-4">
+              {!isLoading && isAuthenticated && user ? (
+                <>
+                  {isAdmin() && (
+                    <Link
+                      to="/admin/dashboard"
+                      className="flex items-center space-x-2 text-sm font-light text-gray-600 hover:text-black transition-colors duration-200"
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      <span>Admin Dashboard</span>
+                    </Link>
+                  )}
+                  {isAgent() && (
+                    <Link
+                      to="/agent/dashboard"
+                      className="flex items-center space-x-2 text-sm font-light text-gray-600 hover:text-black transition-colors duration-200"
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      <span>Agent Dashboard</span>
+                    </Link>
+                  )}
+                  
+                  {/* Buyer Profile Dropdown */}
+                  {isBuyer() && (
+                    <div className="relative" ref={profileRef}>
+                      <button
+                        onClick={() => setIsProfileOpen(!isProfileOpen)}
+                        className="flex items-center space-x-2 text-sm font-light text-gray-600 hover:text-black transition-colors duration-200"
+                      >
+                        <User className="h-4 w-4" />
+                        <span>{user?.name}</span>
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                      
+                      {isProfileOpen && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                          <Link
+                            to="/profile"
+                            onClick={() => setIsProfileOpen(false)}
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            <User className="h-4 w-4" />
+                            <span>My Profile</span>
+                          </Link>
+                          <Link
+                            to="/saved-properties"
+                            onClick={() => setIsProfileOpen(false)}
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            <Heart className="h-4 w-4" />
+                            <span>Saved Properties</span>
+                          </Link>
+                          <Link
+                            to="/property-history"
+                            onClick={() => setIsProfileOpen(false)}
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            <History className="h-4 w-4" />
+                            <span>View History</span>
+                          </Link>
+                          <div className="border-t border-gray-100"></div>
+                          <button
+                            onClick={() => {
+                              handleLogout();
+                              setIsProfileOpen(false);
+                            }}
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                          >
+                            <LogOut className="h-4 w-4" />
+                            <span>Logout</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Admin/Agent Welcome + Logout */}
+                  {(isAdmin() || isAgent()) && (
+                    <>
+                      <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <span>Welcome, {user?.name}</span>
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-sm text-sm font-light transition-all duration-200 hover:bg-gray-200"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>Logout</span>
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : !isLoading ? (
+                <>
+                  <Link
+                    to="/login"
+                    className="flex items-center space-x-2 text-sm font-light text-gray-600 hover:text-black transition-colors duration-200"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    <span>Login</span>
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="bg-black text-white px-6 py-2 rounded-sm text-sm font-light transition-all duration-200 hover:bg-gray-800"
+                  >
+                    try now
+                  </Link>
+                </>
+              ) : null}
             </div>
           </div>
 
@@ -106,13 +236,100 @@ const ContactNavbar = () => {
               );
             })}
             <div className="border-t border-gray-200 pt-4 pb-3">
-              <Link
-                to="/register"
-                onClick={() => setIsOpen(false)}
-                className="block mx-3 bg-black text-white px-3 py-2 rounded-sm text-base font-light hover:bg-gray-800 transition-all duration-200 text-center"
-              >
-                try now
-              </Link>
+              {!isLoading && isAuthenticated && user ? (
+                <>
+                  {isAdmin() && (
+                    <Link
+                      to="/admin/dashboard"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center space-x-3 mx-3 px-3 py-2 rounded-sm text-base font-light text-gray-600 hover:text-black hover:bg-gray-50 transition-colors duration-200"
+                    >
+                      <LayoutDashboard className="h-5 w-5" />
+                      <span>Admin Dashboard</span>
+                    </Link>
+                  )}
+                  {isAgent() && (
+                    <Link
+                      to="/agent/dashboard"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center space-x-3 mx-3 px-3 py-2 rounded-sm text-base font-light text-gray-600 hover:text-black hover:bg-gray-50 transition-colors duration-200"
+                    >
+                      <LayoutDashboard className="h-5 w-5" />
+                      <span>Agent Dashboard</span>
+                    </Link>
+                  )}
+                  
+                  {/* Buyer Profile Options */}
+                  {isBuyer() && (
+                    <>
+                      <div className="mx-3 px-3 py-2 text-base text-gray-600">
+                        Welcome, {user?.name}
+                      </div>
+                      <Link
+                        to="/profile"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center space-x-3 mx-3 px-3 py-2 rounded-sm text-base font-light text-gray-600 hover:text-black hover:bg-gray-50 transition-colors duration-200"
+                      >
+                        <User className="h-5 w-5" />
+                        <span>My Profile</span>
+                      </Link>
+                      <Link
+                        to="/saved-properties"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center space-x-3 mx-3 px-3 py-2 rounded-sm text-base font-light text-gray-600 hover:text-black hover:bg-gray-50 transition-colors duration-200"
+                      >
+                        <Heart className="h-5 w-5" />
+                        <span>Saved Properties</span>
+                      </Link>
+                      <Link
+                        to="/property-history"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center space-x-3 mx-3 px-3 py-2 rounded-sm text-base font-light text-gray-600 hover:text-black hover:bg-gray-50 transition-colors duration-200"
+                      >
+                        <History className="h-5 w-5" />
+                        <span>View History</span>
+                      </Link>
+                    </>
+                  )}
+                  
+                  {/* Admin/Agent Welcome */}
+                  {(isAdmin() || isAgent()) && (
+                    <div className="mx-3 px-3 py-2 text-base text-gray-600">
+                      Welcome, {user?.name}
+                    </div>
+                  )}
+                  
+                  {/* Logout Button for all authenticated users */}
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center space-x-3 mx-3 px-3 py-2 rounded-sm text-base font-light text-gray-600 hover:text-black hover:bg-gray-50 transition-colors duration-200 w-full"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    <span>Logout</span>
+                  </button>
+                </>
+              ) : !isLoading ? (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center space-x-3 mx-3 px-3 py-2 rounded-sm text-base font-light text-gray-600 hover:text-black hover:bg-gray-50 transition-colors duration-200"
+                  >
+                    <LogIn className="h-5 w-5" />
+                    <span>Login</span>
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setIsOpen(false)}
+                    className="block mx-3 bg-black text-white px-3 py-2 rounded-sm text-base font-light hover:bg-gray-800 transition-all duration-200 text-center"
+                  >
+                    try now
+                  </Link>
+                </>
+              ) : null}
             </div>
           </div>
         </div>
