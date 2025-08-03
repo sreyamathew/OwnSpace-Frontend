@@ -1,24 +1,28 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
   Building,
   ArrowRight,
-  CheckCircle
+  CheckCircle,
+  Loader
 } from 'lucide-react';
+import { authAPI } from '../services/api';
 
 const Login = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    userType: '',
     rememberMe: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -51,40 +55,48 @@ const Login = () => {
       newErrors.password = 'Password must be at least 6 characters';
     }
     
-    if (!formData.userType) {
-      newErrors.userType = 'Please select your role';
-    }
+
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      // Handle login logic here
-      console.log('Login attempt:', formData);
-      // Redirect to dashboard based on user type
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+    setSuccessMessage('');
+
+    try {
+      const response = await authAPI.login({
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (response.success) {
+        setSuccessMessage('Login successful! Redirecting...');
+
+        // Redirect to home page after successful login
+        setTimeout(() => {
+          navigate('/');
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setErrors({
+        general: error.message || 'Login failed. Please try again.'
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const userTypes = [
-    {
-      value: 'investor',
-      label: 'Investor/Buyer',
-      description: 'Looking to invest in properties'
-    },
-    {
-      value: 'agent',
-      label: 'Real Estate Agent',
-      description: 'Managing property listings'
-    },
-    {
-      value: 'admin',
-      label: 'Admin',
-      description: 'System administration'
-    }
-  ];
+
 
   const features = [
     'AI-powered price predictions',
@@ -119,34 +131,24 @@ const Login = () => {
           </div>
 
           <div className="mt-8">
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              {/* User Type Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  I am a *
-                </label>
-                <div className="space-y-2">
-                  {userTypes.map((type) => (
-                    <label key={type.value} className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200">
-                      <input
-                        type="radio"
-                        name="userType"
-                        value={type.value}
-                        checked={formData.userType === type.value}
-                        onChange={handleInputChange}
-                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
-                      />
-                      <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">{type.label}</div>
-                        <div className="text-xs text-gray-500">{type.description}</div>
-                      </div>
-                    </label>
-                  ))}
+            {/* Success Message */}
+            {successMessage && (
+              <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+                <div className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-400 mr-2" />
+                  <p className="text-sm text-green-800">{successMessage}</p>
                 </div>
-                {errors.userType && (
-                  <p className="mt-1 text-sm text-red-600">{errors.userType}</p>
-                )}
               </div>
+            )}
+
+            {/* Error Message */}
+            {errors.general && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-800">{errors.general}</p>
+              </div>
+            )}
+
+            <form className="space-y-6" onSubmit={handleSubmit}>
 
               {/* Email */}
               <div>
@@ -242,10 +244,20 @@ const Login = () => {
               <div>
                 <button
                   type="submit"
-                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+                  disabled={isLoading}
+                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Sign in
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
+                  {isLoading ? (
+                    <>
+                      <Loader className="animate-spin h-4 w-4 mr-2" />
+                      Signing in...
+                    </>
+                  ) : (
+                    <>
+                      Sign in
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
+                    </>
+                  )}
                 </button>
               </div>
             </form>
