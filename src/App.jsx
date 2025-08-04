@@ -23,6 +23,8 @@ import AdminProfile from './pages/AdminProfile';
 import AgentProfile from './pages/AgentProfile';
 import ValidationTest from './pages/ValidationTest';
 import OtpVerification from './pages/OtpVerification';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 const AppContent = () => {
   return (
@@ -85,6 +87,8 @@ const AppContent = () => {
         </div>
       } />
       <Route path="/verify-otp" element={<OtpVerification />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Admin Routes */}
       <Route path="/admin/dashboard" element={

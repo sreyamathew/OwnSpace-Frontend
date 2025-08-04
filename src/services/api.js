@@ -195,6 +195,34 @@ export const authAPI = {
   },
 
   verifyOtp,
+
+  // Forgot password
+  forgotPassword: async (data) => {
+    try {
+      const response = await apiRequest('/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Reset password
+  resetPassword: async (data) => {
+    try {
+      const response = await apiRequest('/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 // Health check function
