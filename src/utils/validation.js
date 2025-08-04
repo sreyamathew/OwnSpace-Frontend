@@ -54,14 +54,6 @@ export const validateEmail = (email) => {
     errors.push('Please enter a valid email address');
   }
   
-  // Check for allowed domains
-  const allowedDomains = ['@gmail.com', '@edu.in'];
-  const hasAllowedDomain = allowedDomains.some(domain => trimmedEmail.endsWith(domain));
-  
-  if (!hasAllowedDomain) {
-    errors.push('Email must end with @gmail.com or @edu.in');
-  }
-  
   return errors;
 };
 

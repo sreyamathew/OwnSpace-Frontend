@@ -136,11 +136,11 @@ const ValidationTest = () => {
       invalidExamples: ['John123', '123John', 'Jo', 'John@Doe']
     },
     {
-      field: 'email', 
+      field: 'email',
       label: 'Email Validation',
-      placeholder: 'Try: "john@yahoo.com", "123@gmail.com", "john@gmail.com"',
-      validExamples: ['john@gmail.com', 'alice@edu.in'],
-      invalidExamples: ['john@yahoo.com', '123@gmail.com', 'john.gmail.com']
+      placeholder: 'Try: "john@example.com", "123@gmail.com", "john@yahoo.com"',
+      validExamples: ['john@example.com', 'alice@yahoo.com', 'user@company.org'],
+      invalidExamples: ['123@gmail.com', '9user@test.com', 'john.example.com']
     },
     {
       field: 'phone',
@@ -286,7 +286,7 @@ const ValidationTest = () => {
               <h4 className="font-medium text-blue-800 mb-2">✅ Completed Features</h4>
               <ul className="text-sm text-blue-700 space-y-1">
                 <li>• Name validation (letters only, starts with letter)</li>
-                <li>• Email validation (@gmail.com, @edu.in only)</li>
+                <li>• Email validation (must start with letter)</li>
                 <li>• Phone validation (10 digits, no letters)</li>
                 <li>• Password validation (8+ chars, mixed case, numbers, symbols)</li>
                 <li>• Price validation (greater than 0)</li>

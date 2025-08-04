@@ -314,7 +314,7 @@ const AgentRegistration = () => {
                           className={`block w-full px-3 py-2 pl-10 border ${
                             errors.email || focusErrors.email ? 'border-red-300' : 'border-gray-300'
                           } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                          placeholder="agent@gmail.com or agent@edu.in"
+                          placeholder="agent@example.com (must start with a letter)"
                         />
                         <Mail className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
                       </div>

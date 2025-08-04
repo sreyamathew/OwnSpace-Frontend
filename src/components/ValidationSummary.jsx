@@ -16,8 +16,8 @@ const ValidationSummary = () => {
       category: "Email Validation", 
       rules: [
         "Must start with a letter",
-        "Must end with @gmail.com or @edu.in",
-        "Valid email format required"
+        "Valid email format required",
+        "Can use any domain (e.g., @gmail.com, @yahoo.com, @company.org)"
       ]
     },
     {
