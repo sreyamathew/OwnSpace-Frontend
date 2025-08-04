@@ -45,6 +45,19 @@ const apiRequest = async (endpoint, options = {}) => {
   }
 };
 
+const verifyOtp = async ({ email, otp }) => {
+  try {
+    const response = await apiRequest('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    });
+
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Auth API functions
 export const authAPI = {
   // Register new user
@@ -179,7 +192,9 @@ export const authAPI = {
   clearAuthData: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-  }
+  },
+
+  verifyOtp,
 };
 
 // Health check function

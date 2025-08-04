@@ -22,6 +22,7 @@ import PropertyHistory from './pages/PropertyHistory';
 import AdminProfile from './pages/AdminProfile';
 import AgentProfile from './pages/AgentProfile';
 import ValidationTest from './pages/ValidationTest';
+import OtpVerification from './pages/OtpVerification';
 
 const AppContent = () => {
   return (
@@ -83,6 +84,7 @@ const AppContent = () => {
           <Footer />
         </div>
       } />
+      <Route path="/verify-otp" element={<OtpVerification />} />
 
       {/* Admin Routes */}
       <Route path="/admin/dashboard" element={

@@ -184,11 +184,9 @@ const Register = () => {
       });
 
       if (response.success) {
-        setSuccessMessage('Registration successful! Redirecting...');
-
-        // Redirect to home page after successful registration
+        setSuccessMessage('Registration successful! Please verify the OTP sent to your email.');
         setTimeout(() => {
-          navigate('/');
+          navigate('/verify-otp', { state: { email: formData.email } });
         }, 1500);
       }
     } catch (error) {
