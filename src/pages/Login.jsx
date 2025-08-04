@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { authAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { validateEmail, validatePassword, getFieldValidationMessage } from '../utils/validation';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [focusErrors, setFocusErrors] = useState({});
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -41,9 +43,11 @@ const Login = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    const newValue = type === 'checkbox' ? checked : value;
+    
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: newValue
     }));
     
     // Clear error when user starts typing
@@ -53,24 +57,54 @@ const Login = () => {
         [name]: ''
       }));
     }
+    
+    // Clear focus error only if the input becomes valid
+    if (focusErrors[name]) {
+      const errorMessage = getFieldValidationMessage(name, newValue);
+      if (!errorMessage) {
+        setFocusErrors(prev => ({
+          ...prev,
+          [name]: ''
+        }));
+      }
+    }
+  };
+
+  const handleInputFocus = (e) => {
+    const { name } = e.target;
+    // Clear focus errors when user focuses on field
+    setFocusErrors(prev => ({
+      ...prev,
+      [name]: ''
+    }));
+  };
+
+  const handleInputBlur = (e) => {
+    const { name, value } = e.target;
+    // Show validation error when user leaves the field
+    const errorMessage = getFieldValidationMessage(name, value);
+    if (errorMessage) {
+      setFocusErrors(prev => ({
+        ...prev,
+        [name]: errorMessage
+      }));
+    }
   };
 
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+    // Validate email
+    const emailErrors = validateEmail(formData.email);
+    if (emailErrors.length > 0) {
+      newErrors.email = emailErrors[0];
     }
     
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    // Validate password
+    const passwordErrors = validatePassword(formData.password);
+    if (passwordErrors.length > 0) {
+      newErrors.password = passwordErrors[0];
     }
-    
-
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -191,14 +225,16 @@ const Login = () => {
                     autoComplete="email"
                     value={formData.email}
                     onChange={handleInputChange}
+                    onFocus={handleInputFocus}
+                    onBlur={handleInputBlur}
                     className={`block w-full pl-10 pr-3 py-2 border ${
-                      errors.email ? 'border-red-300' : 'border-gray-300'
+                      errors.email || focusErrors.email ? 'border-red-300' : 'border-gray-300'
                     } rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
-                    placeholder="Enter your email"
+                    placeholder="Enter your email (must end with @gmail.com or @edu.in)"
                   />
                 </div>
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                {(errors.email || focusErrors.email) && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email || focusErrors.email}</p>
                 )}
               </div>
 
@@ -218,8 +254,10 @@ const Login = () => {
                     autoComplete="current-password"
                     value={formData.password}
                     onChange={handleInputChange}
+                    onFocus={handleInputFocus}
+                    onBlur={handleInputBlur}
                     className={`block w-full pl-10 pr-10 py-2 border ${
-                      errors.password ? 'border-red-300' : 'border-gray-300'
+                      errors.password || focusErrors.password ? 'border-red-300' : 'border-gray-300'
                     } rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
                     placeholder="Enter your password"
                   />
@@ -237,8 +275,8 @@ const Login = () => {
                     </button>
                   </div>
                 </div>
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                {(errors.password || focusErrors.password) && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password || focusErrors.password}</p>
                 )}
               </div>
 

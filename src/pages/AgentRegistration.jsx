@@ -17,6 +17,15 @@ import {
   Upload
 } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
+import { 
+  validateName, 
+  validateEmail, 
+  validatePhone, 
+  validatePassword, 
+  validateConfirmPassword, 
+  getFieldValidationMessage,
+  getPasswordStrength 
+} from '../utils/validation';
 
 const AgentRegistration = () => {
   const navigate = useNavigate();
@@ -25,6 +34,8 @@ const AgentRegistration = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
+  const [focusErrors, setFocusErrors] = useState({});
+  const [passwordStrength, setPasswordStrength] = useState({ strength: 0, label: 'No password', color: 'gray' });
   
   const [formData, setFormData] = useState({
     name: '',
@@ -48,9 +59,11 @@ const AgentRegistration = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked, files } = e.target;
+    const newValue = type === 'checkbox' ? checked : type === 'file' ? files[0] : value;
+    
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : type === 'file' ? files[0] : value
+      [name]: newValue
     }));
     
     // Clear error when user starts typing
@@ -60,42 +73,85 @@ const AgentRegistration = () => {
         [name]: ''
       }));
     }
+    
+    // Clear focus error only if the input becomes valid
+    if (focusErrors[name] && type !== 'file') {
+      const additionalData = name === 'confirmPassword' ? { password: formData.password } : {};
+      const errorMessage = getFieldValidationMessage(name, newValue, additionalData);
+      if (!errorMessage) {
+        setFocusErrors(prev => ({
+          ...prev,
+          [name]: ''
+        }));
+      }
+    }
+
+    // Update password strength in real-time
+    if (name === 'password') {
+      setPasswordStrength(getPasswordStrength(newValue));
+    }
+  };
+
+  const handleInputFocus = (e) => {
+    const { name } = e.target;
+    // Clear focus errors when user focuses on field
+    setFocusErrors(prev => ({
+      ...prev,
+      [name]: ''
+    }));
+  };
+
+  const handleInputBlur = (e) => {
+    const { name, value } = e.target;
+    // Show validation error when user leaves the field
+    const additionalData = name === 'confirmPassword' ? { password: formData.password } : {};
+    const errorMessage = getFieldValidationMessage(name, value, additionalData);
+    if (errorMessage) {
+      setFocusErrors(prev => ({
+        ...prev,
+        [name]: errorMessage
+      }));
+    }
   };
 
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.name.trim()) {
-      newErrors.name = 'Full name is required';
+    // Validate name
+    const nameErrors = validateName(formData.name);
+    if (nameErrors.length > 0) {
+      newErrors.name = nameErrors[0];
     }
     
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+    // Validate email
+    const emailErrors = validateEmail(formData.email);
+    if (emailErrors.length > 0) {
+      newErrors.email = emailErrors[0];
     }
     
-    if (!formData.phone) {
-      newErrors.phone = 'Phone number is required';
+    // Validate phone
+    const phoneErrors = validatePhone(formData.phone);
+    if (phoneErrors.length > 0) {
+      newErrors.phone = phoneErrors[0];
     }
     
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters long';
+    // Validate password
+    const passwordErrors = validatePassword(formData.password);
+    if (passwordErrors.length > 0) {
+      newErrors.password = passwordErrors[0];
     }
     
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+    // Validate confirm password
+    const confirmPasswordErrors = validateConfirmPassword(formData.password, formData.confirmPassword);
+    if (confirmPasswordErrors.length > 0) {
+      newErrors.confirmPassword = confirmPasswordErrors[0];
     }
     
-    if (!formData.licenseNumber) {
+    if (!formData.licenseNumber.trim()) {
       newErrors.licenseNumber = 'License number is required';
     }
     
-    if (!formData.agency) {
+    if (!formData.agency.trim()) {
       newErrors.agency = 'Agency name is required';
     }
     
@@ -226,15 +282,17 @@ const AgentRegistration = () => {
                           required
                           value={formData.name}
                           onChange={handleInputChange}
+                          onFocus={handleInputFocus}
+                          onBlur={handleInputBlur}
                           className={`block w-full px-3 py-2 pl-10 border ${
-                            errors.name ? 'border-red-300' : 'border-gray-300'
+                            errors.name || focusErrors.name ? 'border-red-300' : 'border-gray-300'
                           } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                          placeholder="Enter full name"
+                          placeholder="Enter full name (letters only, no numbers)"
                         />
                         <User className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
                       </div>
-                      {errors.name && (
-                        <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                      {(errors.name || focusErrors.name) && (
+                        <p className="mt-1 text-sm text-red-600">{errors.name || focusErrors.name}</p>
                       )}
                     </div>
 
@@ -251,15 +309,17 @@ const AgentRegistration = () => {
                           required
                           value={formData.email}
                           onChange={handleInputChange}
+                          onFocus={handleInputFocus}
+                          onBlur={handleInputBlur}
                           className={`block w-full px-3 py-2 pl-10 border ${
-                            errors.email ? 'border-red-300' : 'border-gray-300'
+                            errors.email || focusErrors.email ? 'border-red-300' : 'border-gray-300'
                           } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                          placeholder="agent@example.com"
+                          placeholder="agent@gmail.com or agent@edu.in"
                         />
                         <Mail className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
                       </div>
-                      {errors.email && (
-                        <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                      {(errors.email || focusErrors.email) && (
+                        <p className="mt-1 text-sm text-red-600">{errors.email || focusErrors.email}</p>
                       )}
                     </div>
 
@@ -276,15 +336,17 @@ const AgentRegistration = () => {
                           required
                           value={formData.phone}
                           onChange={handleInputChange}
+                          onFocus={handleInputFocus}
+                          onBlur={handleInputBlur}
                           className={`block w-full px-3 py-2 pl-10 border ${
-                            errors.phone ? 'border-red-300' : 'border-gray-300'
+                            errors.phone || focusErrors.phone ? 'border-red-300' : 'border-gray-300'
                           } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                          placeholder="+1 (555) 123-4567"
+                          placeholder="9876543210 (10 digits only)"
                         />
                         <Phone className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
                       </div>
-                      {errors.phone && (
-                        <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                      {(errors.phone || focusErrors.phone) && (
+                        <p className="mt-1 text-sm text-red-600">{errors.phone || focusErrors.phone}</p>
                       )}
                     </div>
 
@@ -405,8 +467,10 @@ const AgentRegistration = () => {
                           required
                           value={formData.password}
                           onChange={handleInputChange}
+                          onFocus={handleInputFocus}
+                          onBlur={handleInputBlur}
                           className={`block w-full px-3 py-2 pl-10 pr-10 border ${
-                            errors.password ? 'border-red-300' : 'border-gray-300'
+                            errors.password || focusErrors.password ? 'border-red-300' : 'border-gray-300'
                           } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                           placeholder="••••••••"
                         />
@@ -423,8 +487,32 @@ const AgentRegistration = () => {
                           )}
                         </button>
                       </div>
-                      {errors.password && (
-                        <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                      {/* Password Strength Indicator */}
+                      {formData.password && (
+                        <div className="mt-2">
+                          <div className="flex items-center space-x-2">
+                            <div className="flex-1 bg-gray-200 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full transition-all duration-300 ${
+                                  passwordStrength.color === 'red' ? 'bg-red-500' :
+                                  passwordStrength.color === 'yellow' ? 'bg-yellow-500' :
+                                  passwordStrength.color === 'green' ? 'bg-green-500' : 'bg-gray-300'
+                                }`}
+                                style={{ width: `${(passwordStrength.strength / 6) * 100}%` }}
+                              ></div>
+                            </div>
+                            <span className={`text-xs font-medium ${
+                              passwordStrength.color === 'red' ? 'text-red-600' :
+                              passwordStrength.color === 'yellow' ? 'text-yellow-600' :
+                              passwordStrength.color === 'green' ? 'text-green-600' : 'text-gray-500'
+                            }`}>
+                              {passwordStrength.label}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {(errors.password || focusErrors.password) && (
+                        <p className="mt-1 text-sm text-red-600">{errors.password || focusErrors.password}</p>
                       )}
                     </div>
 
@@ -441,8 +529,10 @@ const AgentRegistration = () => {
                           required
                           value={formData.confirmPassword}
                           onChange={handleInputChange}
+                          onFocus={handleInputFocus}
+                          onBlur={handleInputBlur}
                           className={`block w-full px-3 py-2 pl-10 pr-10 border ${
-                            errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                            errors.confirmPassword || focusErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'
                           } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                           placeholder="••••••••"
                         />
@@ -459,8 +549,8 @@ const AgentRegistration = () => {
                           )}
                         </button>
                       </div>
-                      {errors.confirmPassword && (
-                        <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+                      {(errors.confirmPassword || focusErrors.confirmPassword) && (
+                        <p className="mt-1 text-sm text-red-600">{errors.confirmPassword || focusErrors.confirmPassword}</p>
                       )}
                     </div>
                   </div>

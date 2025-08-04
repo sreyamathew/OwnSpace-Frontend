@@ -16,12 +16,14 @@ import {
   Loader
 } from 'lucide-react';
 import AgentSidebar from '../components/AgentSidebar';
+import { validatePrice, getFieldValidationMessage } from '../utils/validation';
 
 const AddProperty = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
+  const [focusErrors, setFocusErrors] = useState({});
   const [images, setImages] = useState([]);
   
   const [formData, setFormData] = useState({
@@ -69,9 +71,11 @@ const AddProperty = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    const newValue = type === 'checkbox' ? checked : value;
+    
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: newValue
     }));
     
     // Clear error when user starts typing
@@ -79,6 +83,38 @@ const AddProperty = () => {
       setErrors(prev => ({
         ...prev,
         [name]: ''
+      }));
+    }
+    
+    // Clear focus error only if the input becomes valid
+    if (focusErrors[name]) {
+      const errorMessage = getFieldValidationMessage(name, newValue);
+      if (!errorMessage) {
+        setFocusErrors(prev => ({
+          ...prev,
+          [name]: ''
+        }));
+      }
+    }
+  };
+
+  const handleInputFocus = (e) => {
+    const { name } = e.target;
+    // Clear focus errors when user focuses on field
+    setFocusErrors(prev => ({
+      ...prev,
+      [name]: ''
+    }));
+  };
+
+  const handleInputBlur = (e) => {
+    const { name, value } = e.target;
+    // Show validation error when user leaves the field
+    const errorMessage = getFieldValidationMessage(name, value);
+    if (errorMessage) {
+      setFocusErrors(prev => ({
+        ...prev,
+        [name]: errorMessage
       }));
     }
   };
@@ -125,10 +161,10 @@ const AddProperty = () => {
       newErrors.description = 'Property description is required';
     }
     
-    if (!formData.price) {
-      newErrors.price = 'Price is required';
-    } else if (isNaN(formData.price) || parseFloat(formData.price) <= 0) {
-      newErrors.price = 'Please enter a valid price';
+    // Validate price
+    const priceErrors = validatePrice(formData.price);
+    if (priceErrors.length > 0) {
+      newErrors.price = priceErrors[0];
     }
     
     if (!formData.propertyType) {
@@ -289,17 +325,20 @@ const AddProperty = () => {
                           name="price"
                           type="number"
                           required
+                          min="1"
                           value={formData.price}
                           onChange={handleInputChange}
+                          onFocus={handleInputFocus}
+                          onBlur={handleInputBlur}
                           className={`block w-full pl-10 pr-3 py-2 border ${
-                            errors.price ? 'border-red-300' : 'border-gray-300'
+                            errors.price || focusErrors.price ? 'border-red-300' : 'border-gray-300'
                           } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                          placeholder="450000"
+                          placeholder="450000 (must be greater than 0)"
                         />
                         <DollarSign className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
                       </div>
-                      {errors.price && (
-                        <p className="mt-1 text-sm text-red-600">{errors.price}</p>
+                      {(errors.price || focusErrors.price) && (
+                        <p className="mt-1 text-sm text-red-600">{errors.price || focusErrors.price}</p>
                       )}
                     </div>
 

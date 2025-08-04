@@ -21,6 +21,7 @@ import SavedProperties from './pages/SavedProperties';
 import PropertyHistory from './pages/PropertyHistory';
 import AdminProfile from './pages/AdminProfile';
 import AgentProfile from './pages/AgentProfile';
+import ValidationTest from './pages/ValidationTest';
 
 const AppContent = () => {
   return (
@@ -72,6 +73,13 @@ const AppContent = () => {
         <div className="App min-h-screen bg-gray-50">
           <ContactNavbar />
           <main><Register /></main>
+          <Footer />
+        </div>
+      } />
+      <Route path="/validation-test" element={
+        <div className="App min-h-screen bg-gray-50">
+          <ContactNavbar />
+          <main><ValidationTest /></main>
           <Footer />
         </div>
       } />

@@ -12,6 +12,15 @@ import {
   Loader
 } from 'lucide-react';
 import { authAPI } from '../services/api';
+import { 
+  validateName, 
+  validateEmail, 
+  validatePhone, 
+  validatePassword, 
+  validateConfirmPassword, 
+  getFieldValidationMessage,
+  getPasswordStrength 
+} from '../utils/validation';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -20,6 +29,8 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
+  const [focusErrors, setFocusErrors] = useState({});
+  const [passwordStrength, setPasswordStrength] = useState({ strength: 0, label: 'No password', color: 'gray' });
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -32,9 +43,11 @@ const Register = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    const newValue = type === 'checkbox' ? checked : value;
+    
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: newValue
     }));
 
     // Clear error when user starts typing
@@ -44,33 +57,80 @@ const Register = () => {
         [name]: ''
       }));
     }
+    
+    // Clear focus error only if the input becomes valid
+    if (focusErrors[name]) {
+      const additionalData = name === 'confirmPassword' ? { password: formData.password } : {};
+      const errorMessage = getFieldValidationMessage(name, newValue, additionalData);
+      if (!errorMessage) {
+        setFocusErrors(prev => ({
+          ...prev,
+          [name]: ''
+        }));
+      }
+    }
+
+    // Update password strength in real-time
+    if (name === 'password') {
+      setPasswordStrength(getPasswordStrength(newValue));
+    }
+  };
+
+  const handleInputFocus = (e) => {
+    const { name } = e.target;
+    // Clear focus errors when user focuses on field
+    setFocusErrors(prev => ({
+      ...prev,
+      [name]: ''
+    }));
+  };
+
+  const handleInputBlur = (e) => {
+    const { name, value } = e.target;
+    // Show validation error when user leaves the field
+    const additionalData = name === 'confirmPassword' ? { password: formData.password } : {};
+    const errorMessage = getFieldValidationMessage(name, value, additionalData);
+    if (errorMessage) {
+      setFocusErrors(prev => ({
+        ...prev,
+        [name]: errorMessage
+      }));
+    }
   };
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters long';
+    // Validate name
+    const nameErrors = validateName(formData.name);
+    if (nameErrors.length > 0) {
+      newErrors.name = nameErrors[0];
     }
 
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+    // Validate email
+    const emailErrors = validateEmail(formData.email);
+    if (emailErrors.length > 0) {
+      newErrors.email = emailErrors[0];
     }
 
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters long';
+    // Validate phone (if provided)
+    if (formData.phone && formData.phone.trim()) {
+      const phoneErrors = validatePhone(formData.phone);
+      if (phoneErrors.length > 0) {
+        newErrors.phone = phoneErrors[0];
+      }
     }
 
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+    // Validate password
+    const passwordErrors = validatePassword(formData.password);
+    if (passwordErrors.length > 0) {
+      newErrors.password = passwordErrors[0];
+    }
+
+    // Validate confirm password
+    const confirmPasswordErrors = validateConfirmPassword(formData.password, formData.confirmPassword);
+    if (confirmPasswordErrors.length > 0) {
+      newErrors.confirmPassword = confirmPasswordErrors[0];
     }
 
     if (!formData.agreeToTerms) {
@@ -166,15 +226,17 @@ const Register = () => {
                   required
                   value={formData.name}
                   onChange={handleInputChange}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
                   className={`appearance-none block w-full px-3 py-2 pl-10 border ${
-                    errors.name ? 'border-red-300' : 'border-gray-300'
+                    errors.name || focusErrors.name ? 'border-red-300' : 'border-gray-300'
                   } rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
-                  placeholder="Enter your full name"
+                  placeholder="Enter your full name (letters only, no numbers)"
                 />
                 <User className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
               </div>
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+              {(errors.name || focusErrors.name) && (
+                <p className="mt-1 text-sm text-red-600">{errors.name || focusErrors.name}</p>
               )}
             </div>
 
@@ -192,15 +254,17 @@ const Register = () => {
                   required
                   value={formData.email}
                   onChange={handleInputChange}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
                   className={`appearance-none block w-full px-3 py-2 pl-10 border ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
+                    errors.email || focusErrors.email ? 'border-red-300' : 'border-gray-300'
                   } rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
-                  placeholder="john@example.com"
+                  placeholder="john@gmail.com or john@edu.in"
                 />
                 <Mail className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
               </div>
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              {(errors.email || focusErrors.email) && (
+                <p className="mt-1 text-sm text-red-600">{errors.email || focusErrors.email}</p>
               )}
             </div>
 
@@ -216,10 +280,17 @@ const Register = () => {
                   type="tel"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="+91 98765 43210"
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
+                  className={`appearance-none block w-full px-3 py-2 border ${
+                    errors.phone || focusErrors.phone ? 'border-red-300' : 'border-gray-300'
+                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
+                  placeholder="9876543210 (10 digits only)"
                 />
               </div>
+              {(errors.phone || focusErrors.phone) && (
+                <p className="mt-1 text-sm text-red-600">{errors.phone || focusErrors.phone}</p>
+              )}
             </div>
 
 
@@ -238,8 +309,10 @@ const Register = () => {
                   required
                   value={formData.password}
                   onChange={handleInputChange}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
                   className={`appearance-none block w-full px-3 py-2 pl-10 pr-10 border ${
-                    errors.password ? 'border-red-300' : 'border-gray-300'
+                    errors.password || focusErrors.password ? 'border-red-300' : 'border-gray-300'
                   } rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
                   placeholder="••••••••"
                 />
@@ -256,8 +329,32 @@ const Register = () => {
                   )}
                 </button>
               </div>
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+              {/* Password Strength Indicator */}
+              {formData.password && (
+                <div className="mt-2">
+                  <div className="flex items-center space-x-2">
+                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          passwordStrength.color === 'red' ? 'bg-red-500' :
+                          passwordStrength.color === 'yellow' ? 'bg-yellow-500' :
+                          passwordStrength.color === 'green' ? 'bg-green-500' : 'bg-gray-300'
+                        }`}
+                        style={{ width: `${(passwordStrength.strength / 6) * 100}%` }}
+                      ></div>
+                    </div>
+                    <span className={`text-xs font-medium ${
+                      passwordStrength.color === 'red' ? 'text-red-600' :
+                      passwordStrength.color === 'yellow' ? 'text-yellow-600' :
+                      passwordStrength.color === 'green' ? 'text-green-600' : 'text-gray-500'
+                    }`}>
+                      {passwordStrength.label}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {(errors.password || focusErrors.password) && (
+                <p className="mt-1 text-sm text-red-600">{errors.password || focusErrors.password}</p>
               )}
             </div>
 
@@ -275,8 +372,10 @@ const Register = () => {
                   required
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
                   className={`appearance-none block w-full px-3 py-2 pl-10 pr-10 border ${
-                    errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                    errors.confirmPassword || focusErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'
                   } rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
                   placeholder="••••••••"
                 />
@@ -293,8 +392,8 @@ const Register = () => {
                   )}
                 </button>
               </div>
-              {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+              {(errors.confirmPassword || focusErrors.confirmPassword) && (
+                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword || focusErrors.confirmPassword}</p>
               )}
             </div>
 
