@@ -199,36 +199,9 @@ const Register = () => {
     }
   };
 
-  const handleGoogleSignup = async () => {
-    setIsLoading(true);
-    setErrors({});
-    setSuccessMessage('');
-
-    try {
-      // Mock Google signup - replace with actual Google OAuth implementation
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock successful Google signup
-      const mockGoogleUser = {
-        id: 2,
-        name: 'Google User',
-        email: 'user@gmail.com',
-        userType: 'buyer',
-        provider: 'google'
-      };
-      
-      setSuccessMessage('Google signup successful! Redirecting...');
-      
-      // Redirect to home page
-      setTimeout(() => {
-        navigate('/');
-      }, 1000);
-      
-    } catch (error) {
-      setErrors({ general: 'Google signup failed. Please try again.' });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleGoogleSignup = () => {
+    // Redirect to backend Google OAuth endpoint
+    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/google`;
   };
 
   return (

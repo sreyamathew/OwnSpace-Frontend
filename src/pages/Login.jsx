@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Mail,
   Lock,
@@ -38,6 +38,7 @@ const GoogleIcon = () => (
 
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, isAuthenticated, isAdmin, isAgent } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
@@ -50,7 +51,7 @@ const Login = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [focusErrors, setFocusErrors] = useState({});
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated and handle URL error params
   useEffect(() => {
     if (isAuthenticated) {
       if (isAdmin()) {
@@ -61,7 +62,13 @@ const Login = () => {
         navigate('/');
       }
     }
-  }, [isAuthenticated, isAdmin, isAgent, navigate]);
+
+    // Check for error in URL params (from Google OAuth failure)
+    const urlError = searchParams.get('error');
+    if (urlError) {
+      setErrors({ general: decodeURIComponent(urlError) });
+    }
+  }, [isAuthenticated, isAdmin, isAgent, navigate, searchParams]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -177,37 +184,9 @@ const Login = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    setErrors({});
-    setSuccessMessage('');
-
-    try {
-      // Mock Google login - replace with actual Google OAuth implementation
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock successful Google login
-      const mockGoogleUser = {
-        id: 2,
-        name: 'Google User',
-        email: 'user@gmail.com',
-        userType: 'buyer',
-        provider: 'google'
-      };
-      
-      login(mockGoogleUser, 'mock-google-token');
-      setSuccessMessage('Google login successful! Redirecting...');
-      
-      // Redirect to home page for regular users
-      setTimeout(() => {
-        navigate('/');
-      }, 1000);
-      
-    } catch (error) {
-      setErrors({ general: 'Google login failed. Please try again.' });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleGoogleLogin = () => {
+    // Redirect to backend Google OAuth endpoint
+    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/google`;
   };
 
   const features = [

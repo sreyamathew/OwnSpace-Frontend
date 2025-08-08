@@ -25,6 +25,7 @@ import ValidationTest from './pages/ValidationTest';
 import OtpVerification from './pages/OtpVerification';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import AuthCallback from './pages/AuthCallback';
 
 const AppContent = () => {
   return (
@@ -89,6 +90,7 @@ const AppContent = () => {
       <Route path="/verify-otp" element={<OtpVerification />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
 
       {/* Admin Routes */}
       <Route path="/admin/dashboard" element={
