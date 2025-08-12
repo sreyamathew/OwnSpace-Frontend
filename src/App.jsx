@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import AgentRegistration from './pages/AgentRegistration';
+import AgentManagement from './pages/AgentManagement';
 import UserProfiles from './pages/UserProfiles';
 import AgentDashboard from './pages/AgentDashboard';
 import AddProperty from './pages/AddProperty';
@@ -103,6 +104,11 @@ const AppContent = () => {
           <AgentRegistration />
         </ProtectedRoute>
       } />
+      <Route path="/admin/agents" element={
+        <ProtectedRoute requireAdmin={true}>
+          <AgentManagement />
+        </ProtectedRoute>
+      } />
       <Route path="/admin/users" element={
         <ProtectedRoute requireAdmin={true}>
           <UserProfiles />
@@ -111,6 +117,11 @@ const AppContent = () => {
       <Route path="/admin/profile" element={
         <ProtectedRoute requireAdmin={true}>
           <AdminProfile />
+        </ProtectedRoute>
+      } />
+      <Route path="/add-property" element={
+        <ProtectedRoute requireAdmin={true}>
+          <AddProperty />
         </ProtectedRoute>
       } />
 

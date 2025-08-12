@@ -235,9 +235,53 @@ export const healthCheck = async () => {
   }
 };
 
+// Agent API functions
+export const agentAPI = {
+  // Get all agents (Admin only)
+  getAllAgents: async () => {
+    try {
+      const response = await apiRequest('/agents', {
+        method: 'GET',
+        includeAuth: true,
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Update agent (Admin only)
+  updateAgent: async (agentId, agentData) => {
+    try {
+      const response = await apiRequest(`/agents/${agentId}`, {
+        method: 'PUT',
+        body: JSON.stringify(agentData),
+        includeAuth: true,
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Delete agent (Admin only)
+  deleteAgent: async (agentId) => {
+    try {
+      const response = await apiRequest(`/agents/${agentId}`, {
+        method: 'DELETE',
+        includeAuth: true,
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+};
+
 // Export default API object
 const api = {
   auth: authAPI,
+  agent: agentAPI,
   healthCheck,
 };
 

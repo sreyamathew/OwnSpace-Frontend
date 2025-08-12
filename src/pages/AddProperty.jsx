@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, 
   MapPin, 
@@ -13,13 +13,21 @@ import {
   Plus,
   X,
   CheckCircle,
-  Loader
+  Loader,
+  Menu,
+  Building,
+  Users,
+  UserPlus,
+  BarChart3,
+  Settings,
+  FileText,
+  LayoutDashboard
 } from 'lucide-react';
-import AgentSidebar from '../components/AgentSidebar';
 import { validatePrice, getFieldValidationMessage } from '../utils/validation';
 
 const AddProperty = () => {
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
@@ -219,27 +227,56 @@ const AddProperty = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AgentSidebar />
-      
-      <div className="flex-1 ml-64">
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)} />
+          <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg">
+            <MinimalSidebar onClose={() => setSidebarOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-64 lg:block">
+        <MinimalSidebar />
+      </div>
+
+      {/* Main Content */}
+      <div className="lg:ml-64">
         {/* Header */}
-        <div className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <header className="bg-white border-b border-gray-200 px-4 py-3">
           <div className="flex items-center justify-between">
+            {/* Left side - Logo and Menu */}
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate('/agent/properties')}
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <div className="flex items-center space-x-2">
+                <Building className="h-6 w-6 text-blue-600" />
+                <span className="text-lg font-semibold text-gray-900">OwnSpace Admin</span>
+              </div>
+            </div>
+
+            {/* Right side - Title */}
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate('/admin/dashboard')}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft className="h-5 w-5 text-gray-600" />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Add New Property</h1>
-                <p className="text-gray-600 mt-1">Create a new property listing</p>
+                <h1 className="text-xl font-semibold text-gray-900">Add New Property</h1>
+                <p className="text-sm text-gray-600">Create a new property listing</p>
               </div>
             </div>
           </div>
-        </div>
+        </header>
 
         {/* Form Content */}
         <div className="p-6">
@@ -667,6 +704,65 @@ const AddProperty = () => {
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+// Minimal Sidebar Component
+const MinimalSidebar = ({ onClose }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const menuItems = [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
+    { label: 'Properties', icon: Home, path: '/admin/properties' },
+    { label: 'Add Property', icon: Plus, path: '/add-property' },
+    { label: 'Agents', icon: Users, path: '/admin/agents' },
+    { label: 'Add Agent', icon: UserPlus, path: '/admin/agents/add' },
+    { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
+    { label: 'Reports', icon: FileText, path: '/admin/reports' },
+    { label: 'Settings', icon: Settings, path: '/admin/settings' }
+  ];
+
+  const isActive = (path) => location.pathname === path;
+
+  return (
+    <div className="h-full bg-white border-r border-gray-200">
+      {/* Logo */}
+      <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
+        <div className="flex items-center space-x-2">
+          <Building className="h-6 w-6 text-blue-600" />
+          <span className="text-lg font-semibold text-gray-900">OwnSpace</span>
+        </div>
+        {onClose && (
+          <button onClick={onClose} className="lg:hidden p-1 rounded-md text-gray-600 hover:bg-gray-100">
+            <X className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className="p-4">
+        <div className="space-y-2">
+          {menuItems.map((item) => (
+            <button
+              key={item.path}
+              onClick={() => {
+                navigate(item.path);
+                onClose && onClose();
+              }}
+              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive(item.path)
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <item.icon className="h-5 w-5" />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 };

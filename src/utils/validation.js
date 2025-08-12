@@ -78,9 +78,37 @@ export const validatePhone = (phone) => {
     errors.push('Phone number cannot contain letters');
   }
   
-  // Phone should start with a valid digit (not 0 or 1 for Indian numbers)
-  if (digitsOnly.length === 10 && (digitsOnly[0] === '0' || digitsOnly[0] === '1')) {
-    errors.push('Phone number should start with digits 2-9');
+  // Phone should start with 7, 8, or 9 only
+  if (digitsOnly.length === 10 && !['7', '8', '9'].includes(digitsOnly[0])) {
+    errors.push('Phone number must start with 7, 8, or 9');
+  }
+  
+  return errors;
+};
+
+export const validateLicenseNumber = (licenseNumber) => {
+  const errors = [];
+  
+  if (!licenseNumber || !licenseNumber.trim()) {
+    errors.push('License number is required');
+    return errors;
+  }
+  
+  const trimmedLicense = licenseNumber.trim();
+  
+  // License must start with "RE" in capital letters
+  if (!trimmedLicense.startsWith('RE')) {
+    errors.push('License number must start with "RE" in capital letters');
+  }
+  
+  // License must be exactly 11 characters (RE + 9 digits)
+  if (trimmedLicense.length !== 11) {
+    errors.push('License number must be exactly 11 characters (RE followed by 9 digits)');
+  }
+  
+  // Check if it follows the pattern RE followed by exactly 9 digits
+  if (!/^RE\d{9}$/.test(trimmedLicense)) {
+    errors.push('License number must be RE followed by exactly 9 digits (e.g., RE123456789)');
   }
   
   return errors;
@@ -193,6 +221,10 @@ export const getFieldValidationMessage = (fieldName, value, additionalData = {})
     case 'phone':
       const phoneErrors = validatePhone(value);
       return phoneErrors.length > 0 ? phoneErrors[0] : '';
+      
+    case 'licenseNumber':
+      const licenseErrors = validateLicenseNumber(value);
+      return licenseErrors.length > 0 ? licenseErrors[0] : '';
       
     case 'password':
       const passwordErrors = validatePassword(value);

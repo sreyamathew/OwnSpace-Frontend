@@ -58,6 +58,44 @@ const AdminProfile = () => {
     }
   };
 
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    const newErrors = { ...errors };
+    
+    // Validate on blur
+    switch (name) {
+      case 'name':
+        if (!value.trim()) {
+          newErrors.name = 'Name is required';
+        } else if (value.trim().length < 2) {
+          newErrors.name = 'Name must be at least 2 characters';
+        } else {
+          delete newErrors.name;
+        }
+        break;
+      case 'email':
+        if (!value.trim()) {
+          newErrors.email = 'Email is required';
+        } else if (!/\S+@\S+\.\S+/.test(value)) {
+          newErrors.email = 'Please enter a valid email';
+        } else {
+          delete newErrors.email;
+        }
+        break;
+      case 'phone':
+        if (value && !/^\+?[\d\s\-\(\)]+$/.test(value)) {
+          newErrors.phone = 'Please enter a valid phone number';
+        } else {
+          delete newErrors.phone;
+        }
+        break;
+      default:
+        break;
+    }
+    
+    setErrors(newErrors);
+  };
+
   const validateForm = () => {
     const newErrors = {};
     
@@ -250,6 +288,7 @@ const AdminProfile = () => {
                           name="name"
                           value={formData.name}
                           onChange={handleInputChange}
+                          onBlur={handleBlur}
                           className={`w-full px-3 py-2 border ${
                             errors.name ? 'border-red-300' : 'border-gray-300'
                           } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
@@ -277,6 +316,7 @@ const AdminProfile = () => {
                           name="email"
                           value={formData.email}
                           onChange={handleInputChange}
+                          onBlur={handleBlur}
                           className={`w-full px-3 py-2 border ${
                             errors.email ? 'border-red-300' : 'border-gray-300'
                           } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
@@ -304,7 +344,10 @@ const AdminProfile = () => {
                           name="phone"
                           value={formData.phone}
                           onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          onBlur={handleBlur}
+                          className={`w-full px-3 py-2 border ${
+                            errors.phone ? 'border-red-300' : 'border-gray-300'
+                          } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                           placeholder="Enter your phone number"
                         />
                       ) : (
@@ -312,6 +355,9 @@ const AdminProfile = () => {
                           <Phone className="h-4 w-4 text-gray-400" />
                           <span className="text-gray-900">{formData.phone || 'Not provided'}</span>
                         </div>
+                      )}
+                      {errors.phone && (
+                        <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
                       )}
                     </div>
 

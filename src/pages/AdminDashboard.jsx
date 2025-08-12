@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Users, 
   ShoppingCart, 
@@ -14,231 +14,688 @@ import {
   Activity,
   FileText,
   LogOut,
-  User
+  User,
+  Bell,
+  Search,
+  Menu,
+  X,
+  CheckCircle,
+  AlertTriangle,
+  Info,
+  Building,
+  TrendingDown,
+  Eye,
+  Edit,
+  Trash2,
+  Plus,
+  Filter,
+  MoreVertical,
+  ChevronDown,
+  Settings,
+  Shield,
+  Newspaper,
+  AlertCircle,
+  Clock,
+  Check,
+  XCircle,
+  LayoutDashboard
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import AdminSidebar from '../components/AdminSidebar';
-import StatsCard from '../components/StatsCard';
-import SalesChart from '../components/SalesChart';
-import RecentPurchases from '../components/RecentPurchases';
-import AgentPerformance from '../components/AgentPerformance';
-import MonthlyTarget from '../components/MonthlyTarget';
+import { dashboardStats, salesData, alerts, purchaseRequests, marketNews } from '../data/mockData';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
-  const [dateRange, setDateRange] = useState('Mar 6, 2025 - Mar 12, 2025');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [selectedRequests, setSelectedRequests] = useState([]);
+  const [newsFilter, setNewsFilter] = useState('all');
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  // Mock data - In real app, this would come from API
-  const dashboardStats = {
-    customers: {
-      count: 3782,
-      change: 11.01,
-      trend: 'up'
-    },
-    orders: {
-      count: 5359,
-      change: 9.05,
-      trend: 'up'
-    },
-    revenue: {
-      amount: 328700,
-      change: 15.3,
-      trend: 'up'
-    },
-    properties: {
-      count: 1247,
-      change: 8.2,
-      trend: 'up'
-    }
-  };
-
-  const monthlyTarget = {
-    percentage: 75.55,
-    target: 20000,
-    revenue: 26000,
-    today: 2000,
-    message: "You earn $328.7 today, it's higher than last month. Keep up your good work!"
-  };
+  // Mock data imported from shared data file
 
   const handleDownloadReport = (reportType) => {
-    // Mock download functionality
     console.log(`Downloading ${reportType} report...`);
-    // In real app, this would trigger actual file download
+    // Mock download functionality
+    const link = document.createElement('a');
+    link.href = '#';
+    link.download = `${reportType}-report-${new Date().toISOString().split('T')[0]}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleApproveRequest = (requestId) => {
+    console.log(`Approving request ${requestId}`);
+    // Mock approval functionality
+  };
+
+  const handleRejectRequest = (requestId) => {
+    console.log(`Rejecting request ${requestId}`);
+    // Mock rejection functionality
+  };
+
+  const handleMarkAsSold = (propertyId) => {
+    console.log(`Marking property ${propertyId} as sold`);
+    // Mock sold functionality
+  };
+
+  const handleApproveNews = (newsId) => {
+    console.log(`Approving news ${newsId}`);
+    // Mock news approval functionality
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <AdminSidebar />
-
-      {/* Main Content */}
-      <div className="flex-1 ml-64">
-        {/* Header */}
-        <div className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600 mt-1">Welcome back, {user?.name}! Here's what's happening with your properties.</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 bg-gray-100 rounded-lg px-3 py-2">
-                <Calendar className="h-4 w-4 text-gray-500" />
-                <span className="text-sm text-gray-700">{dateRange}</span>
-              </div>
-              <button
-                onClick={() => handleDownloadReport('overview')}
-                className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Download className="h-4 w-4" />
-                <span>Export</span>
-              </button>
-              <button
-                onClick={() => navigate('/admin/profile')}
-                className="flex items-center space-x-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                <User className="h-4 w-4" />
-                <span>Profile</span>
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Logout</span>
-              </button>
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)} />
+          <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg">
+            <MinimalSidebar onClose={() => setSidebarOpen(false)} />
           </div>
         </div>
+      )}
 
-        {/* Dashboard Content */}
-        <div className="p-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatsCard
-              title="Customers"
-              value={dashboardStats.customers.count.toLocaleString()}
-              change={dashboardStats.customers.change}
-              trend={dashboardStats.customers.trend}
-              icon={Users}
-              onDownload={() => handleDownloadReport('customers')}
-            />
-            <StatsCard
-              title="Orders"
-              value={dashboardStats.orders.count.toLocaleString()}
-              change={dashboardStats.orders.change}
-              trend={dashboardStats.orders.trend}
-              icon={ShoppingCart}
-              onDownload={() => handleDownloadReport('orders')}
-            />
-            <StatsCard
-              title="Revenue"
-              value={`$${(dashboardStats.revenue.amount / 1000).toFixed(1)}K`}
-              change={dashboardStats.revenue.change}
-              trend={dashboardStats.revenue.trend}
-              icon={DollarSign}
-              onDownload={() => handleDownloadReport('revenue')}
-            />
-            <StatsCard
-              title="Properties"
-              value={dashboardStats.properties.count.toLocaleString()}
-              change={dashboardStats.properties.change}
-              trend={dashboardStats.properties.trend}
-              icon={Home}
-              onDownload={() => handleDownloadReport('properties')}
-            />
-          </div>
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-64 lg:block">
+        <MinimalSidebar />
+      </div>
 
-          {/* Charts and Analytics */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Sales Chart */}
-            <div className="lg:col-span-2">
-              <SalesChart onDownload={() => handleDownloadReport('sales')} />
+      {/* Main Content */}
+      <div className="lg:ml-64">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-4 py-3">
+          <div className="flex items-center justify-between">
+            {/* Left side - Logo and Menu */}
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <div className="flex items-center space-x-2">
+                <Building className="h-6 w-6 text-blue-600" />
+                <span className="text-lg font-semibold text-gray-900">OwnSpace Admin</span>
+              </div>
             </div>
 
-            {/* Monthly Target */}
-            <div className="lg:col-span-1">
-              <MonthlyTarget 
-                data={monthlyTarget}
-                onDownload={() => handleDownloadReport('monthly-target')}
+            {/* Right side - Search, Notifications, Profile */}
+            <div className="flex items-center space-x-4">
+              {/* Search */}
+              <div className="hidden md:block relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Notifications */}
+              <div className="relative">
+                <button
+                  onClick={() => setNotificationsOpen(!notificationsOpen)}
+                  className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 relative"
+                >
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    3
+                  </span>
+                </button>
+
+                {/* Notifications Dropdown */}
+                {notificationsOpen && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <div className="p-4 border-b border-gray-200">
+                      <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto">
+                      {alerts.slice(0, 3).map((alert) => (
+                        <div key={alert.id} className="p-3 border-b border-gray-100 hover:bg-gray-50">
+                          <div className="flex items-start space-x-3">
+                            <div className={`p-1 rounded-full ${
+                              alert.type === 'high' ? 'bg-red-100' : 
+                              alert.type === 'medium' ? 'bg-yellow-100' : 'bg-blue-100'
+                            }`}>
+                              {alert.type === 'high' ? (
+                                <AlertTriangle className="h-3 w-3 text-red-600" />
+                              ) : alert.type === 'medium' ? (
+                                <AlertCircle className="h-3 w-3 text-yellow-600" />
+                              ) : (
+                                <Info className="h-3 w-3 text-blue-600" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900">{alert.title}</p>
+                              <p className="text-xs text-gray-600">{alert.message}</p>
+                              <p className="text-xs text-gray-400 mt-1">{alert.time}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="p-3 border-t border-gray-200">
+                      <button className="text-sm text-blue-600 hover:text-blue-700">View all notifications</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Profile Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className="flex items-center space-x-2 p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+                >
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <User className="h-4 w-4 text-white" />
+                  </div>
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+
+                {/* Profile Dropdown Menu */}
+                {profileDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <div className="p-3 border-b border-gray-200">
+                      <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                      <p className="text-xs text-gray-600">{user?.email}</p>
+                    </div>
+                    <div className="py-1">
+                      <button
+                        onClick={() => navigate('/admin/profile')}
+                        className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <User className="h-4 w-4" />
+                        <span>Profile</span>
+                      </button>
+                      <button
+                        onClick={() => navigate('/admin/settings')}
+                        className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <Settings className="h-4 w-4" />
+                        <span>Settings</span>
+                      </button>
+                      <hr className="my-1" />
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Dashboard Content */}
+        <main className="p-6">
+          {/* System Stats Overview */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">System Overview</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <StatsCard
+                title="Total Users"
+                value={dashboardStats.totalUsers.toLocaleString()}
+                icon={Users}
+                color="blue"
+              />
+              <StatsCard
+                title="System Logs"
+                value={dashboardStats.totalLogs.toLocaleString()}
+                icon={FileText}
+                color="green"
+              />
+              <StatsCard
+                title="Platform Performance"
+                value={`${dashboardStats.platformPerformance}%`}
+                icon={Activity}
+                color="purple"
               />
             </div>
           </div>
 
-          {/* Bottom Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Recent Purchases */}
-            <RecentPurchases onDownload={() => handleDownloadReport('recent-purchases')} />
-
-            {/* Agent Performance */}
-            <AgentPerformance onDownload={() => handleDownloadReport('agent-performance')} />
-          </div>
-
-          {/* Statistics Overview */}
-          <div className="mt-8">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Statistics</h3>
-                  <p className="text-gray-600">Target you've set for each month</p>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => setActiveTab('overview')}
-                      className={`px-3 py-1 rounded-md text-sm font-medium ${
-                        activeTab === 'overview' 
-                          ? 'bg-blue-100 text-blue-700' 
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      Overview
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('sales')}
-                      className={`px-3 py-1 rounded-md text-sm font-medium ${
-                        activeTab === 'sales' 
-                          ? 'bg-blue-100 text-blue-700' 
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      Sales
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('revenue')}
-                      className={`px-3 py-1 rounded-md text-sm font-medium ${
-                        activeTab === 'revenue' 
-                          ? 'bg-blue-100 text-blue-700' 
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      Revenue
-                    </button>
-                  </div>
-                  <button
-                    onClick={() => handleDownloadReport('statistics')}
-                    className="flex items-center space-x-1 text-gray-600 hover:text-gray-900"
-                  >
-                    <Download className="h-4 w-4" />
-                  </button>
-                </div>
+          {/* Sales Reports Section */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Sales Reports</h2>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleDownloadReport('sales-pdf')}
+                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>PDF</span>
+                </button>
+                <button
+                  onClick={() => handleDownloadReport('sales-excel')}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Excel</span>
+                </button>
               </div>
-
-              {/* Statistics Chart Placeholder */}
-              <div className="h-64 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <BarChart3 className="h-12 w-12 text-blue-400 mx-auto mb-2" />
-                  <p className="text-gray-600">Statistics chart will be displayed here</p>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-gray-900">{dashboardStats.propertiesSold}</p>
+                    <p className="text-sm text-gray-600">Properties Sold</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-gray-900">${(dashboardStats.revenue / 1000000).toFixed(1)}M</p>
+                    <p className="text-sm text-gray-600">Total Revenue</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-gray-900">{dashboardStats.agentPerformance}%</p>
+                    <p className="text-sm text-gray-600">Agent Performance</p>
+                  </div>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Month</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Properties</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Revenue</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Top Agent</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesData.map((item, index) => (
+                        <tr key={index} className="border-b border-gray-100">
+                          <td className="py-3 px-4 text-gray-900">{item.month}</td>
+                          <td className="py-3 px-4 text-gray-900">{item.properties}</td>
+                          <td className="py-3 px-4 text-gray-900">${item.revenue.toLocaleString()}</td>
+                          <td className="py-3 px-4 text-gray-900">{item.agent}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Report Generation */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Report Generation</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <ReportCard
+                title="Price Predictions"
+                description="Generate AI-powered price prediction reports"
+                onDownloadPDF={() => handleDownloadReport('price-predictions-pdf')}
+                onDownloadExcel={() => handleDownloadReport('price-predictions-excel')}
+              />
+              <ReportCard
+                title="Risk Summaries"
+                description="Comprehensive risk analysis reports"
+                onDownloadPDF={() => handleDownloadReport('risk-summaries-pdf')}
+                onDownloadExcel={() => handleDownloadReport('risk-summaries-excel')}
+              />
+              <ReportCard
+                title="Market Trends"
+                description="Latest market trends and insights"
+                onDownloadPDF={() => handleDownloadReport('market-trends-pdf')}
+                onDownloadExcel={() => handleDownloadReport('market-trends-excel')}
+              />
+            </div>
+          </div>
+
+          {/* Smart Alerts & Notifications Panel */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Smart Alerts & Notifications</h2>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6">
+                <div className="space-y-4">
+                  {alerts.map((alert) => (
+                    <AlertItem key={alert.id} alert={alert} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Offer/Purchase Request Management */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Purchase Request Management</h2>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Property</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Investor</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Amount</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {purchaseRequests.map((request) => (
+                        <tr key={request.id} className="border-b border-gray-100">
+                          <td className="py-3 px-4 text-gray-900">{request.property}</td>
+                          <td className="py-3 px-4 text-gray-900">{request.investor}</td>
+                          <td className="py-3 px-4 text-gray-900">${request.amount.toLocaleString()}</td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              request.status === 'approved' ? 'bg-green-100 text-green-800' :
+                              request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {request.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            {request.status === 'pending' && (
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleApproveRequest(request.id)}
+                                  className="p-1 text-green-600 hover:bg-green-100 rounded"
+                                >
+                                  <Check className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleRejectRequest(request.id)}
+                                  className="p-1 text-red-600 hover:bg-red-100 rounded"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sale Finalization Tool */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Sale Finalization</h2>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6">
+                <p className="text-gray-600 mb-4">Mark properties as "Sold" and remove from active listings</p>
+                <button
+                  onClick={() => handleMarkAsSold('sample-property')}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Mark as Sold</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Market News Feed Management */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Market News Management</h2>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setNewsFilter('all')}
+                      className={`px-3 py-1 rounded-md text-sm font-medium ${
+                        newsFilter === 'all' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => setNewsFilter('pending')}
+                      className={`px-3 py-1 rounded-md text-sm font-medium ${
+                        newsFilter === 'pending' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Pending
+                    </button>
+                    <button
+                      onClick={() => setNewsFilter('approved')}
+                      className={`px-3 py-1 rounded-md text-sm font-medium ${
+                        newsFilter === 'approved' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Approved
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  {marketNews
+                    .filter(news => newsFilter === 'all' || news.status === newsFilter)
+                    .map((news) => (
+                      <div key={news.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-900">{news.title}</h3>
+                          <p className="text-sm text-gray-600">By {news.author} • {news.date}</p>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            news.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {news.status}
+                          </span>
+                          {news.status === 'pending' && (
+                            <button
+                              onClick={() => handleApproveNews(news.id)}
+                              className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                            >
+                              Approve
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Management</h3>
+              <button
+                onClick={() => navigate('/add-property')}
+                className="flex items-center space-x-2 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add New Property</span>
+              </button>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Agent Management</h3>
+              <div className="space-y-3">
+                <button
+                  onClick={() => navigate('/admin/agents')}
+                  className="flex items-center space-x-2 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Users className="h-4 w-4" />
+                  <span>View All Agents</span>
+                </button>
+                <button
+                  onClick={() => navigate('/admin/agents/add')}
+                  className="flex items-center space-x-2 w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>Add New Agent</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+// Minimal Sidebar Component
+const MinimalSidebar = ({ onClose }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const menuItems = [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
+    { label: 'Properties', icon: Home, path: '/admin/properties' },
+    { label: 'Add Property', icon: Plus, path: '/add-property' },
+    { label: 'Agents', icon: Users, path: '/admin/agents' },
+    { label: 'Add Agent', icon: UserPlus, path: '/admin/agents/add' },
+    { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
+    { label: 'Reports', icon: FileText, path: '/admin/reports' },
+    { label: 'Settings', icon: Settings, path: '/admin/settings' }
+  ];
+
+  const isActive = (path) => location.pathname === path;
+
+  return (
+    <div className="h-full bg-white border-r border-gray-200">
+      {/* Logo */}
+      <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
+        <div className="flex items-center space-x-2">
+          <Building className="h-6 w-6 text-blue-600" />
+          <span className="text-lg font-semibold text-gray-900">OwnSpace</span>
+        </div>
+        {onClose && (
+          <button onClick={onClose} className="lg:hidden p-1 rounded-md text-gray-600 hover:bg-gray-100">
+            <X className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className="p-4">
+        <div className="space-y-2">
+          {menuItems.map((item) => (
+            <button
+              key={item.path}
+              onClick={() => {
+                navigate(item.path);
+                onClose && onClose();
+              }}
+              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive(item.path)
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <item.icon className="h-5 w-5" />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+    </div>
+  );
+};
+
+// Stats Card Component
+const StatsCard = ({ title, value, icon: Icon, color = 'blue' }) => {
+  const colorClasses = {
+    blue: 'bg-blue-50 text-blue-600',
+    green: 'bg-green-50 text-green-600',
+    purple: 'bg-purple-50 text-purple-600',
+    red: 'bg-red-50 text-red-600'
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+        </div>
+        <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
+          <Icon className="h-6 w-6" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Report Card Component
+const ReportCard = ({ title, description, onDownloadPDF, onDownloadExcel }) => {
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+      <p className="text-gray-600 mb-4">{description}</p>
+      <div className="flex space-x-2">
+        <button
+          onClick={onDownloadPDF}
+          className="flex items-center space-x-2 px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+        >
+          <Download className="h-4 w-4" />
+          <span>PDF</span>
+        </button>
+        <button
+          onClick={onDownloadExcel}
+          className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+        >
+          <Download className="h-4 w-4" />
+          <span>Excel</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Alert Item Component
+const AlertItem = ({ alert }) => {
+  const getAlertIcon = (type) => {
+    switch (type) {
+      case 'high':
+        return <AlertTriangle className="h-5 w-5 text-red-600" />;
+      case 'medium':
+        return <AlertCircle className="h-5 w-5 text-yellow-600" />;
+      default:
+        return <Info className="h-5 w-5 text-blue-600" />;
+    }
+  };
+
+  const getAlertBg = (type) => {
+    switch (type) {
+      case 'high':
+        return 'bg-red-50 border-red-200';
+      case 'medium':
+        return 'bg-yellow-50 border-yellow-200';
+      default:
+        return 'bg-blue-50 border-blue-200';
+    }
+  };
+
+  return (
+    <div className={`p-4 rounded-lg border ${getAlertBg(alert.type)} ${alert.read ? 'opacity-60' : ''}`}>
+      <div className="flex items-start space-x-3">
+        <div className="flex-shrink-0">
+          {getAlertIcon(alert.type)}
+        </div>
+        <div className="flex-1">
+          <h4 className="text-sm font-medium text-gray-900">{alert.title}</h4>
+          <p className="text-sm text-gray-600 mt-1">{alert.message}</p>
+          <p className="text-xs text-gray-500 mt-2">{alert.time}</p>
+        </div>
+        <div className="flex-shrink-0">
+          <button className="text-gray-400 hover:text-gray-600">
+            <MoreVertical className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </div>

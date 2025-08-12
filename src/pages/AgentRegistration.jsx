@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import { 
   User, 
@@ -14,13 +14,22 @@ import {
   MapPin,
   FileText,
   Loader,
-  Upload
+  Upload,
+  Menu,
+  X,
+  Home,
+  Users,
+  UserPlus,
+  BarChart3,
+  Settings,
+  Plus,
+  LayoutDashboard
 } from 'lucide-react';
-import AdminSidebar from '../components/AdminSidebar';
 import { 
   validateName, 
   validateEmail, 
   validatePhone, 
+  validateLicenseNumber,
   validatePassword, 
   validateConfirmPassword, 
   getFieldValidationMessage,
@@ -29,6 +38,7 @@ import {
 
 const AgentRegistration = () => {
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -147,8 +157,10 @@ const AgentRegistration = () => {
       newErrors.confirmPassword = confirmPasswordErrors[0];
     }
     
-    if (!formData.licenseNumber.trim()) {
-      newErrors.licenseNumber = 'License number is required';
+    // Validate license number
+    const licenseErrors = validateLicenseNumber(formData.licenseNumber);
+    if (licenseErrors.length > 0) {
+      newErrors.licenseNumber = licenseErrors[0];
     }
     
     if (!formData.agency.trim()) {
@@ -229,19 +241,48 @@ const AgentRegistration = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar />
-      
-      <div className="flex-1 ml-64">
-        {/* Header */}
-        <div className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Agent Registration</h1>
-              <p className="text-gray-600 mt-1">Add a new real estate agent to the system</p>
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)} />
+          <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg">
+            <MinimalSidebar onClose={() => setSidebarOpen(false)} />
           </div>
         </div>
+      )}
+
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-64 lg:block">
+        <MinimalSidebar />
+      </div>
+
+      {/* Main Content */}
+      <div className="lg:ml-64">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-4 py-3">
+          <div className="flex items-center justify-between">
+            {/* Left side - Logo and Menu */}
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <div className="flex items-center space-x-2">
+                <Building className="h-6 w-6 text-blue-600" />
+                <span className="text-lg font-semibold text-gray-900">OwnSpace Admin</span>
+              </div>
+            </div>
+
+            {/* Right side - Title */}
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">Agent Registration</h1>
+              <p className="text-sm text-gray-600">Add a new real estate agent to the system</p>
+            </div>
+          </div>
+        </header>
 
         {/* Form Content */}
         <div className="p-6">
@@ -341,7 +382,7 @@ const AgentRegistration = () => {
                           className={`block w-full px-3 py-2 pl-10 border ${
                             errors.phone || focusErrors.phone ? 'border-red-300' : 'border-gray-300'
                           } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                          placeholder="9876543210 (10 digits only)"
+                          placeholder="9876543210 (Must start with 7, 8, or 9)"
                         />
                         <Phone className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
                       </div>
@@ -363,15 +404,17 @@ const AgentRegistration = () => {
                           required
                           value={formData.licenseNumber}
                           onChange={handleInputChange}
+                          onFocus={handleInputFocus}
+                          onBlur={handleInputBlur}
                           className={`block w-full px-3 py-2 pl-10 border ${
-                            errors.licenseNumber ? 'border-red-300' : 'border-gray-300'
+                            errors.licenseNumber || focusErrors.licenseNumber ? 'border-red-300' : 'border-gray-300'
                           } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                          placeholder="RE123456789"
+                          placeholder="RE123456789 (RE followed by 9 digits)"
                         />
                         <FileText className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
                       </div>
-                      {errors.licenseNumber && (
-                        <p className="mt-1 text-sm text-red-600">{errors.licenseNumber}</p>
+                      {(errors.licenseNumber || focusErrors.licenseNumber) && (
+                        <p className="mt-1 text-sm text-red-600">{errors.licenseNumber || focusErrors.licenseNumber}</p>
                       )}
                     </div>
                   </div>
@@ -616,6 +659,65 @@ const AgentRegistration = () => {
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+// Minimal Sidebar Component
+const MinimalSidebar = ({ onClose }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const menuItems = [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
+    { label: 'Properties', icon: Home, path: '/admin/properties' },
+    { label: 'Add Property', icon: Plus, path: '/add-property' },
+    { label: 'Agents', icon: Users, path: '/admin/agents' },
+    { label: 'Add Agent', icon: UserPlus, path: '/admin/agents/add' },
+    { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
+    { label: 'Reports', icon: FileText, path: '/admin/reports' },
+    { label: 'Settings', icon: Settings, path: '/admin/settings' }
+  ];
+
+  const isActive = (path) => location.pathname === path;
+
+  return (
+    <div className="h-full bg-white border-r border-gray-200">
+      {/* Logo */}
+      <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
+        <div className="flex items-center space-x-2">
+          <Building className="h-6 w-6 text-blue-600" />
+          <span className="text-lg font-semibold text-gray-900">OwnSpace</span>
+        </div>
+        {onClose && (
+          <button onClick={onClose} className="lg:hidden p-1 rounded-md text-gray-600 hover:bg-gray-100">
+            <X className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className="p-4">
+        <div className="space-y-2">
+          {menuItems.map((item) => (
+            <button
+              key={item.path}
+              onClick={() => {
+                navigate(item.path);
+                onClose && onClose();
+              }}
+              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive(item.path)
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <item.icon className="h-5 w-5" />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 };
