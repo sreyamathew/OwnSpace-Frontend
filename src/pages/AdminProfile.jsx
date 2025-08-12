@@ -16,18 +16,28 @@ import {
   Calendar,
   Building,
   Users,
-  Settings
+  Settings,
+  Menu,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import AdminSidebar from '../components/AdminSidebar';
+import MinimalSidebar from '../components/MinimalSidebar';
+import {
+  validateName,
+  validateEmail,
+  validatePhone
+} from '../utils/validation';
+import { authAPI } from '../services/api';
 
 const AdminProfile = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errors, setErrors] = useState({});
+  const [focusErrors, setFocusErrors] = useState({});
   
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -38,7 +48,6 @@ const AdminProfile = () => {
     state: user?.address?.state || '',
     zipCode: user?.address?.zipCode || '',
     bio: user?.bio || '',
-    department: user?.department || 'Administration',
     employeeId: user?.employeeId || 'ADM001'
   });
 
@@ -56,35 +65,46 @@ const AdminProfile = () => {
         [name]: ''
       }));
     }
+    
+    // Clear focus error when user starts typing
+    if (focusErrors[name]) {
+      setFocusErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
 
   const handleBlur = (e) => {
     const { name, value } = e.target;
     const newErrors = { ...errors };
-    
-    // Validate on blur
+
+    // Validate on blur using the validation utilities
     switch (name) {
       case 'name':
-        if (!value.trim()) {
-          newErrors.name = 'Name is required';
-        } else if (value.trim().length < 2) {
-          newErrors.name = 'Name must be at least 2 characters';
+        const nameErrors = validateName(value);
+        if (nameErrors.length > 0) {
+          newErrors.name = nameErrors[0];
         } else {
           delete newErrors.name;
         }
         break;
       case 'email':
-        if (!value.trim()) {
-          newErrors.email = 'Email is required';
-        } else if (!/\S+@\S+\.\S+/.test(value)) {
-          newErrors.email = 'Please enter a valid email';
+        const emailErrors = validateEmail(value);
+        if (emailErrors.length > 0) {
+          newErrors.email = emailErrors[0];
         } else {
           delete newErrors.email;
         }
         break;
       case 'phone':
-        if (value && !/^\+?[\d\s\-\(\)]+$/.test(value)) {
-          newErrors.phone = 'Please enter a valid phone number';
+        if (value.trim()) { // Only validate if phone is provided
+          const phoneErrors = validatePhone(value);
+          if (phoneErrors.length > 0) {
+            newErrors.phone = phoneErrors[0];
+          } else {
+            delete newErrors.phone;
+          }
         } else {
           delete newErrors.phone;
         }
@@ -92,23 +112,33 @@ const AdminProfile = () => {
       default:
         break;
     }
-    
+
     setErrors(newErrors);
   };
 
   const validateForm = () => {
     const newErrors = {};
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+
+    // Validate name
+    const nameErrors = validateName(formData.name);
+    if (nameErrors.length > 0) {
+      newErrors.name = nameErrors[0];
     }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
+
+    // Validate email
+    const emailErrors = validateEmail(formData.email);
+    if (emailErrors.length > 0) {
+      newErrors.email = emailErrors[0];
     }
-    
+
+    // Validate phone (optional but if provided should be valid)
+    if (formData.phone && formData.phone.trim()) {
+      const phoneErrors = validatePhone(formData.phone);
+      if (phoneErrors.length > 0) {
+        newErrors.phone = phoneErrors[0];
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -123,20 +153,42 @@ const AdminProfile = () => {
     setSuccessMessage('');
 
     try {
-      // Mock API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const profileData = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        address: {
+          street: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode
+        },
+        bio: formData.bio,
+        employeeId: formData.employeeId
+      };
+
+      const response = await authAPI.updateProfile(profileData);
       
-      setSuccessMessage('Profile updated successfully!');
-      setIsEditing(false);
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 3000);
+      if (response.success) {
+        // Update user context with new data
+        updateUser(response.data.user);
+        
+        setSuccessMessage('Profile updated successfully!');
+        setIsEditing(false);
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setSuccessMessage('');
+        }, 3000);
+      } else {
+        setErrors({
+          general: response.message || 'Failed to update profile. Please try again.'
+        });
+      }
     } catch (error) {
       console.error('Update profile error:', error);
       setErrors({
-        general: 'Failed to update profile. Please try again.'
+        general: error.message || 'Failed to update profile. Please try again.'
       });
     } finally {
       setIsLoading(false);
@@ -154,7 +206,6 @@ const AdminProfile = () => {
       state: user?.address?.state || '',
       zipCode: user?.address?.zipCode || '',
       bio: user?.bio || '',
-      department: user?.department || 'Administration',
       employeeId: user?.employeeId || 'ADM001'
     });
     setIsEditing(false);
@@ -171,25 +222,51 @@ const AdminProfile = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <AdminSidebar />
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)} />
+          <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg">
+            <MinimalSidebar onClose={() => setSidebarOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-64 lg:block">
+        <MinimalSidebar />
+      </div>
 
       {/* Main Content */}
-      <div className="flex-1 ml-64">
-        <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-8">
+      <div className="lg:ml-64">
+        {/* Mobile Header */}
+        <div className="lg:hidden bg-white shadow-sm border-b border-gray-200 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-gray-900">Admin Profile</h1>
             <button
-              onClick={() => navigate('/admin/dashboard')}
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-4"
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back to Dashboard</span>
+              <Menu className="h-6 w-6" />
             </button>
-            <h1 className="text-3xl font-bold text-gray-900">Admin Profile</h1>
-            <p className="text-gray-600 mt-2">Manage your administrator account information</p>
           </div>
+        </div>
+        {/* Main Content */}
+        <main className="p-6">
+          <div className="max-w-4xl mx-auto">
+            {/* Header - Hidden on mobile since it's in mobile header */}
+            <div className="hidden lg:block mb-8">
+              <button
+                onClick={() => navigate('/admin/dashboard')}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-4"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Dashboard</span>
+              </button>
+              <h1 className="text-3xl font-bold text-gray-900">Admin Profile</h1>
+              <p className="text-gray-600 mt-2">Manage your administrator account information</p>
+            </div>
 
           {/* Success Message */}
           {successMessage && (
@@ -361,30 +438,7 @@ const AdminProfile = () => {
                       )}
                     </div>
 
-                    {/* Department */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Department
-                      </label>
-                      {isEditing ? (
-                        <select
-                          name="department"
-                          value={formData.department}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="Administration">Administration</option>
-                          <option value="Operations">Operations</option>
-                          <option value="Finance">Finance</option>
-                          <option value="IT">IT</option>
-                        </select>
-                      ) : (
-                        <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-md">
-                          <Building className="h-4 w-4 text-gray-400" />
-                          <span className="text-gray-900">{formData.department || 'Not provided'}</span>
-                        </div>
-                      )}
-                    </div>
+
 
                     {/* Address */}
                     <div className="md:col-span-2">
@@ -514,7 +568,8 @@ const AdminProfile = () => {
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );

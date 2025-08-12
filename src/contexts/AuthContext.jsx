@@ -67,6 +67,11 @@ export const AuthProvider = ({ children }) => {
     return user && user.userType === 'agent';
   };
 
+  const updateUser = (userData) => {
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
+  };
+
   const value = {
     user,
     isAuthenticated,
@@ -74,7 +79,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     isAdmin,
-    isAgent
+    isAgent,
+    updateUser
   };
 
   return (
