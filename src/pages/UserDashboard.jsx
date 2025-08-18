@@ -211,6 +211,7 @@ const UserDashboard = () => {
                 <option value="2">2+</option>
                 <option value="3">3+</option>
                 <option value="4">4+</option>
+                <option value="5">5+</option>
               </select>
             </div>
             
@@ -226,17 +227,75 @@ const UserDashboard = () => {
                 <option value="1">1+</option>
                 <option value="2">2+</option>
                 <option value="3">3+</option>
+                <option value="4">4+</option>
               </select>
             </div>
           </div>
           
-          <button
-            onClick={applyFilters}
-            className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            <Search className="h-4 w-4" />
-            <span>Search Properties</span>
-          </button>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <input
+                type="text"
+                placeholder="Search properties..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+              <button
+                onClick={applyFilters}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                <Search className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Saved Properties Quick Access */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              onClick={() => navigate('/saved-properties')}
+              className="flex items-center justify-center space-x-3 p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors group"
+            >
+              <div className="p-3 bg-red-100 rounded-full group-hover:bg-red-200 transition-colors">
+                <Heart className="h-6 w-6 text-red-600" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-medium text-gray-900">Saved Properties</h3>
+                <p className="text-sm text-gray-600">View your favorites</p>
+              </div>
+            </button>
+            
+            <button
+              onClick={() => navigate('/profile')}
+              className="flex items-center justify-center space-x-3 p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors group"
+            >
+              <div className="p-3 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors">
+                <User className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-medium text-gray-900">My Profile</h3>
+                <p className="text-sm text-gray-600">Edit your details</p>
+              </div>
+            </button>
+            
+            <button
+              onClick={() => navigate('/property-history')}
+              className="flex items-center justify-center space-x-3 p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors group"
+            >
+              <div className="p-3 bg-green-100 rounded-full group-hover:bg-green-200 transition-colors">
+                <Eye className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-medium text-gray-900">View History</h3>
+                <p className="text-sm text-gray-600">Track your activity</p>
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Properties Grid */}

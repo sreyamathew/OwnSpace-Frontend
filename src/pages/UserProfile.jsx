@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, 
@@ -11,7 +11,11 @@ import {
   Camera,
   ArrowLeft,
   CheckCircle,
-  Loader
+  Loader,
+  Heart,
+  Bed,
+  Bath,
+  Square
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ContactNavbar from '../components/ContactNavbar';
@@ -23,6 +27,7 @@ const UserProfile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errors, setErrors] = useState({});
+  const [savedProperties, setSavedProperties] = useState([]);
   
   // Validation function for individual fields
   const validateField = (name, value) => {
@@ -61,6 +66,41 @@ const UserProfile = () => {
     zipCode: user?.address?.zipCode || '',
     bio: user?.bio || ''
   });
+
+  useEffect(() => {
+    if (user) {
+      fetchSavedProperties();
+    }
+  }, [user]);
+
+  const fetchSavedProperties = () => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(`savedProperties_${user.id}`) || '[]');
+      setSavedProperties(saved);
+    } catch (error) {
+      console.error('Error fetching saved properties:', error);
+    }
+  };
+
+  const removeSavedProperty = (propertyId) => {
+    try {
+      const updatedSaved = savedProperties.filter(p => p._id !== propertyId);
+      setSavedProperties(updatedSaved);
+      localStorage.setItem(`savedProperties_${user.id}`, JSON.stringify(updatedSaved));
+    } catch (error) {
+      console.error('Error removing saved property:', error);
+    }
+  };
+
+  const formatPrice = (price) => {
+    if (price >= 10000000) {
+      return `₹${(price / 10000000).toFixed(1)}Cr`;
+    } else if (price >= 100000) {
+      return `₹${(price / 100000).toFixed(1)}L`;
+    } else {
+      return `₹${price.toLocaleString()}`;
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -435,6 +475,96 @@ const UserProfile = () => {
               </label>
             </div>
           </div>
+        </div>
+
+        {/* Saved Properties */}
+        <div className="mt-8 bg-white shadow-sm rounded-lg p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Saved Properties</h3>
+          {savedProperties.length === 0 ? (
+            <div className="text-center py-8">
+              <Heart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">No saved properties yet</p>
+              <p className="text-sm text-gray-400 mt-1">Start browsing properties and save your favorites!</p>
+              <button
+                onClick={() => navigate('/properties')}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Browse Properties
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {savedProperties.map((property) => (
+                <div key={property._id} className="bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
+                  <div className="relative">
+                    {property.images && property.images.length > 0 ? (
+                      <img
+                        src={property.images[0].url}
+                        alt={property.images[0].alt || property.title}
+                        className="w-full h-40 object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-40 bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-500">No Image</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => removeSavedProperty(property._id)}
+                      className="absolute top-2 right-2 p-2 bg-red-100 hover:bg-red-200 rounded-full transition-colors"
+                      title="Remove from saved"
+                    >
+                      <Heart className="h-4 w-4 text-red-600 fill-current" />
+                    </button>
+                    <div className="absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600">
+                      {property.propertyType}
+                    </div>
+                  </div>
+                  
+                  <div className="p-4">
+                    <h4 className="font-semibold text-gray-900 mb-2 line-clamp-2">{property.title}</h4>
+                    <div className="flex items-center text-gray-600 mb-2 text-sm">
+                      <MapPin className="h-3 w-3 mr-1" />
+                      <span>{property.address?.city}, {property.address?.state}</span>
+                    </div>
+                    
+                    <div className="text-lg font-bold text-green-600 mb-3">
+                      {formatPrice(property.price)}
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-gray-600 text-sm">
+                      {property.bedrooms && (
+                        <div className="flex items-center">
+                          <Bed className="h-3 w-3 mr-1" />
+                          <span>{property.bedrooms}</span>
+                        </div>
+                      )}
+                      {property.bathrooms && (
+                        <div className="flex items-center">
+                          <Bath className="h-3 w-3 mr-1" />
+                          <span>{property.bathrooms}</span>
+                        </div>
+                      )}
+                      {property.area && (
+                        <div className="flex items-center">
+                          <Square className="h-3 w-3 mr-1" />
+                          <span>{property.area} sq ft</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="mt-3 flex space-x-2">
+                      <button className="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-sm font-medium hover:bg-blue-700 transition-colors">
+                        View Details
+                      </button>
+                      <button className="flex-1 border border-gray-300 text-gray-700 py-2 px-3 rounded text-sm font-medium hover:bg-gray-50 transition-colors">
+                        Contact Agent
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

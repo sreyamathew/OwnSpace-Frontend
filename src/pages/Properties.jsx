@@ -14,8 +14,10 @@ import {
   Calendar
 } from 'lucide-react';
 import { propertyAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const Properties = () => {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     propertyType: '',
@@ -26,13 +28,61 @@ const Properties = () => {
   const [sortBy, setSortBy] = useState('relevance');
   const [properties, setProperties] = useState([]);
   const [filteredProperties, setFilteredProperties] = useState([]);
+  const [savedProperties, setSavedProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [availableLocations, setAvailableLocations] = useState([]);
 
   useEffect(() => {
     fetchProperties();
-  }, []);
+    if (user) {
+      fetchSavedProperties();
+    }
+  }, [user]);
+
+  const fetchSavedProperties = async () => {
+    try {
+      // Get saved properties from localStorage for now
+      // In a real app, this would be an API call
+      const saved = JSON.parse(localStorage.getItem(`savedProperties_${user.id}`) || '[]');
+      setSavedProperties(saved);
+    } catch (error) {
+      console.error('Error fetching saved properties:', error);
+    }
+  };
+
+  const toggleSaveProperty = async (propertyId) => {
+    if (!user) {
+      // Redirect to login or show login modal
+      alert('Please login to save properties');
+      return;
+    }
+
+    try {
+      const isSaved = savedProperties.some(p => p._id === propertyId);
+      
+      if (isSaved) {
+        // Remove from saved
+        const updatedSaved = savedProperties.filter(p => p._id !== propertyId);
+        setSavedProperties(updatedSaved);
+        localStorage.setItem(`savedProperties_${user.id}`, JSON.stringify(updatedSaved));
+      } else {
+        // Add to saved
+        const propertyToSave = properties.find(p => p._id === propertyId);
+        if (propertyToSave) {
+          const updatedSaved = [...savedProperties, propertyToSave];
+          setSavedProperties(updatedSaved);
+          localStorage.setItem(`savedProperties_${user.id}`, JSON.stringify(updatedSaved));
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling save property:', error);
+    }
+  };
+
+  const isPropertySaved = (propertyId) => {
+    return savedProperties.some(p => p._id === propertyId);
+  };
 
   const fetchProperties = async (filterParams = {}) => {
     try {
@@ -480,8 +530,13 @@ const Properties = () => {
                       <span className="text-gray-500">No Image</span>
                     </div>
                   )}
-                  <button className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors duration-200">
-                    <Heart className="h-5 w-5 text-gray-600" />
+                  <button 
+                    onClick={() => toggleSaveProperty(property._id)}
+                    className={`absolute top-4 right-4 p-2 rounded-full shadow-md transition-colors duration-200 ${
+                      isPropertySaved(property._id) ? 'bg-red-100 hover:bg-red-200' : 'bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    <Heart className={`h-5 w-5 ${isPropertySaved(property._id) ? 'text-red-600' : 'text-gray-600'}`} />
                   </button>
                   <div className="absolute top-4 left-4 px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-600">
                     {property.propertyType}
