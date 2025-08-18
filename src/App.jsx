@@ -32,6 +32,7 @@ import AuthCallback from './pages/AuthCallback';
 import MakeAdmin from './pages/MakeAdmin';
 import EditProperty from './pages/EditProperty';
 import AgentProperties from './pages/AgentProperties';
+import PropertyDetail from './pages/PropertyDetail';
 
 const AppContent = () => {
   return (
@@ -62,6 +63,13 @@ const AppContent = () => {
         <div className="App min-h-screen bg-gray-50">
           <ContactNavbar />
           <main><Properties /></main>
+          <Footer />
+        </div>
+      } />
+      <Route path="/property/:id" element={
+        <div className="App min-h-screen bg-gray-50">
+          <ContactNavbar />
+          <main><PropertyDetail /></main>
           <Footer />
         </div>
       } />

@@ -104,7 +104,16 @@ const PropertyDetail = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => {
+                // Smart back navigation based on user type and referrer
+                if (user?.userType === 'admin') {
+                  navigate('/admin/properties');
+                } else if (user?.userType === 'agent') {
+                  navigate('/agent/properties');
+                } else {
+                  navigate('/properties');
+                }
+              }}
               className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
             >
               <ArrowLeft className="h-5 w-5" />
