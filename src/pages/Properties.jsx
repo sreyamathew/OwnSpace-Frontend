@@ -23,9 +23,12 @@ const Properties = () => {
     bedrooms: '',
     location: ''
   });
+  const [sortBy, setSortBy] = useState('relevance');
   const [properties, setProperties] = useState([]);
+  const [filteredProperties, setFilteredProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [availableLocations, setAvailableLocations] = useState([]);
 
   useEffect(() => {
     fetchProperties();
@@ -37,7 +40,13 @@ const Properties = () => {
       const response = await propertyAPI.getAllProperties(filterParams);
 
       if (response.success) {
-        setProperties(response.data.properties);
+        const fetchedProperties = response.data.properties || [];
+        setProperties(fetchedProperties);
+        setFilteredProperties(fetchedProperties); // Initialize filtered properties with all properties
+        
+        // Extract unique locations from fetched properties
+        const locations = [...new Set(fetchedProperties.map(p => p.address?.city).filter(Boolean))];
+        setAvailableLocations(locations);
       } else {
         setError('Failed to fetch properties');
       }
@@ -46,6 +55,135 @@ const Properties = () => {
       setError('Failed to fetch properties');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFilterChange = (filterName, value) => {
+    const newFilters = { ...filters, [filterName]: value };
+    setFilters(newFilters);
+    
+    // Apply filters immediately
+    applyFilters(newFilters, sortBy);
+  };
+
+  const resetAllFilters = () => {
+    const resetFilters = {
+      propertyType: '',
+      priceRange: '',
+      bedrooms: '',
+      location: ''
+    };
+    setFilters(resetFilters);
+    setSearchTerm('');
+    setSortBy('relevance');
+    
+    // Reset to show all properties
+    setFilteredProperties(properties);
+  };
+
+  const handleSortChange = (value) => {
+    setSortBy(value);
+    applyFilters(filters, value);
+  };
+
+  const applyFilters = (currentFilters, currentSort) => {
+    // Always start with the original properties list
+    let filteredProperties = [...properties];
+    
+    console.log('Starting with original properties:', properties.length);
+    console.log('Current filters:', currentFilters);
+    console.log('Search term:', searchTerm);
+    
+    // Apply search filter
+    if (searchTerm) {
+      filteredProperties = filteredProperties.filter(property =>
+        property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        property.address?.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        property.address?.state?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      console.log('After search filter:', filteredProperties.length);
+    }
+
+    // Apply property type filter - only filter if a specific type is selected
+    if (currentFilters.propertyType && currentFilters.propertyType !== '') {
+      filteredProperties = filteredProperties.filter(property =>
+        property.propertyType.toLowerCase() === currentFilters.propertyType.toLowerCase()
+      );
+      console.log('After property type filter:', filteredProperties.length);
+    }
+
+    // Apply price range filter - only filter if a specific range is selected
+    if (currentFilters.priceRange && currentFilters.priceRange !== '') {
+      const [min, max] = currentFilters.priceRange.split('-').map(val => {
+        if (val === '999999999') return Infinity;
+        return parseFloat(val);
+      });
+      
+      filteredProperties = filteredProperties.filter(property => {
+        const price = property.price;
+        if (max === Infinity) return price >= min;
+        return price >= min && price <= max;
+      });
+      console.log('After price range filter:', filteredProperties.length);
+    }
+
+    // Apply bedrooms filter - only filter if a specific count is selected
+    if (currentFilters.bedrooms && currentFilters.bedrooms !== '') {
+      const minBedrooms = parseInt(currentFilters.bedrooms);
+      filteredProperties = filteredProperties.filter(property =>
+        property.bedrooms >= minBedrooms
+      );
+      console.log('After bedrooms filter:', filteredProperties.length);
+    }
+
+    // Apply location filter - only filter if a specific location is selected
+    if (currentFilters.location && currentFilters.location !== '') {
+      filteredProperties = filteredProperties.filter(property =>
+        property.address?.city === currentFilters.location
+      );
+      console.log('After location filter:', filteredProperties.length);
+    }
+
+    // Apply sorting
+    switch (currentSort) {
+      case 'price-low-high':
+        filteredProperties.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-high-low':
+        filteredProperties.sort((a, b) => b.price - a.price);
+        break;
+      case 'newest':
+        filteredProperties.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        break;
+      case 'oldest':
+        filteredProperties.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+        break;
+      default:
+        // Relevance - keep original order
+        break;
+    }
+
+    console.log('Final filtered properties:', filteredProperties.length);
+    setFilteredProperties(filteredProperties);
+  };
+
+  const handleSearch = () => {
+    applyFilters(filters, sortBy);
+  };
+
+  // Update search term and apply filters
+  const handleSearchTermChange = (value) => {
+    setSearchTerm(value);
+    applyFilters(filters, sortBy);
+  };
+
+  const formatPrice = (price) => {
+    if (price >= 10000000) {
+      return `₹${(price / 10000000).toFixed(1)}Cr`;
+    } else if (price >= 100000) {
+      return `₹${(price / 100000).toFixed(1)}L`;
+    } else {
+      return `₹${price.toLocaleString()}`;
     }
   };
 
@@ -181,17 +319,6 @@ const Properties = () => {
     }
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
-
-
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
@@ -217,23 +344,30 @@ const Properties = () => {
                       type="text"
                       placeholder="Search by location, property type..."
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={(e) => handleSearchTermChange(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                 </div>
                 <select 
                   value={filters.propertyType}
-                  onChange={(e) => setFilters({...filters, propertyType: e.target.value})}
+                  onChange={(e) => handleFilterChange('propertyType', e.target.value)}
                   className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
-                  <option value="">Property Type</option>
+                  <option value="">All Property Types</option>
                   <option value="apartment">Apartment</option>
                   <option value="house">House</option>
                   <option value="villa">Villa</option>
                   <option value="condo">Condo</option>
+                  <option value="townhouse">Townhouse</option>
+                  <option value="commercial">Commercial</option>
+                  <option value="land">Land</option>
+                  <option value="other">Other</option>
                 </select>
-                <button className="bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors duration-200">
+                <button 
+                  onClick={handleSearch}
+                  className="bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors duration-200"
+                >
                   Search
                 </button>
               </div>
@@ -247,58 +381,73 @@ const Properties = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Filter Bar */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-8">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center space-x-2">
-                <Filter className="h-5 w-5 text-gray-500" />
-                <span className="font-medium text-gray-700">Filters:</span>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center space-x-2">
+                  <Filter className="h-5 w-5 text-gray-500" />
+                  <span className="font-medium text-gray-700">Filters:</span>
+                </div>
+                <select 
+                  value={filters.priceRange}
+                  onChange={(e) => handleFilterChange('priceRange', e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">All Price Ranges</option>
+                  <option value="0-500000">₹0 - ₹5L</option>
+                  <option value="500000-1000000">₹5L - ₹10L</option>
+                  <option value="1000000-2500000">₹10L - ₹25L</option>
+                  <option value="2500000-5000000">₹25L - ₹50L</option>
+                  <option value="5000000-10000000">₹50L - ₹1Cr</option>
+                  <option value="10000000-25000000">₹1Cr - ₹2.5Cr</option>
+                  <option value="25000000-50000000">₹2.5Cr - ₹5Cr</option>
+                  <option value="50000000-999999999">₹5Cr+</option>
+                </select>
+                <select 
+                  value={filters.bedrooms}
+                  onChange={(e) => handleFilterChange('bedrooms', e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">All Bedrooms</option>
+                  <option value="1">1+ Bedroom</option>
+                  <option value="2">2+ Bedrooms</option>
+                  <option value="3">3+ Bedrooms</option>
+                  <option value="4">4+ Bedrooms</option>
+                  <option value="5">5+ Bedrooms</option>
+                  <option value="6">6+ Bedrooms</option>
+                </select>
+                <select 
+                  value={filters.location}
+                  onChange={(e) => handleFilterChange('location', e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">All Locations</option>
+                  {availableLocations.map((location, index) => (
+                    <option key={index} value={location}>{location}</option>
+                  ))}
+                </select>
               </div>
-              <select 
-                value={filters.priceRange}
-                onChange={(e) => setFilters({...filters, priceRange: e.target.value})}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
+              
+              {/* Reset Filters Button */}
+              <button
+                onClick={resetAllFilters}
+                className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-800 transition-colors"
               >
-                <option value="">Price Range</option>
-                <option value="0-500k">$0 - $500K</option>
-                <option value="500k-1m">$500K - $1M</option>
-                <option value="1m-2m">$1M - $2M</option>
-                <option value="2m+">$2M+</option>
-              </select>
-              <select 
-                value={filters.bedrooms}
-                onChange={(e) => setFilters({...filters, bedrooms: e.target.value})}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">Bedrooms</option>
-                <option value="1">1+</option>
-                <option value="2">2+</option>
-                <option value="3">3+</option>
-                <option value="4">4+</option>
-              </select>
-              <select 
-                value={filters.location}
-                onChange={(e) => setFilters({...filters, location: e.target.value})}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">Location</option>
-                <option value="new-york">New York</option>
-                <option value="california">California</option>
-                <option value="texas">Texas</option>
-                <option value="florida">Florida</option>
-              </select>
+                Reset All Filters
+              </button>
             </div>
           </div>
 
           {/* Results Header */}
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
-              {properties.length} Properties Found
+              {filteredProperties.length} Properties Found
             </h2>
-            <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-              <option>Sort by: Relevance</option>
-              <option>Price: Low to High</option>
-              <option>Price: High to Low</option>
-              <option>Newest First</option>
-              <option>Highest ROI</option>
+            <select value={sortBy} onChange={(e) => handleSortChange(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+              <option value="relevance">Sort by: Relevance</option>
+              <option value="price-low-high">Price: Low to High</option>
+              <option value="price-high-low">Price: High to Low</option>
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
             </select>
           </div>
 
@@ -311,13 +460,13 @@ const Properties = () => {
             <div className="text-center py-12">
               <p className="text-red-600">{error}</p>
             </div>
-          ) : properties.length === 0 ? (
+          ) : filteredProperties.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600">No properties found.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {properties.map((property) => (
+              {filteredProperties.map((property) => (
               <div key={property._id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200 transform hover:-translate-y-2">
                 <div className="relative">
                   {property.images && property.images.length > 0 ? (
@@ -348,7 +497,7 @@ const Properties = () => {
                   
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <div className="text-2xl font-bold text-green-600">₹{property.price.toLocaleString()}</div>
+                      <div className="text-2xl font-bold text-green-600">₹{formatPrice(property.price)}</div>
                     </div>
                     <div className="text-right">
                       <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
