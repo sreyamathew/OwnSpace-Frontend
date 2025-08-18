@@ -470,7 +470,7 @@ const AddProperty = () => {
                         className={`mt-1 block w-full px-3 py-2 border ${
                           errors.title || focusErrors.title ? 'border-red-300' : 'border-gray-300'
                         } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                        placeholder="e.g., Beautiful Modern Villa with Garden"
+                        placeholder="e.g., Beautiful Modern Villa (letters and spaces only)"
                       />
                       {(errors.title || focusErrors.title) && (
                         <p className="mt-1 text-sm text-red-600">{errors.title || focusErrors.title}</p>
@@ -523,9 +523,9 @@ const AddProperty = () => {
                           className={`block w-full pl-10 pr-3 py-2 border ${
                             errors.price || focusErrors.price ? 'border-red-300' : 'border-gray-300'
                           } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                          placeholder="450000 (must be greater than 0)"
+                          placeholder="450000 (in INR, max 15 digits, cannot start with 0)"
                         />
-                        <DollarSign className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
+                        <span className="absolute left-3 top-2.5 text-gray-400 font-medium">₹</span>
                       </div>
                       {(errors.price || focusErrors.price) && (
                         <p className="mt-1 text-sm text-red-600">{errors.price || focusErrors.price}</p>
@@ -550,7 +550,7 @@ const AddProperty = () => {
                           className={`block w-full pl-10 pr-3 py-2 border ${
                             errors.bedrooms || focusErrors.bedrooms ? 'border-red-300' : 'border-gray-300'
                           } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                          placeholder="3"
+                          placeholder="3 (max 15)"
                         />
                         <Bed className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
                       </div>
@@ -578,7 +578,7 @@ const AddProperty = () => {
                           className={`block w-full pl-10 pr-3 py-2 border ${
                             errors.bathrooms || focusErrors.bathrooms ? 'border-red-300' : 'border-gray-300'
                           } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                          placeholder="2"
+                          placeholder="2 (max 15)"
                         />
                         <Bath className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
                       </div>
@@ -605,7 +605,7 @@ const AddProperty = () => {
                           className={`block w-full pl-10 pr-3 py-2 border ${
                             errors.area || focusErrors.area ? 'border-red-300' : 'border-gray-300'
                           } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                          placeholder="2500"
+                          placeholder="2500 (max 10 digits)"
                         />
                         <Square className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
                       </div>
@@ -735,7 +735,7 @@ const AddProperty = () => {
                         className={`mt-1 block w-full px-3 py-2 border ${
                           errors.zipCode || focusErrors.zipCode ? 'border-red-300' : 'border-gray-300'
                         } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                        placeholder="10001"
+                        placeholder="123456 (exactly 6 digits)"
                       />
                       {(errors.zipCode || focusErrors.zipCode) && (
                         <p className="mt-1 text-sm text-red-600">{errors.zipCode || focusErrors.zipCode}</p>

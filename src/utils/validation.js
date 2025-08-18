@@ -188,22 +188,33 @@ export const validateConfirmPassword = (password, confirmPassword) => {
 
 export const validatePrice = (price) => {
   const errors = [];
-  
+
   if (!price && price !== 0) {
     errors.push('Price is required');
     return errors;
   }
-  
+
+  const priceStr = price.toString();
+
+  // Check if price starts with zero (but allow single zero)
+  if (priceStr.length > 1 && priceStr.startsWith('0')) {
+    errors.push('Price cannot start with zero');
+  }
+
+  // Check if price has more than 15 digits
+  const digitsOnly = priceStr.replace(/[^\d]/g, '');
+  if (digitsOnly.length > 15) {
+    errors.push('Price cannot exceed 15 digits');
+  }
+
   const numericPrice = parseFloat(price);
-  
+
   if (isNaN(numericPrice)) {
     errors.push('Price must be a valid number');
   } else if (numericPrice <= 0) {
     errors.push('Price must be greater than zero');
-  } else if (numericPrice > 999999999) {
-    errors.push('Price cannot exceed $999,999,999');
   }
-  
+
   return errors;
 };
 
@@ -217,18 +228,19 @@ export const validatePropertyTitle = (title) => {
   }
   
   const trimmedTitle = title.trim();
-  
+
+  // Check if title contains only letters and spaces
+  const lettersOnlyRegex = /^[A-Za-z\s]+$/;
+  if (!lettersOnlyRegex.test(trimmedTitle)) {
+    errors.push('Property title should contain only letters and spaces');
+  }
+
   if (trimmedTitle.length < 5) {
     errors.push('Property title must be at least 5 characters long');
   }
-  
+
   if (trimmedTitle.length > 100) {
     errors.push('Property title cannot exceed 100 characters');
-  }
-  
-  // Title should not be all caps
-  if (trimmedTitle === trimmedTitle.toUpperCase() && trimmedTitle.length > 10) {
-    errors.push('Property title should not be in all caps');
   }
   
   return errors;
@@ -285,8 +297,8 @@ export const validateBedrooms = (bedrooms) => {
     errors.push('Bedrooms must be a valid number');
   } else if (numericBedrooms < 0) {
     errors.push('Bedrooms cannot be negative');
-  } else if (numericBedrooms > 20) {
-    errors.push('Bedrooms cannot exceed 20');
+  } else if (numericBedrooms > 15) {
+    errors.push('Bedrooms cannot exceed 15');
   }
   
   return errors;
@@ -305,8 +317,8 @@ export const validateBathrooms = (bathrooms) => {
     errors.push('Bathrooms must be a valid number');
   } else if (numericBathrooms < 0) {
     errors.push('Bathrooms cannot be negative');
-  } else if (numericBathrooms > 20) {
-    errors.push('Bathrooms cannot exceed 20');
+  } else if (numericBathrooms > 15) {
+    errors.push('Bathrooms cannot exceed 15');
   }
   
   return errors;
@@ -314,21 +326,27 @@ export const validateBathrooms = (bathrooms) => {
 
 export const validateArea = (area) => {
   const errors = [];
-  
+
   if (area === '' || area === null || area === undefined) {
     return errors; // Optional field
   }
-  
+
+  const areaStr = area.toString();
+
+  // Check if area has more than 10 digits
+  const digitsOnly = areaStr.replace(/[^\d]/g, '');
+  if (digitsOnly.length > 10) {
+    errors.push('Area cannot exceed 10 digits');
+  }
+
   const numericArea = parseFloat(area);
-  
+
   if (isNaN(numericArea)) {
     errors.push('Area must be a valid number');
   } else if (numericArea <= 0) {
     errors.push('Area must be greater than zero');
-  } else if (numericArea > 100000) {
-    errors.push('Area cannot exceed 100,000 sq ft');
   }
-  
+
   return errors;
 };
 
@@ -413,10 +431,10 @@ export const validateZipCode = (zipCode) => {
   }
   
   const trimmedZipCode = zipCode.trim();
-  
-  // Basic zip code validation (supports various formats)
-  if (!/^\d{5}(-\d{4})?$|^\d{6}$/.test(trimmedZipCode)) {
-    errors.push('Please enter a valid zip code (e.g., 12345, 12345-6789, or 123456)');
+
+  // Zip code must be exactly 6 digits
+  if (!/^\d{6}$/.test(trimmedZipCode)) {
+    errors.push('Zip code must be exactly 6 digits');
   }
   
   return errors;
