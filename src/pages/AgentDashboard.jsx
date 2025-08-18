@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Building, User, MapPin, Bed, Bath, Square } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Plus, Building, User, MapPin, Bed, Bath, Square, CheckCircle, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AgentSidebar from '../components/AgentSidebar';
 import { propertyAPI } from '../services/api';
@@ -27,10 +27,27 @@ const ActionCard = ({ icon: Icon, title, description, onClick }) => {
 
 const AgentDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  useEffect(() => {
+    // Check for success message in URL params
+    const urlParams = new URLSearchParams(location.search);
+    const success = urlParams.get('success');
+    if (success === 'property-added') {
+      setSuccessMessage('Property added successfully!');
+      // Clear the success message after 5 seconds
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 5000);
+      // Clean up URL
+      navigate('/agent/dashboard', { replace: true });
+    }
+  }, [location, navigate]);
 
   useEffect(() => {
     const fetchAgentProperties = async () => {
@@ -89,6 +106,24 @@ const AgentDashboard = () => {
 
         <main className="p-6">
           <div className="max-w-5xl mx-auto">
+            {/* Success Message */}
+            {successMessage && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-400 mr-2" />
+                    <p className="text-sm text-green-800">{successMessage}</p>
+                  </div>
+                  <button
+                    onClick={() => setSuccessMessage('')}
+                    className="text-green-400 hover:text-green-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <ActionCard
                 icon={Plus}

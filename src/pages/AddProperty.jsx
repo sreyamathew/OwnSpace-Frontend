@@ -354,7 +354,7 @@ const AddProperty = () => {
           if (user?.userType === 'admin') {
             navigate('/admin/properties');
           } else if (user?.userType === 'agent') {
-            navigate('/agent/dashboard');
+            navigate('/agent/dashboard?success=property-added');
           } else {
             navigate('/admin/dashboard');
           }
@@ -368,8 +368,23 @@ const AddProperty = () => {
     } catch (error) {
       console.error('Add property error:', error);
       console.error('Error details:', error.response || error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      
+      // More specific error messages
+      let errorMessage = 'Failed to add property. Please try again.';
+      if (error.message.includes('fetch')) {
+        errorMessage = 'Unable to connect to server. Please check if the backend is running.';
+      } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        errorMessage = 'Authentication failed. Please log in again.';
+      } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
+        errorMessage = 'You do not have permission to add properties.';
+      } else if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
+        errorMessage = 'Server error. Please try again later.';
+      }
+      
       setErrors({
-        general: error.message || 'Failed to add property. Please try again.'
+        general: errorMessage
       });
     } finally {
       setIsLoading(false);
