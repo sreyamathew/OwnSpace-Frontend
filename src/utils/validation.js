@@ -333,10 +333,15 @@ export const validateArea = (area) => {
 
   const areaStr = area.toString();
 
-  // Check if area has more than 10 digits
+  // Check if area starts with zero (but allow single zero)
+  if (areaStr.length > 1 && areaStr.startsWith('0')) {
+    errors.push('Area cannot start with zero');
+  }
+
+  // Check if area has more than 15 digits
   const digitsOnly = areaStr.replace(/[^\d]/g, '');
-  if (digitsOnly.length > 10) {
-    errors.push('Area cannot exceed 10 digits');
+  if (digitsOnly.length > 15) {
+    errors.push('Area cannot exceed 15 digits');
   }
 
   const numericArea = parseFloat(area);
@@ -344,7 +349,7 @@ export const validateArea = (area) => {
   if (isNaN(numericArea)) {
     errors.push('Area must be a valid number');
   } else if (numericArea <= 0) {
-    errors.push('Area must be greater than zero');
+    errors.push('Area cannot be zero');
   }
 
   return errors;

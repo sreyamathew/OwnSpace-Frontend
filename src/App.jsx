@@ -30,6 +30,8 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import AuthCallback from './pages/AuthCallback';
 import MakeAdmin from './pages/MakeAdmin';
+import EditProperty from './pages/EditProperty';
+import AgentProperties from './pages/AgentProperties';
 
 const AppContent = () => {
   return (
@@ -178,6 +180,11 @@ const AppContent = () => {
           <AddProperty />
         </ProtectedRoute>
       } />
+      <Route path="/admin/properties/edit/:id" element={
+        <ProtectedRoute requireAdmin={true}>
+          <EditProperty />
+        </ProtectedRoute>
+      } />
 
       {/* Agent Routes */}
       <Route path="/agent/dashboard" element={
@@ -185,9 +192,19 @@ const AppContent = () => {
           <AgentDashboard />
         </ProtectedRoute>
       } />
+      <Route path="/agent/properties" element={
+        <ProtectedRoute requireAgent={true}>
+          <AgentProperties />
+        </ProtectedRoute>
+      } />
       <Route path="/agent/properties/add" element={
         <ProtectedRoute requireAgent={true}>
           <AddProperty />
+        </ProtectedRoute>
+      } />
+      <Route path="/agent/properties/edit/:id" element={
+        <ProtectedRoute requireAgent={true}>
+          <EditProperty />
         </ProtectedRoute>
       } />
       <Route path="/agent/profile" element={

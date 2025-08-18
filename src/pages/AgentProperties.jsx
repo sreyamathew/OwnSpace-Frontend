@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Home, 
   MapPin, 
-  DollarSign, 
   Bed, 
   Bath, 
   Square, 
@@ -20,9 +19,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { propertyAPI } from '../services/api';
-import MinimalSidebar from '../components/MinimalSidebar';
+import AgentSidebar from '../components/AgentSidebar';
 
-const AdminProperties = () => {
+const AgentProperties = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [properties, setProperties] = useState([]);
@@ -39,10 +38,11 @@ const AdminProperties = () => {
   const fetchProperties = async () => {
     try {
       setLoading(true);
-      const response = await propertyAPI.getAllProperties();
+      // Fetch properties for the current agent
+      const response = await propertyAPI.getPropertiesByAgent(user._id);
       
       if (response.success) {
-        setProperties(response.data.properties);
+        setProperties(response.data);
       } else {
         setError('Failed to fetch properties');
       }
@@ -81,89 +81,77 @@ const AdminProperties = () => {
 
   const filteredProperties = properties.filter(property => {
     const matchesSearch = property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         property.address.city.toLowerCase().includes(searchTerm.toLowerCase());
+                         property.address.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         property.address.state.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = !filterType || property.propertyType === filterType;
     return matchesSearch && matchesType;
   });
 
+  const propertyTypes = ['House', 'Apartment', 'Condo', 'Townhouse', 'Villa', 'Commercial', 'Land', 'Other'];
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-          <div className="fixed top-0 left-0 bottom-0 w-64 bg-white shadow-xl">
-            <MinimalSidebar onClose={() => setSidebarOpen(false)} />
-          </div>
-        </div>
-      )}
-
-      {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <MinimalSidebar />
-      </div>
-
-      {/* Main content */}
-      <div className="lg:pl-64">
+    <div className="min-h-screen bg-gray-50 flex">
+      <AgentSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="bg-white shadow-sm border-b border-gray-200">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center">
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="lg:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100"
-                >
-                  <Menu className="h-6 w-6" />
-                </button>
-                <div className="ml-4 lg:ml-0">
-                  <h1 className="text-2xl font-bold text-gray-900">Properties Management</h1>
-                  <p className="text-sm text-gray-600">Manage all properties in the system</p>
-                </div>
-              </div>
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate('/admin/properties/add')}
-                className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={() => setSidebarOpen(true)}
+                className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 lg:hidden"
               >
-                <Plus className="h-4 w-4" />
-                <span>Add Property</span>
+                <Menu className="h-6 w-6" />
               </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Main content */}
-        <main className="p-6">
-          {/* Search and Filter */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="h-5 w-5 text-gray-400 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    placeholder="Search properties..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
+              
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-full flex items-center justify-center">
+                  <Building className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold text-gray-900">My Properties</h1>
+                  <p className="text-xs text-gray-500">Manage your property listings</p>
                 </div>
               </div>
-              <div className="sm:w-48">
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">All Types</option>
-                  <option value="House">House</option>
-                  <option value="Apartment">Apartment</option>
-                  <option value="Condo">Condo</option>
-                  <option value="Townhouse">Townhouse</option>
-                  <option value="Villa">Villa</option>
-                  <option value="Bungalow">Bungalow</option>
-                </select>
-              </div>
+            </div>
+            
+            <button
+              onClick={() => navigate('/agent/properties/add')}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Property
+            </button>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto p-6">
+          {/* Search and Filter */}
+          <div className="mb-6 flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <input
+                type="text"
+                placeholder="Search properties..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+              >
+                <option value="">All Types</option>
+                {propertyTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -179,14 +167,18 @@ const AdminProperties = () => {
           ) : filteredProperties.length === 0 ? (
             <div className="text-center py-12">
               <Home className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">No properties found.</p>
-              <button
-                onClick={() => navigate('/admin/properties/add')}
-                className="mt-4 flex items-center space-x-2 mx-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Add First Property</span>
-              </button>
+              <p className="text-gray-600">
+                {searchTerm || filterType ? 'No properties found matching your criteria.' : 'You haven\'t added any properties yet.'}
+              </p>
+              {!searchTerm && !filterType && (
+                <button
+                  onClick={() => navigate('/agent/properties/add')}
+                  className="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Your First Property
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -216,7 +208,7 @@ const AdminProperties = () => {
                         <Eye className="h-4 w-4 text-gray-600" />
                       </button>
                       <button
-                        onClick={() => navigate(`/admin/properties/edit/${property._id}`)}
+                        onClick={() => navigate(`/agent/properties/edit/${property._id}`)}
                         className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
                         title="Edit Property"
                       >
@@ -276,10 +268,14 @@ const AdminProperties = () => {
                     
                     <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                       <div className="flex items-center space-x-2">
-                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                          <User className="h-3 w-3 text-blue-600" />
-                        </div>
-                        <span className="text-xs text-gray-600">{property.agent?.name}</span>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          property.status === 'active' ? 'bg-green-100 text-green-800' :
+                          property.status === 'sold' ? 'bg-red-100 text-red-800' :
+                          property.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {property.status}
+                        </span>
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-gray-500">
                         <Eye className="h-3 w-3" />
@@ -297,4 +293,4 @@ const AdminProperties = () => {
   );
 };
 
-export default AdminProperties;
+export default AgentProperties;
