@@ -24,6 +24,33 @@ const UserProfile = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [errors, setErrors] = useState({});
   
+  // Validation function for individual fields
+  const validateField = (name, value) => {
+    let error = '';
+    switch (name) {
+      case 'name':
+        if (!value.trim()) error = 'Name is required';
+        else if (!/^[A-Za-z\s]+$/.test(value.trim())) error = 'Name should only contain letters and spaces';
+        break;
+      case 'email':
+        if (!value.trim()) error = 'Email is required';
+        else if (!/^[A-Za-z][A-Za-z0-9._%+-]*@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(value.trim())) error = 'Email should start with a letter and have a valid domain format';
+        break;
+      case 'phone':
+        if (value.trim() && !/^[789]\d{9}$/.test(value.trim())) error = 'Phone number should start with 7, 8, or 9 and be exactly 10 digits';
+        break;
+      default: break;
+    }
+    return error;
+  };
+
+  // Handle input blur for validation
+  const handleInputBlur = (e) => {
+    const { name, value } = e.target;
+    const error = validateField(name, value);
+    setErrors(prev => ({ ...prev, [name]: error }));
+  };
+  
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -54,15 +81,13 @@ const UserProfile = () => {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
-    }
+    // Validate each field using the validateField function
+    Object.keys(formData).forEach(fieldName => {
+      const error = validateField(fieldName, formData[fieldName]);
+      if (error) {
+        newErrors[fieldName] = error;
+      }
+    });
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -224,6 +249,7 @@ const UserProfile = () => {
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     className={`w-full px-3 py-2 border ${
                       errors.name ? 'border-red-300' : 'border-gray-300'
                     } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
@@ -251,6 +277,7 @@ const UserProfile = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     className={`w-full px-3 py-2 border ${
                       errors.email ? 'border-red-300' : 'border-gray-300'
                     } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
@@ -278,7 +305,10 @@ const UserProfile = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    onBlur={handleInputBlur}
+                    className={`w-full px-3 py-2 border ${
+                      errors.phone ? 'border-red-300' : 'border-gray-300'
+                    } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                     placeholder="Enter your phone number"
                   />
                 ) : (
@@ -286,6 +316,9 @@ const UserProfile = () => {
                     <Phone className="h-4 w-4 text-gray-400" />
                     <span className="text-gray-900">{formData.phone || 'Not provided'}</span>
                   </div>
+                )}
+                {errors.phone && (
+                  <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
                 )}
               </div>
 
