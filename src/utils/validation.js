@@ -207,6 +207,221 @@ export const validatePrice = (price) => {
   return errors;
 };
 
+// Property-specific validation functions
+export const validatePropertyTitle = (title) => {
+  const errors = [];
+  
+  if (!title || !title.trim()) {
+    errors.push('Property title is required');
+    return errors;
+  }
+  
+  const trimmedTitle = title.trim();
+  
+  if (trimmedTitle.length < 5) {
+    errors.push('Property title must be at least 5 characters long');
+  }
+  
+  if (trimmedTitle.length > 100) {
+    errors.push('Property title cannot exceed 100 characters');
+  }
+  
+  // Title should not be all caps
+  if (trimmedTitle === trimmedTitle.toUpperCase() && trimmedTitle.length > 10) {
+    errors.push('Property title should not be in all caps');
+  }
+  
+  return errors;
+};
+
+export const validatePropertyDescription = (description) => {
+  const errors = [];
+  
+  if (!description || !description.trim()) {
+    errors.push('Property description is required');
+    return errors;
+  }
+  
+  const trimmedDescription = description.trim();
+  
+  if (trimmedDescription.length < 20) {
+    errors.push('Property description must be at least 20 characters long');
+  }
+  
+  if (trimmedDescription.length > 1000) {
+    errors.push('Property description cannot exceed 1000 characters');
+  }
+  
+  return errors;
+};
+
+export const validatePropertyType = (propertyType) => {
+  const errors = [];
+  
+  if (!propertyType) {
+    errors.push('Property type is required');
+    return errors;
+  }
+  
+  const validTypes = ['house', 'apartment', 'condo', 'townhouse', 'villa', 'bungalow', 'commercial', 'land', 'other'];
+  
+  if (!validTypes.includes(propertyType.toLowerCase())) {
+    errors.push('Please select a valid property type');
+  }
+  
+  return errors;
+};
+
+export const validateBedrooms = (bedrooms) => {
+  const errors = [];
+  
+  if (bedrooms === '' || bedrooms === null || bedrooms === undefined) {
+    return errors; // Optional field
+  }
+  
+  const numericBedrooms = parseInt(bedrooms);
+  
+  if (isNaN(numericBedrooms)) {
+    errors.push('Bedrooms must be a valid number');
+  } else if (numericBedrooms < 0) {
+    errors.push('Bedrooms cannot be negative');
+  } else if (numericBedrooms > 20) {
+    errors.push('Bedrooms cannot exceed 20');
+  }
+  
+  return errors;
+};
+
+export const validateBathrooms = (bathrooms) => {
+  const errors = [];
+  
+  if (bathrooms === '' || bathrooms === null || bathrooms === undefined) {
+    return errors; // Optional field
+  }
+  
+  const numericBathrooms = parseFloat(bathrooms);
+  
+  if (isNaN(numericBathrooms)) {
+    errors.push('Bathrooms must be a valid number');
+  } else if (numericBathrooms < 0) {
+    errors.push('Bathrooms cannot be negative');
+  } else if (numericBathrooms > 20) {
+    errors.push('Bathrooms cannot exceed 20');
+  }
+  
+  return errors;
+};
+
+export const validateArea = (area) => {
+  const errors = [];
+  
+  if (area === '' || area === null || area === undefined) {
+    return errors; // Optional field
+  }
+  
+  const numericArea = parseFloat(area);
+  
+  if (isNaN(numericArea)) {
+    errors.push('Area must be a valid number');
+  } else if (numericArea <= 0) {
+    errors.push('Area must be greater than zero');
+  } else if (numericArea > 100000) {
+    errors.push('Area cannot exceed 100,000 sq ft');
+  }
+  
+  return errors;
+};
+
+export const validateAddress = (address) => {
+  const errors = [];
+  
+  if (!address || !address.trim()) {
+    errors.push('Street address is required');
+    return errors;
+  }
+  
+  const trimmedAddress = address.trim();
+  
+  if (trimmedAddress.length < 5) {
+    errors.push('Street address must be at least 5 characters long');
+  }
+  
+  if (trimmedAddress.length > 200) {
+    errors.push('Street address cannot exceed 200 characters');
+  }
+  
+  return errors;
+};
+
+export const validateCity = (city) => {
+  const errors = [];
+  
+  if (!city || !city.trim()) {
+    errors.push('City is required');
+    return errors;
+  }
+  
+  const trimmedCity = city.trim();
+  
+  if (trimmedCity.length < 2) {
+    errors.push('City must be at least 2 characters long');
+  }
+  
+  if (trimmedCity.length > 50) {
+    errors.push('City cannot exceed 50 characters');
+  }
+  
+  // City should only contain letters, spaces, and common punctuation
+  if (!/^[a-zA-Z\s\-'.]+$/.test(trimmedCity)) {
+    errors.push('City can only contain letters, spaces, hyphens, apostrophes, and periods');
+  }
+  
+  return errors;
+};
+
+export const validateState = (state) => {
+  const errors = [];
+  
+  if (!state || !state.trim()) {
+    errors.push('State is required');
+    return errors;
+  }
+  
+  const trimmedState = state.trim();
+  
+  if (trimmedState.length < 2) {
+    errors.push('State must be at least 2 characters long');
+  }
+  
+  if (trimmedState.length > 50) {
+    errors.push('State cannot exceed 50 characters');
+  }
+  
+  // State should only contain letters, spaces, and common punctuation
+  if (!/^[a-zA-Z\s\-'.]+$/.test(trimmedState)) {
+    errors.push('State can only contain letters, spaces, hyphens, apostrophes, and periods');
+  }
+  
+  return errors;
+};
+
+export const validateZipCode = (zipCode) => {
+  const errors = [];
+  
+  if (zipCode === '' || zipCode === null || zipCode === undefined) {
+    return errors; // Optional field
+  }
+  
+  const trimmedZipCode = zipCode.trim();
+  
+  // Basic zip code validation (supports various formats)
+  if (!/^\d{5}(-\d{4})?$|^\d{6}$/.test(trimmedZipCode)) {
+    errors.push('Please enter a valid zip code (e.g., 12345, 12345-6789, or 123456)');
+  }
+  
+  return errors;
+};
+
 // Real-time validation for on-focus events
 export const getFieldValidationMessage = (fieldName, value, additionalData = {}) => {
   switch (fieldName) {
@@ -237,6 +452,47 @@ export const getFieldValidationMessage = (fieldName, value, additionalData = {})
     case 'price':
       const priceErrors = validatePrice(value);
       return priceErrors.length > 0 ? priceErrors[0] : '';
+      
+    // Property-specific validations
+    case 'title':
+      const titleErrors = validatePropertyTitle(value);
+      return titleErrors.length > 0 ? titleErrors[0] : '';
+      
+    case 'description':
+      const descriptionErrors = validatePropertyDescription(value);
+      return descriptionErrors.length > 0 ? descriptionErrors[0] : '';
+      
+    case 'propertyType':
+      const propertyTypeErrors = validatePropertyType(value);
+      return propertyTypeErrors.length > 0 ? propertyTypeErrors[0] : '';
+      
+    case 'bedrooms':
+      const bedroomsErrors = validateBedrooms(value);
+      return bedroomsErrors.length > 0 ? bedroomsErrors[0] : '';
+      
+    case 'bathrooms':
+      const bathroomsErrors = validateBathrooms(value);
+      return bathroomsErrors.length > 0 ? bathroomsErrors[0] : '';
+      
+    case 'area':
+      const areaErrors = validateArea(value);
+      return areaErrors.length > 0 ? areaErrors[0] : '';
+      
+    case 'address':
+      const addressErrors = validateAddress(value);
+      return addressErrors.length > 0 ? addressErrors[0] : '';
+      
+    case 'city':
+      const cityErrors = validateCity(value);
+      return cityErrors.length > 0 ? cityErrors[0] : '';
+      
+    case 'state':
+      const stateErrors = validateState(value);
+      return stateErrors.length > 0 ? stateErrors[0] : '';
+      
+    case 'zipCode':
+      const zipCodeErrors = validateZipCode(value);
+      return zipCodeErrors.length > 0 ? zipCodeErrors[0] : '';
       
     default:
       return '';
@@ -279,6 +535,47 @@ export const validateForm = (formData, requiredFields = []) => {
         
       case 'price':
         fieldErrors = validatePrice(formData[field]);
+        break;
+        
+      // Property-specific validations
+      case 'title':
+        fieldErrors = validatePropertyTitle(formData[field]);
+        break;
+        
+      case 'description':
+        fieldErrors = validatePropertyDescription(formData[field]);
+        break;
+        
+      case 'propertyType':
+        fieldErrors = validatePropertyType(formData[field]);
+        break;
+        
+      case 'bedrooms':
+        fieldErrors = validateBedrooms(formData[field]);
+        break;
+        
+      case 'bathrooms':
+        fieldErrors = validateBathrooms(formData[field]);
+        break;
+        
+      case 'area':
+        fieldErrors = validateArea(formData[field]);
+        break;
+        
+      case 'address':
+        fieldErrors = validateAddress(formData[field]);
+        break;
+        
+      case 'city':
+        fieldErrors = validateCity(formData[field]);
+        break;
+        
+      case 'state':
+        fieldErrors = validateState(formData[field]);
+        break;
+        
+      case 'zipCode':
+        fieldErrors = validateZipCode(formData[field]);
         break;
         
       default:

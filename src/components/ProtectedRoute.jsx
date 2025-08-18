@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const ProtectedRoute = ({ children, requireAdmin = false, requireAgent = false }) => {
+const ProtectedRoute = ({ children, requireAdmin = false, requireAgent = false, requireAdminOrAgent = false }) => {
   const { isAuthenticated, isLoading, user, isAdmin, isAgent } = useAuth();
   const location = useLocation();
 
@@ -27,6 +27,11 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireAgent = false }
 
   // Check agent access
   if (requireAgent && !isAgent()) {
+    return <Navigate to="/" replace />;
+  }
+
+  // Check admin or agent access
+  if (requireAdminOrAgent && !isAdmin() && !isAgent()) {
     return <Navigate to="/" replace />;
   }
 

@@ -14,8 +14,12 @@ const createHeaders = (includeAuth = false) => {
 
   if (includeAuth) {
     const token = getAuthToken();
+    console.log('Creating headers with auth:', !!token);
     if (token) {
       headers.Authorization = `Bearer ${token}`;
+      console.log('Token added to headers');
+    } else {
+      console.log('No token found in localStorage');
     }
   }
 
@@ -31,8 +35,16 @@ const apiRequest = async (endpoint, options = {}) => {
       ...options,
     };
 
+    console.log('=== API Request Debug ===');
+    console.log('URL:', url);
+    console.log('Headers:', config.headers);
+    console.log('Include Auth:', options.includeAuth);
+
     const response = await fetch(url, config);
     const data = await response.json();
+
+    console.log('Response status:', response.status);
+    console.log('Response data:', data);
 
     if (!response.ok) {
       throw new Error(data.message || 'Something went wrong');
@@ -278,10 +290,94 @@ export const agentAPI = {
   },
 };
 
+// Property API functions
+export const propertyAPI = {
+  // Get all properties
+  getAllProperties: async (filterParams = {}) => {
+    try {
+      const queryString = new URLSearchParams(filterParams).toString();
+      const endpoint = queryString ? `/properties?${queryString}` : '/properties';
+      
+      const response = await apiRequest(endpoint, {
+        method: 'GET',
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Get single property
+  getProperty: async (propertyId) => {
+    try {
+      const response = await apiRequest(`/properties/${propertyId}`, {
+        method: 'GET',
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Create new property
+  createProperty: async (propertyData) => {
+    try {
+      const response = await apiRequest('/properties', {
+        method: 'POST',
+        body: JSON.stringify(propertyData),
+        includeAuth: true,
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Update property
+  updateProperty: async (propertyId, propertyData) => {
+    try {
+      const response = await apiRequest(`/properties/${propertyId}`, {
+        method: 'PUT',
+        body: JSON.stringify(propertyData),
+        includeAuth: true,
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Delete property
+  deleteProperty: async (propertyId) => {
+    try {
+      const response = await apiRequest(`/properties/${propertyId}`, {
+        method: 'DELETE',
+        includeAuth: true,
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Get properties by agent
+  getPropertiesByAgent: async (agentId) => {
+    try {
+      const response = await apiRequest(`/properties/agent/${agentId}`, {
+        method: 'GET',
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+};
+
 // Export default API object
 const api = {
   auth: authAPI,
   agent: agentAPI,
+  property: propertyAPI,
   healthCheck,
 };
 

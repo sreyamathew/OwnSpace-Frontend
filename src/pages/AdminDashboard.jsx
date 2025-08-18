@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { dashboardStats, salesData, alerts, purchaseRequests, marketNews } from '../data/mockData';
+import { propertyAPI } from '../services/api';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -51,6 +52,25 @@ const AdminDashboard = () => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [selectedRequests, setSelectedRequests] = useState([]);
   const [newsFilter, setNewsFilter] = useState('all');
+  const [propertiesCount, setPropertiesCount] = useState(0);
+  const [propertiesLoading, setPropertiesLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPropertiesCount = async () => {
+      try {
+        const response = await propertyAPI.getAllProperties();
+        if (response.success) {
+          setPropertiesCount(response.data.properties.length);
+        }
+      } catch (error) {
+        console.error('Error fetching properties count:', error);
+      } finally {
+        setPropertiesLoading(false);
+      }
+    };
+
+    fetchPropertiesCount();
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -243,24 +263,30 @@ const AdminDashboard = () => {
           {/* System Stats Overview */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">System Overview</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatsCard
+                title="Total Properties"
+                value={propertiesLoading ? "Loading..." : propertiesCount.toLocaleString()}
+                icon={Home}
+                color="blue"
+              />
               <StatsCard
                 title="Total Users"
                 value={dashboardStats.totalUsers.toLocaleString()}
                 icon={Users}
-                color="blue"
+                color="green"
               />
               <StatsCard
                 title="System Logs"
                 value={dashboardStats.totalLogs.toLocaleString()}
                 icon={FileText}
-                color="green"
+                color="purple"
               />
               <StatsCard
                 title="Platform Performance"
                 value={`${dashboardStats.platformPerformance}%`}
                 icon={Activity}
-                color="purple"
+                color="red"
               />
             </div>
           </div>
@@ -514,7 +540,7 @@ const AdminDashboard = () => {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Management</h3>
               <button
-                onClick={() => navigate('/add-property')}
+                onClick={() => navigate('/admin/properties/add')}
                 className="flex items-center space-x-2 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <Plus className="h-4 w-4" />
@@ -556,7 +582,7 @@ const MinimalSidebar = ({ onClose }) => {
   const menuItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
     { label: 'Properties', icon: Home, path: '/admin/properties' },
-    { label: 'Add Property', icon: Plus, path: '/add-property' },
+    { label: 'Add Property', icon: Plus, path: '/admin/properties/add' },
     { label: 'Agents', icon: Users, path: '/admin/agents' },
     { label: 'Add Agent', icon: UserPlus, path: '/admin/agents/add' },
     { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { 
-  Search, 
-  Filter, 
-  MapPin, 
-  Bed, 
-  Bath, 
-  Square, 
+import React, { useState, useEffect } from 'react';
+import {
+  Search,
+  Filter,
+  MapPin,
+  Bed,
+  Bath,
+  Square,
   Heart,
   TrendingUp,
   Shield,
@@ -13,6 +13,7 @@ import {
   Eye,
   Calendar
 } from 'lucide-react';
+import { propertyAPI } from '../services/api';
 
 const Properties = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,8 +23,33 @@ const Properties = () => {
     bedrooms: '',
     location: ''
   });
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const properties = [
+  useEffect(() => {
+    fetchProperties();
+  }, []);
+
+  const fetchProperties = async (filterParams = {}) => {
+    try {
+      setLoading(true);
+      const response = await propertyAPI.getAllProperties(filterParams);
+
+      if (response.success) {
+        setProperties(response.data.properties);
+      } else {
+        setError('Failed to fetch properties');
+      }
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+      setError('Failed to fetch properties');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const staticProperties = [
     {
       id: 1,
       title: 'Modern Downtown Apartment',
@@ -156,13 +182,15 @@ const Properties = () => {
   };
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price);
   };
+
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -275,20 +303,39 @@ const Properties = () => {
           </div>
 
           {/* Property Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {properties.map((property) => (
-              <div key={property.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200 transform hover:-translate-y-2">
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-red-600">{error}</p>
+            </div>
+          ) : properties.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600">No properties found.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {properties.map((property) => (
+              <div key={property._id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200 transform hover:-translate-y-2">
                 <div className="relative">
-                  <img
-                    src={property.image}
-                    alt={property.title}
-                    className="w-full h-48 object-cover"
-                  />
+                  {property.images && property.images.length > 0 ? (
+                    <img
+                      src={property.images[0].url}
+                      alt={property.images[0].alt || property.title}
+                      className="w-full h-48 object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                      <span className="text-gray-500">No Image</span>
+                    </div>
+                  )}
                   <button className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors duration-200">
                     <Heart className="h-5 w-5 text-gray-600" />
                   </button>
-                  <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-sm font-medium ${getRiskColor(property.riskLevel)}`}>
-                    {property.riskLevel} Risk
+                  <div className="absolute top-4 left-4 px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-600">
+                    {property.propertyType}
                   </div>
                 </div>
                 
@@ -296,40 +343,40 @@ const Properties = () => {
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">{property.title}</h3>
                   <div className="flex items-center text-gray-600 mb-4">
                     <MapPin className="h-4 w-4 mr-1" />
-                    <span className="text-sm">{property.location}</span>
+                    <span className="text-sm">{property.address.city}, {property.address.state}</span>
                   </div>
                   
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <div className="text-2xl font-bold text-primary-600">{formatPrice(property.price)}</div>
-                      <div className="text-sm text-gray-500">
-                        Predicted: {formatPrice(property.predictedPrice)}
-                        <TrendingUp className="inline h-4 w-4 ml-1 text-green-500" />
-                      </div>
+                      <div className="text-2xl font-bold text-green-600">₹{property.price.toLocaleString()}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-lg font-semibold text-green-600">{property.roi}% ROI</div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Star className="h-4 w-4 text-yellow-400 mr-1" />
-                        {property.rating}
-                      </div>
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        {property.status}
+                      </span>
                     </div>
                   </div>
                   
                   <div className="flex items-center justify-between text-gray-600 mb-4">
                     <div className="flex items-center space-x-4">
-                      <div className="flex items-center">
-                        <Bed className="h-4 w-4 mr-1" />
-                        <span className="text-sm">{property.bedrooms}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Bath className="h-4 w-4 mr-1" />
-                        <span className="text-sm">{property.bathrooms}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Square className="h-4 w-4 mr-1" />
-                        <span className="text-sm">{property.area} sq ft</span>
-                      </div>
+                      {property.bedrooms && (
+                        <div className="flex items-center">
+                          <Bed className="h-4 w-4 mr-1" />
+                          <span className="text-sm">{property.bedrooms}</span>
+                        </div>
+                      )}
+                      {property.bathrooms && (
+                        <div className="flex items-center">
+                          <Bath className="h-4 w-4 mr-1" />
+                          <span className="text-sm">{property.bathrooms}</span>
+                        </div>
+                      )}
+                      {property.area && (
+                        <div className="flex items-center">
+                          <Square className="h-4 w-4 mr-1" />
+                          <span className="text-sm">{property.area} sq ft</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
@@ -382,7 +429,8 @@ const Properties = () => {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
 
           {/* Load More */}
           <div className="text-center mt-12">

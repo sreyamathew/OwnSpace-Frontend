@@ -826,7 +826,7 @@ const MinimalSidebar = ({ onClose }) => {
   const menuItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
     { label: 'Properties', icon: Home, path: '/admin/properties' },
-    { label: 'Add Property', icon: Plus, path: '/add-property' },
+    { label: 'Add Property', icon: Plus, path: '/admin/properties/add' },
     { label: 'Agents', icon: Users, path: '/admin/agents' },
     { label: 'Add Agent', icon: UserPlus, path: '/admin/agents/add' },
     { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },

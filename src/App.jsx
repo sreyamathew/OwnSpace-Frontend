@@ -16,7 +16,9 @@ import AgentRegistration from './pages/AgentRegistration';
 import AgentManagement from './pages/AgentManagement';
 import UserProfiles from './pages/UserProfiles';
 import AgentDashboard from './pages/AgentDashboard';
+import UserDashboard from './pages/UserDashboard';
 import AddProperty from './pages/AddProperty';
+import AdminProperties from './pages/AdminProperties';
 import UserProfile from './pages/UserProfile';
 import SavedProperties from './pages/SavedProperties';
 import PropertyHistory from './pages/PropertyHistory';
@@ -27,6 +29,7 @@ import OtpVerification from './pages/OtpVerification';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import AuthCallback from './pages/AuthCallback';
+import MakeAdmin from './pages/MakeAdmin';
 
 const AppContent = () => {
   return (
@@ -92,6 +95,23 @@ const AppContent = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
+      
+      {/* Debug Route */}
+      <Route path="/debug" element={
+        <div className="p-8 text-center bg-green-50">
+          <h1 className="text-3xl font-bold text-green-600 mb-4">🎉 Navigation Works!</h1>
+          <p className="text-lg text-gray-700 mb-4">If you can see this page, navigation is working correctly.</p>
+          <p className="text-sm text-gray-500">This means the issue is likely with route protection or user authentication.</p>
+          <div className="mt-6">
+            <button 
+              onClick={() => window.history.back()} 
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      } />
 
       {/* Admin Routes */}
       <Route path="/admin/dashboard" element={
@@ -114,12 +134,46 @@ const AppContent = () => {
           <UserProfiles />
         </ProtectedRoute>
       } />
+      <Route path="/admin/analytics" element={
+        <ProtectedRoute requireAdmin={true}>
+          <div className="p-8 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
+            <p className="text-gray-600 mt-2">Analytics page coming soon...</p>
+          </div>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/reports" element={
+        <ProtectedRoute requireAdmin={true}>
+          <div className="p-8 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+            <p className="text-gray-600 mt-2">Reports page coming soon...</p>
+          </div>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/settings" element={
+        <ProtectedRoute requireAdmin={true}>
+          <div className="p-8 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+            <p className="text-gray-600 mt-2">Settings page coming soon...</p>
+          </div>
+        </ProtectedRoute>
+      } />
       <Route path="/admin/profile" element={
         <ProtectedRoute requireAdmin={true}>
           <AdminProfile />
         </ProtectedRoute>
       } />
+      <Route path="/admin/properties" element={
+        <ProtectedRoute requireAdmin={true}>
+          <AdminProperties />
+        </ProtectedRoute>
+      } />
       <Route path="/add-property" element={
+        <ProtectedRoute requireAdminOrAgent={true}>
+          <AddProperty />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/properties/add" element={
         <ProtectedRoute requireAdmin={true}>
           <AddProperty />
         </ProtectedRoute>
@@ -143,6 +197,11 @@ const AppContent = () => {
       } />
 
       {/* User/Buyer Routes */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <UserDashboard />
+        </ProtectedRoute>
+      } />
       <Route path="/profile" element={
         <ProtectedRoute>
           <UserProfile />
@@ -157,6 +216,27 @@ const AppContent = () => {
         <ProtectedRoute>
           <PropertyHistory />
         </ProtectedRoute>
+      } />
+      <Route path="/make-admin" element={
+        <ProtectedRoute>
+          <MakeAdmin />
+        </ProtectedRoute>
+      } />
+
+      {/* Catch-all route for 404 */}
+      <Route path="*" element={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">404</h1>
+            <p className="text-xl text-gray-600 mb-8">Page not found</p>
+            <button
+              onClick={() => window.history.back()}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
       } />
     </Routes>
   );
