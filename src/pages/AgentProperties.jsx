@@ -79,6 +79,15 @@ const AgentProperties = () => {
     }).format(price);
   };
 
+  const getAddressText = (property) => {
+    const city = property?.address?.city || property?.city;
+    const state = property?.address?.state || property?.state;
+    if (city && state) return `${city}, ${state}`;
+    if (city) return city;
+    if (state) return state;
+    return 'Location not specified';
+  };
+
   const filteredProperties = properties.filter(property => {
     const matchesSearch = property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          property.address.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -93,7 +102,7 @@ const AgentProperties = () => {
     <div className="min-h-screen bg-gray-50 flex">
       <AgentSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden ml-64">
         {/* Header */}
         <header className="bg-white shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between px-6 py-4">
@@ -181,17 +190,17 @@ const AgentProperties = () => {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 justify-items-center max-w-7xl mx-auto">
               {filteredProperties.map((property) => (
                 <div
                   key={property._id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow w-full max-w-sm"
                 >
-                  <div className="relative h-48 bg-gray-200">
+                  <div className="relative h-32 bg-gray-200">
                     {property.images && property.images.length > 0 ? (
                       <img
                         src={property.images[0].url}
-                        alt={property.title}
+                        alt={property.images[0].alt || property.title || 'Property image'}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -224,41 +233,41 @@ const AgentProperties = () => {
                     </div>
                   </div>
                   
-                  <div className="p-4">
+                  <div className="p-3">
                     <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
-                      {property.title}
+                      {property?.title || 'Untitled Property'}
                     </h3>
                     
-                    <div className="flex items-center text-gray-600 mb-2">
+                    <div className="flex items-center text-gray-600 mb-1">
                       <MapPin className="h-4 w-4 mr-1" />
                       <span className="text-sm line-clamp-1">
-                        {property.address.city}, {property.address.state}
+                        {getAddressText(property)}
                       </span>
                     </div>
                     
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2">
                       <span className="text-xl font-bold text-green-600">
-                        {formatPrice(property.price)}
+                        {typeof property?.price === 'number' ? formatPrice(property.price) : 'Price on request'}
                       </span>
                       <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {property.propertyType}
+                        {property?.propertyType || 'Type N/A'}
                       </span>
                     </div>
                     
-                    <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                      {property.bedrooms && (
+                    <div className="flex items-center space-x-3 text-sm text-gray-600 mb-2">
+                      {property?.bedrooms != null && property?.bedrooms !== '' && (
                         <div className="flex items-center">
                           <Bed className="h-4 w-4 mr-1" />
                           <span>{property.bedrooms}</span>
                         </div>
                       )}
-                      {property.bathrooms && (
+                      {property?.bathrooms != null && property?.bathrooms !== '' && (
                         <div className="flex items-center">
                           <Bath className="h-4 w-4 mr-1" />
                           <span>{property.bathrooms}</span>
                         </div>
                       )}
-                      {property.area && (
+                      {property?.area != null && property?.area !== '' && (
                         <div className="flex items-center">
                           <Square className="h-4 w-4 mr-1" />
                           <span>{property.area} sqft</span>
@@ -266,7 +275,7 @@ const AgentProperties = () => {
                       )}
                     </div>
                     
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                       <div className="flex items-center space-x-2">
                         <span className={`text-xs px-2 py-1 rounded-full ${
                           property.status === 'active' ? 'bg-green-100 text-green-800' :

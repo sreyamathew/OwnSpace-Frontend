@@ -43,6 +43,7 @@ import { processImages, formatFileSize } from '../utils/imageUtils';
 import { propertyAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import MinimalSidebar from '../components/MinimalSidebar';
+import AgentSidebar from '../components/AgentSidebar';
 
 const AddProperty = () => {
   const navigate = useNavigate();
@@ -375,22 +376,36 @@ const AddProperty = () => {
     }
   };
 
+  const isAgent = user?.userType === 'agent';
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)} />
-          <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg">
-            <MinimalSidebar onClose={() => setSidebarOpen(false)} />
-          </div>
+          {isAgent ? (
+            <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg">
+              <AgentSidebar />
+            </div>
+          ) : (
+            <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg">
+              <MinimalSidebar onClose={() => setSidebarOpen(false)} />
+            </div>
+          )}
         </div>
       )}
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-64 lg:block">
-        <MinimalSidebar />
-      </div>
+      {isAgent ? (
+        <div className="hidden lg:block">
+          <AgentSidebar />
+        </div>
+      ) : (
+        <div className="hidden lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-64 lg:block">
+          <MinimalSidebar />
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="lg:ml-64">
@@ -407,14 +422,14 @@ const AddProperty = () => {
               </button>
               <div className="flex items-center space-x-2">
                 <Building className="h-6 w-6 text-blue-600" />
-                <span className="text-lg font-semibold text-gray-900">OwnSpace Admin</span>
+                <span className="text-lg font-semibold text-gray-900">{isAgent ? 'OwnSpace Agent' : 'OwnSpace Admin'}</span>
               </div>
             </div>
 
             {/* Right side - Title */}
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate('/admin/dashboard')}
+                onClick={() => navigate(isAgent ? '/agent/dashboard' : '/admin/dashboard')}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft className="h-5 w-5 text-gray-600" />
