@@ -48,6 +48,39 @@ const PropertyDetail = () => {
       
       if (response.success) {
         setProperty(response.data);
+        // Record recently viewed property for the current user (limit to 10)
+        if (user && response.data) {
+          try {
+            const key = `recentlyViewed_${user.id}`;
+            const existingRaw = localStorage.getItem(key) || '[]';
+            let existingList = [];
+            try {
+              existingList = JSON.parse(existingRaw);
+              if (!Array.isArray(existingList)) existingList = [];
+            } catch (_) {
+              existingList = [];
+            }
+
+            const viewedItem = {
+              propertyId: response.data._id,
+              title: response.data.title,
+              price: response.data.price,
+              location: `${response.data.address?.city || ''}${response.data.address?.state ? ', ' + response.data.address.state : ''}`.trim(),
+              viewedAt: new Date().toISOString(),
+              image: response.data.images?.[0]?.url || null,
+              action: 'viewed'
+            };
+
+            // Remove duplicates by propertyId, then unshift the latest
+            const deduped = existingList.filter(i => i && i.propertyId !== viewedItem.propertyId);
+            deduped.unshift(viewedItem);
+            // Keep a larger rolling history so "Load more" can reveal older items
+            const limited = deduped.slice(0, 200);
+            localStorage.setItem(key, JSON.stringify(limited));
+          } catch (e) {
+            console.warn('Failed to record recently viewed property:', e);
+          }
+        }
       } else {
         setError('Property not found');
       }
@@ -93,6 +126,38 @@ const PropertyDetail = () => {
       }
     } catch (error) {
       console.error('Error toggling save property:', error);
+    }
+  };
+
+  const recordHistoryAction = (action) => {
+    if (!user || !property) return;
+    try {
+      const key = `recentlyViewed_${user.id}`;
+      const existingRaw = localStorage.getItem(key) || '[]';
+      let existingList = [];
+      try {
+        existingList = JSON.parse(existingRaw);
+        if (!Array.isArray(existingList)) existingList = [];
+      } catch (_) {
+        existingList = [];
+      }
+
+      const historyItem = {
+        propertyId: property._id,
+        title: property.title,
+        price: property.price,
+        location: `${property.address?.city || ''}${property.address?.state ? ', ' + property.address.state : ''}`.trim(),
+        viewedAt: new Date().toISOString(),
+        image: property.images?.[0]?.url || null,
+        action
+      };
+
+      const deduped = existingList.filter(i => i && i.propertyId !== historyItem.propertyId);
+      deduped.unshift(historyItem);
+      const limited = deduped.slice(0, 200);
+      localStorage.setItem(key, JSON.stringify(limited));
+    } catch (e) {
+      console.warn('Failed to record history action:', e);
     }
   };
 
@@ -355,10 +420,22 @@ const PropertyDetail = () => {
               )}
               
               <div className="space-y-3">
-                <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                <button
+                  onClick={() => {
+                    recordHistoryAction('contacted_agent');
+                    alert('Agent has been contacted (demo).');
+                  }}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
                   Contact Agent
                 </button>
-                <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
+                <button
+                  onClick={() => {
+                    recordHistoryAction('scheduled_visit');
+                    alert('Visit has been scheduled (demo).');
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                >
                   Schedule Tour
                 </button>
                 <button 

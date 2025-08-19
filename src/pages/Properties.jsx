@@ -117,9 +117,7 @@ const Properties = () => {
   const handleFilterChange = (filterName, value) => {
     const newFilters = { ...filters, [filterName]: value };
     setFilters(newFilters);
-    
-    // Apply filters immediately
-    applyFilters(newFilters, sortBy);
+    // Do not apply automatically; wait for Search button click
   };
 
   const resetAllFilters = () => {
@@ -139,29 +137,36 @@ const Properties = () => {
 
   const handleSortChange = (value) => {
     setSortBy(value);
-    applyFilters(filters, value);
+    // Do not apply automatically; wait for Search button click
   };
 
-  const applyFilters = (currentFilters, currentSort) => {
+  const applyFilters = (currentFilters, currentSort, overrideSearchTerm, applyFacetFilters = true) => {
     // Always start with the original properties list
     let filteredProperties = [...properties];
     
     console.log('Starting with original properties:', properties.length);
     console.log('Current filters:', currentFilters);
-    console.log('Search term:', searchTerm);
+    const effectiveSearch = overrideSearchTerm !== undefined ? overrideSearchTerm : searchTerm;
+    console.log('Search term:', effectiveSearch);
     
-    // Apply search filter
-    if (searchTerm) {
-      filteredProperties = filteredProperties.filter(property =>
-        property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        property.address?.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        property.address?.state?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+    // Apply search filter (by property name and full location)
+    if (effectiveSearch) {
+      const q = effectiveSearch.trim().toLowerCase();
+      filteredProperties = filteredProperties.filter(property => {
+        const name = (property.title || '').toLowerCase();
+        const street = (property.address?.street || '').toLowerCase();
+        const city = (property.address?.city || '').toLowerCase();
+        const state = (property.address?.state || '').toLowerCase();
+        const zip = (property.address?.zipCode || '').toLowerCase();
+        const combinedLocation = `${street} ${city} ${state} ${zip}`.trim();
+        const haystack = `${name} ${combinedLocation}`.trim();
+        return haystack.includes(q);
+      });
       console.log('After search filter:', filteredProperties.length);
     }
 
     // Apply property type filter - only filter if a specific type is selected
-    if (currentFilters.propertyType && currentFilters.propertyType !== '') {
+    if (applyFacetFilters && currentFilters.propertyType && currentFilters.propertyType !== '') {
       filteredProperties = filteredProperties.filter(property =>
         property.propertyType.toLowerCase() === currentFilters.propertyType.toLowerCase()
       );
@@ -169,7 +174,7 @@ const Properties = () => {
     }
 
     // Apply price range filter - only filter if a specific range is selected
-    if (currentFilters.priceRange && currentFilters.priceRange !== '') {
+    if (applyFacetFilters && currentFilters.priceRange && currentFilters.priceRange !== '') {
       const [min, max] = currentFilters.priceRange.split('-').map(val => {
         if (val === '999999999') return Infinity;
         return parseFloat(val);
@@ -184,7 +189,7 @@ const Properties = () => {
     }
 
     // Apply bedrooms filter - only filter if a specific count is selected
-    if (currentFilters.bedrooms && currentFilters.bedrooms !== '') {
+    if (applyFacetFilters && currentFilters.bedrooms && currentFilters.bedrooms !== '') {
       const minBedrooms = parseInt(currentFilters.bedrooms);
       filteredProperties = filteredProperties.filter(property =>
         property.bedrooms >= minBedrooms
@@ -193,7 +198,7 @@ const Properties = () => {
     }
 
     // Apply location filter - only filter if a specific location is selected
-    if (currentFilters.location && currentFilters.location !== '') {
+    if (applyFacetFilters && currentFilters.location && currentFilters.location !== '') {
       filteredProperties = filteredProperties.filter(property =>
         property.address?.city === currentFilters.location
       );
@@ -230,7 +235,8 @@ const Properties = () => {
   // Update search term and apply filters
   const handleSearchTermChange = (value) => {
     setSearchTerm(value);
-    applyFilters(filters, sortBy);
+    // Live text search only; facet filters apply when Search button is clicked
+    applyFilters(filters, sortBy, value, false);
   };
 
   const formatPrice = (price) => {
@@ -398,17 +404,17 @@ const Properties = () => {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                     <input
                       type="text"
-                      placeholder="Search by location, property type..."
+                      placeholder="Search by property name or location..."
                       value={searchTerm}
                       onChange={(e) => handleSearchTermChange(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                 </div>
                 <select 
                   value={filters.propertyType}
                   onChange={(e) => handleFilterChange('propertyType', e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="px-4 py-3 border border-gray-700 bg-gray-900 text-white rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-gray-600"
                 >
                   <option value="">All Property Types</option>
                   <option value="apartment">Apartment</option>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   History, 
@@ -20,65 +20,33 @@ const PropertyHistory = () => {
   const { user } = useAuth();
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewHistory, setViewHistory] = useState([]);
+  const [visibleCount, setVisibleCount] = useState(10);
+  const [savedMap, setSavedMap] = useState({});
 
-  // Mock property viewing history data
-  const viewHistory = [
-    {
-      id: 1,
-      propertyId: 101,
-      title: "Modern Villa with Garden",
-      price: 850000,
-      location: "Downtown, City Center",
-      viewedAt: "2025-03-12T14:30:00Z",
-      duration: "5 minutes",
-      action: "viewed",
-      image: "/api/placeholder/300/200"
-    },
-    {
-      id: 2,
-      propertyId: 102,
-      title: "Luxury Apartment",
-      price: 420000,
-      location: "Business District",
-      viewedAt: "2025-03-11T10:15:00Z",
-      duration: "8 minutes",
-      action: "saved",
-      image: "/api/placeholder/300/200"
-    },
-    {
-      id: 3,
-      propertyId: 103,
-      title: "Cozy Family Home",
-      price: 320000,
-      location: "Suburban Area",
-      viewedAt: "2025-03-10T16:45:00Z",
-      duration: "12 minutes",
-      action: "contacted_agent",
-      image: "/api/placeholder/300/200"
-    },
-    {
-      id: 4,
-      propertyId: 104,
-      title: "Downtown Condo",
-      price: 280000,
-      location: "City Center",
-      viewedAt: "2025-03-09T09:20:00Z",
-      duration: "3 minutes",
-      action: "viewed",
-      image: "/api/placeholder/300/200"
-    },
-    {
-      id: 5,
-      propertyId: 105,
-      title: "Suburban House",
-      price: 450000,
-      location: "Residential Area",
-      viewedAt: "2025-03-08T13:10:00Z",
-      duration: "15 minutes",
-      action: "scheduled_visit",
-      image: "/api/placeholder/300/200"
+  useEffect(() => {
+    try {
+      if (!user) return;
+      const key = `recentlyViewed_${user.id}`;
+      const raw = localStorage.getItem(key) || '[]';
+      const parsed = JSON.parse(raw);
+      const items = Array.isArray(parsed) ? parsed : [];
+      setViewHistory(items);
+      // Initialize saved map from savedProperties storage if present
+      try {
+        const savedRaw = localStorage.getItem(`savedProperties_${user.id}`) || '[]';
+        const savedArr = JSON.parse(savedRaw);
+        const map = {};
+        if (Array.isArray(savedArr)) {
+          savedArr.forEach(p => { if (p && p._id) map[p._id] = true; });
+        }
+        setSavedMap(map);
+      } catch (_) {}
+    } catch (e) {
+      console.warn('Failed to load recently viewed history:', e);
+      setViewHistory([]);
     }
-  ];
+  }, [user]);
 
   const getActionColor = (action) => {
     switch (action) {
@@ -100,13 +68,54 @@ const PropertyHistory = () => {
     }
   };
 
-  const filteredHistory = viewHistory.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.location.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (filter === 'all') return matchesSearch;
-    return matchesSearch && item.action === filter;
-  });
+  const filteredHistory = (() => {
+    const sorted = [...viewHistory].sort((a, b) => new Date(b.viewedAt) - new Date(a.viewedAt));
+    const filtered = sorted.filter(item => {
+      const title = (item.title || '').toLowerCase();
+      const location = (item.location || '').toLowerCase();
+      const q = (searchTerm || '').trim().toLowerCase();
+      const haystack = `${title} ${location}`.trim();
+      const tokens = q ? q.split(/\s+/) : [];
+      const matchesSearch = tokens.length === 0
+        ? true
+        : tokens.some(t => haystack.includes(t));
+      if (filter === 'all') return matchesSearch;
+      return matchesSearch && item.action === filter;
+    });
+    return filtered;
+  })();
+
+  const visibleHistory = filteredHistory.slice(0, visibleCount);
+
+  const toggleSave = (propertyId) => {
+    if (!user) return;
+    try {
+      const savedKey = `savedProperties_${user.id}`;
+      const raw = localStorage.getItem(savedKey) || '[]';
+      let savedArr = [];
+      try { savedArr = JSON.parse(raw); if (!Array.isArray(savedArr)) savedArr = []; } catch (_) { savedArr = []; }
+
+      const isSaved = !!savedMap[propertyId];
+      if (isSaved) {
+        // remove
+        savedArr = savedArr.filter(p => p && p._id !== propertyId);
+      } else {
+        // try to find minimal info from history to store
+        const src = viewHistory.find(v => v.propertyId === propertyId);
+        if (src) {
+          savedArr.push({ _id: propertyId, title: src.title, price: src.price, address: { city: src.location } });
+        } else {
+          savedArr.push({ _id: propertyId });
+        }
+      }
+      localStorage.setItem(savedKey, JSON.stringify(savedArr));
+      setSavedMap(prev => ({ ...prev, [propertyId]: !isSaved }));
+      // Reflect action label in history item if saved
+      setViewHistory(prev => prev.map(i => i.propertyId === propertyId ? { ...i, action: !isSaved ? 'saved' : 'viewed' } : i));
+    } catch (e) {
+      console.warn('Failed to toggle save:', e);
+    }
+  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -117,6 +126,20 @@ const PropertyHistory = () => {
     if (diffInHours < 24) return `${diffInHours} hours ago`;
     if (diffInHours < 48) return 'Yesterday';
     return date.toLocaleDateString();
+  };
+
+  const formatPriceINR = (price) => {
+    if (typeof price !== 'number') return '₹0';
+    try {
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(price);
+    } catch (_) {
+      return `₹${(price || 0).toLocaleString('en-IN')}`;
+    }
   };
 
   return (
@@ -177,14 +200,27 @@ const PropertyHistory = () => {
         {/* History List */}
         {filteredHistory.length > 0 ? (
           <div className="space-y-4">
-            {filteredHistory.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+            {visibleHistory.map((item) => (
+              <div key={`${item.propertyId}-${item.viewedAt}`} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
                 <div className="flex items-start space-x-4">
                   {/* Property Image */}
-                  <div className="w-24 h-24 bg-gray-200 rounded-lg flex-shrink-0">
-                    <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400 rounded-lg flex items-center justify-center">
-                      <Eye className="h-8 w-8 text-gray-500" />
-                    </div>
+                  <div className="w-24 h-24 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center">
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = '/vite.svg';
+                          e.currentTarget.className = 'w-full h-full object-contain p-2 bg-white';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center">
+                        <Eye className="h-8 w-8 text-gray-500" />
+                      </div>
+                    )}
                   </div>
 
                   {/* Property Details */}
@@ -197,7 +233,7 @@ const PropertyHistory = () => {
                           <span className="text-sm">{item.location}</span>
                         </div>
                         <div className="text-xl font-bold text-green-600 mb-2">
-                          ${item.price.toLocaleString()}
+                          {formatPriceINR(item.price)}
                         </div>
                       </div>
                       
@@ -214,33 +250,30 @@ const PropertyHistory = () => {
                         <Calendar className="h-4 w-4 mr-1" />
                         <span>{formatDate(item.viewedAt)}</span>
                       </div>
-                      <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-1" />
-                        <span>Viewed for {item.duration}</span>
-                      </div>
+                      {item.duration && (
+                        <div className="flex items-center">
+                          <Clock className="h-4 w-4 mr-1" />
+                          <span>Viewed for {item.duration}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Actions */}
                     <div className="flex items-center space-x-3">
                       <button
-                        onClick={() => navigate(`/properties/${item.propertyId}`)}
+                        onClick={() => navigate(`/property/${item.propertyId}`)}
                         className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
                       >
                         <ExternalLink className="h-4 w-4" />
                         <span>View Again</span>
                       </button>
                       
-                      {item.action === 'viewed' && (
-                        <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm">
-                          Save Property
-                        </button>
-                      )}
-                      
-                      {item.action === 'saved' && (
-                        <button className="px-4 py-2 border border-green-300 text-green-700 rounded-md hover:bg-green-50 transition-colors text-sm">
-                          Already Saved
-                        </button>
-                      )}
+                      <button
+                        onClick={() => toggleSave(item.propertyId)}
+                        className={`px-4 py-2 border rounded-md transition-colors text-sm ${savedMap[item.propertyId] ? 'border-green-300 text-green-700 hover:bg-green-50' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                      >
+                        {savedMap[item.propertyId] ? 'Saved' : 'Save Property'}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -267,29 +300,40 @@ const PropertyHistory = () => {
         )}
 
         {/* Summary Stats */}
+        {filteredHistory.length > visibleHistory.length && (
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={() => setVisibleCount(c => c + 10)}
+              className="px-6 py-2 bg-gray-100 text-gray-800 rounded-md border border-gray-300 hover:bg-gray-200"
+            >
+              Load more
+            </button>
+          </div>
+        )}
+
         {filteredHistory.length > 0 && (
           <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Viewing Summary</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{viewHistory.length}</div>
+                <div className="text-2xl font-bold text-blue-600">{filteredHistory.length}</div>
                 <div className="text-sm text-gray-600">Total Views</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">
-                  {viewHistory.filter(item => item.action === 'saved').length}
+                  {filteredHistory.filter(item => item.action === 'saved').length}
                 </div>
                 <div className="text-sm text-gray-600">Properties Saved</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600">
-                  {viewHistory.filter(item => item.action === 'contacted_agent').length}
+                  {filteredHistory.filter(item => item.action === 'contacted_agent').length}
                 </div>
                 <div className="text-sm text-gray-600">Agents Contacted</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-orange-600">
-                  {viewHistory.filter(item => item.action === 'scheduled_visit').length}
+                  {filteredHistory.filter(item => item.action === 'scheduled_visit').length}
                 </div>
                 <div className="text-sm text-gray-600">Visits Scheduled</div>
               </div>
