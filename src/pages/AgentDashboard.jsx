@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Building, User, MapPin, Bed, Bath, Square, CheckCircle, X } from 'lucide-react';
+import { Plus, Building, User, MapPin, Bed, Bath, Square, CheckCircle, X, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AgentSidebar from '../components/AgentSidebar';
-import { propertyAPI } from '../services/api';
+import { propertyAPI, visitAPI } from '../services/api';
 
 const ActionCard = ({ icon: Icon, title, description, onClick }) => {
   return (
@@ -28,11 +28,13 @@ const ActionCard = ({ icon: Icon, title, description, onClick }) => {
 const AgentDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [visitRequests, setVisitRequests] = useState([]);
+  const [decision, setDecision] = useState({ open: false, id: null, suggestDate: '', suggestTime: '' });
 
   useEffect(() => {
     // Check for success message in URL params
@@ -75,6 +77,41 @@ const AgentDashboard = () => {
     fetchAgentProperties();
   }, [user]);
 
+  useEffect(() => {
+    const fetchAssignedVisits = async () => {
+      try {
+        const res = await visitAPI.assignedToMe();
+        if (res.success) setVisitRequests(res.data || []);
+      } catch (e) {
+        console.warn('Failed to load assigned visit requests');
+      }
+    };
+    fetchAssignedVisits();
+  }, []);
+
+  const approveVisit = async (id) => {
+    try {
+      const res = await visitAPI.updateVisitStatus(id, 'approved');
+      if (res.success) {
+        setVisitRequests(prev => prev.filter(v => v._id !== id));
+        alert('Visit approved. Share your contact details with the requester.');
+      }
+    } catch (e) { alert('Failed to approve'); }
+  };
+
+  const openRejectModal = (id) => setDecision({ open: true, id, suggestDate: '', suggestTime: '' });
+  const closeRejectModal = () => setDecision({ open: false, id: null, suggestDate: '', suggestTime: '' });
+  const rejectVisit = async () => {
+    try {
+      const { id, suggestDate, suggestTime } = decision;
+      await visitAPI.updateVisitStatus(id, 'rejected');
+      setVisitRequests(prev => prev.filter(v => v._id !== id));
+      closeRejectModal();
+      const suggestion = suggestDate && suggestTime ? ` Suggested: ${suggestDate} ${suggestTime}` : '';
+      alert(`Visit rejected.${suggestion}`);
+    } catch (e) { alert('Failed to reject'); }
+  };
+
   const formatPrice = (price) => {
     if (typeof price !== 'number') return 'Price on request';
     return new Intl.NumberFormat('en-IN', {
@@ -100,8 +137,19 @@ const AgentDashboard = () => {
 
       <div className="flex-1 ml-64">
         <header className="bg-white border-b border-gray-200 px-6 py-5">
-          <h1 className="text-2xl font-bold text-gray-900">Agent Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome back, {user?.name || 'Agent'}.</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Agent Dashboard</h1>
+              <p className="text-gray-600 mt-1">Welcome back, {user?.name || 'Agent'}.</p>
+            </div>
+            <button
+              onClick={() => { logout(); navigate('/login'); }}
+              className="inline-flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+            </button>
+          </div>
         </header>
 
         <main className="p-6">
@@ -207,9 +255,54 @@ const AgentDashboard = () => {
                 </div>
               )}
             </div>
+
+            {/* Pending Visit Requests */}
+            <div className="mt-10">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Visit Requests</h2>
+              {visitRequests.length === 0 ? (
+                <div className="py-6 text-sm text-gray-600">No pending requests.</div>
+              ) : (
+                <div className="space-y-3">
+                  {visitRequests.map(v => (
+                    <div key={v._id} className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-gray-900">{v.property?.title || 'Property'}</div>
+                        <div className="text-sm text-gray-600">Requested for: {new Date(v.scheduledAt).toLocaleString()}</div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button onClick={() => approveVisit(v._id)} className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">Approve</button>
+                        <button onClick={() => openRejectModal(v._id)} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Reject</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </main>
       </div>
+      {/* Reject modal with suggestion */}
+      {decision.open && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Reject & Suggest Time</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Suggest Date</label>
+                <input type="date" value={decision.suggestDate} onChange={(e) => setDecision(prev => ({ ...prev, suggestDate: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Suggest Time</label>
+                <input type="time" value={decision.suggestTime} onChange={(e) => setDecision(prev => ({ ...prev, suggestTime: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end space-x-2">
+              <button onClick={closeRejectModal} className="px-4 py-2 border border-gray-300 rounded">Cancel</button>
+              <button onClick={rejectVisit} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Reject</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

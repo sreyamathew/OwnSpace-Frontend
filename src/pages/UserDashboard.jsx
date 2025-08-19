@@ -16,15 +16,17 @@ import {
   Mail,
   Star,
   ChevronRight,
-  Building
+  Building,
+  Calendar
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { propertyAPI } from '../services/api';
+import { propertyAPI, visitAPI } from '../services/api';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [properties, setProperties] = useState([]);
+  const [filteredProperties, setFilteredProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState({
@@ -36,6 +38,9 @@ const UserDashboard = () => {
     bathrooms: ''
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [visibleCount, setVisibleCount] = useState(9);
+  const [scheduling, setScheduling] = useState({ open: false, property: null, date: '', time: '', note: '' });
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     fetchProperties();
@@ -47,7 +52,11 @@ const UserDashboard = () => {
       const response = await propertyAPI.getAllProperties(filterParams);
       
       if (response.success) {
-        setProperties(response.data.properties);
+        const list = response.data.properties || [];
+        setProperties(list);
+        // Initialize filtered list and reset pagination
+        setFilteredProperties(list);
+        setVisibleCount(9);
       } else {
         setError('Failed to fetch properties');
       }
@@ -74,6 +83,7 @@ const UserDashboard = () => {
         filterParams[key] = filters[key];
       }
     });
+    // Fetch filtered data server-side; pagination resets after fetch
     fetchProperties(filterParams);
   };
 
@@ -86,12 +96,63 @@ const UserDashboard = () => {
       bedrooms: '',
       bathrooms: ''
     });
+    setSearchTerm('');
     fetchProperties();
   };
 
   const handlePropertyView = (propertyId) => {
     navigate(`/property/${propertyId}`);
   };
+
+  const openScheduleModal = (property) => {
+    setScheduling({ open: true, property, date: '', time: '', note: '' });
+  };
+
+  const closeScheduleModal = () => {
+    setScheduling({ open: false, property: null, date: '', time: '', note: '' });
+  };
+
+  const submitSchedule = async () => {
+    if (!scheduling.property) return;
+    try {
+      if (!scheduling.date || !scheduling.time) {
+        alert('Please select date and time');
+        return;
+      }
+      const scheduledAt = new Date(`${scheduling.date}T${scheduling.time}:00`);
+      const res = await visitAPI.createVisitRequest({ propertyId: scheduling.property._id, scheduledAt, note: scheduling.note });
+      if (res.success) {
+        alert('Visit request sent for approval');
+        closeScheduleModal();
+      }
+    } catch (e) {
+      console.error('Failed to create visit request', e);
+      alert('Failed to send request');
+    }
+  };
+
+  // Derive filtered list from properties and search term
+  useEffect(() => {
+    const q = (searchTerm || '').trim().toLowerCase();
+    if (!q) {
+      setFilteredProperties(properties);
+      setVisibleCount(9);
+      return;
+    }
+    const next = properties.filter(p => {
+      const title = (p.title || '').toLowerCase();
+      const street = (p.address?.street || '').toLowerCase();
+      const city = (p.address?.city || '').toLowerCase();
+      const state = (p.address?.state || '').toLowerCase();
+      const zip = (p.address?.zipCode || '').toLowerCase();
+      const haystack = `${title} ${street} ${city} ${state} ${zip}`.trim();
+      return haystack.includes(q);
+    });
+    setFilteredProperties(next);
+    setVisibleCount(9);
+  }, [searchTerm, properties]);
+
+  const visibleProperties = filteredProperties.slice(0, visibleCount);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', {
@@ -119,12 +180,30 @@ const UserDashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
-              <button
-                onClick={() => navigate('/profile')}
-                className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-              >
-                <User className="h-5 w-5 text-gray-600" />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setProfileOpen(o => !o)}
+                  className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                >
+                  <User className="h-5 w-5 text-gray-600" />
+                </button>
+                {profileOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                    <button
+                      onClick={() => { setProfileOpen(false); navigate('/profile'); }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Profile
+                    </button>
+                    <button
+                      onClick={() => { setProfileOpen(false); navigate('/appointments'); }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Appointments
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -284,6 +363,18 @@ const UserDashboard = () => {
             </button>
             
             <button
+              onClick={() => navigate('/appointments')}
+              className="flex items-center justify-center space-x-3 p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors group"
+            >
+              <div className="p-3 bg-yellow-100 rounded-full group-hover:bg-yellow-200 transition-colors">
+                <Calendar className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-medium text-gray-900">Appointments</h3>
+                <p className="text-sm text-gray-600">View your visits</p>
+              </div>
+            </button>
+            <button
               onClick={() => navigate('/property-history')}
               className="flex items-center justify-center space-x-3 p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors group"
             >
@@ -314,12 +405,12 @@ const UserDashboard = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.map((property) => (
+            {visibleProperties.map((property) => (
               <div
                 key={property._id}
                 className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => handlePropertyView(property._id)}
               >
+                <div onClick={() => handlePropertyView(property._id)}>
                 <div className="relative h-48 bg-gray-200">
                   {property.images && property.images.length > 0 ? (
                     <>
@@ -348,7 +439,7 @@ const UserDashboard = () => {
                     <Heart className="h-4 w-4 text-gray-600" />
                   </button>
                 </div>
-                
+                </div>
                 <div className="p-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
                     {property.title}
@@ -403,12 +494,81 @@ const UserDashboard = () => {
                       <span>{property.views || 0}</span>
                     </div>
                   </div>
+                  <div className="mt-3 flex space-x-2">
+                    <button
+                      onClick={() => openScheduleModal(property)}
+                      className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-50"
+                    >
+                      Schedule Visit
+                    </button>
+                    <button
+                      onClick={() => handlePropertyView(property._id)}
+                      className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
+                    >
+                      View Details
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
+
+        {/* Load More */}
+        {!loading && !error && visibleProperties.length < filteredProperties.length && (
+          <div className="flex justify-center mt-8">
+            <button
+              onClick={() => setVisibleCount(c => c + 9)}
+              className="px-6 py-2 bg-gray-100 text-gray-800 rounded-md border border-gray-300 hover:bg-gray-200"
+            >
+              Load more
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Schedule Modal */}
+      {scheduling.open && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Schedule Visit</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <input
+                  type="date"
+                  value={scheduling.date}
+                  onChange={(e) => setScheduling(prev => ({ ...prev, date: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                <input
+                  type="time"
+                  value={scheduling.time}
+                  onChange={(e) => setScheduling(prev => ({ ...prev, time: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Note (optional)</label>
+                <textarea
+                  rows="3"
+                  value={scheduling.note}
+                  onChange={(e) => setScheduling(prev => ({ ...prev, note: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Any additional details"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button onClick={closeScheduleModal} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">Cancel</button>
+              <button onClick={submitSchedule} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Send Request</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

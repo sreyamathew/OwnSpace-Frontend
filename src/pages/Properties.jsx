@@ -14,7 +14,7 @@ import {
   Eye,
   Calendar
 } from 'lucide-react';
-import { propertyAPI } from '../services/api';
+import { propertyAPI, visitAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const Properties = () => {
@@ -34,6 +34,7 @@ const Properties = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [availableLocations, setAvailableLocations] = useState([]);
+  const [scheduling, setScheduling] = useState({ open: false, property: null, date: '', time: '', note: '' });
 
   useEffect(() => {
     fetchProperties();
@@ -88,6 +89,38 @@ const Properties = () => {
 
   const handleViewDetails = (propertyId) => {
     navigate(`/property/${propertyId}`);
+  };
+
+  const openScheduleModal = (property) => {
+    if (!user) {
+      alert('Please login to schedule a visit');
+      navigate('/login');
+      return;
+    }
+    setScheduling({ open: true, property, date: '', time: '', note: '' });
+  };
+
+  const closeScheduleModal = () => {
+    setScheduling({ open: false, property: null, date: '', time: '', note: '' });
+  };
+
+  const submitSchedule = async () => {
+    if (!scheduling.property) return;
+    try {
+      if (!scheduling.date || !scheduling.time) {
+        alert('Please select date and time');
+        return;
+      }
+      const scheduledAt = new Date(`${scheduling.date}T${scheduling.time}:00`);
+      const res = await visitAPI.createVisitRequest({ propertyId: scheduling.property._id, scheduledAt, note: scheduling.note });
+      if (res.success) {
+        alert('Visit request sent for approval');
+        closeScheduleModal();
+      }
+    } catch (e) {
+      console.error('Failed to create visit request', e);
+      alert('Failed to send request');
+    }
   };
 
   const fetchProperties = async (filterParams = {}) => {
@@ -634,17 +667,17 @@ const Properties = () => {
                     </div>
                   </div>
                   
-                                     <div className="mt-4 flex space-x-2">
-                     <button 
-                       onClick={() => handleViewDetails(property._id)}
-                       className="flex-1 bg-gray-900 text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-800 transition-colors duration-200"
-                     >
-                       View Details
-                     </button>
-                     <button className="flex-1 border border-gray-900 text-gray-900 py-2 px-4 rounded-lg font-medium hover:bg-gray-100 transition-colors duration-200">
-                       Schedule Visit
-                     </button>
-                   </div>
+                  <div className="mt-4 flex space-x-2">
+                    <button 
+                      onClick={() => handleViewDetails(property._id)}
+                      className="flex-1 bg-gray-900 text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-800 transition-colors duration-200"
+                    >
+                      View Details
+                    </button>
+                    <button onClick={() => openScheduleModal(property)} className="flex-1 border border-gray-900 text-gray-900 py-2 px-4 rounded-lg font-medium hover:bg-gray-100 transition-colors duration-200">
+                      Schedule Visit
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -659,8 +692,50 @@ const Properties = () => {
           </div>
         </div>
       </section>
+      {/* Schedule Modal */}
+      {scheduling.open && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Schedule Visit</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <input
+                  type="date"
+                  value={scheduling.date}
+                  onChange={(e) => setScheduling(prev => ({ ...prev, date: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                <input
+                  type="time"
+                  value={scheduling.time}
+                  onChange={(e) => setScheduling(prev => ({ ...prev, time: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Note (optional)</label>
+                <textarea
+                  rows="3"
+                  value={scheduling.note}
+                  onChange={(e) => setScheduling(prev => ({ ...prev, note: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Any additional details"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button onClick={closeScheduleModal} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">Cancel</button>
+              <button onClick={submitSchedule} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Send Request</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default Properties;
+export default Properties;

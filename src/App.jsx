@@ -16,12 +16,15 @@ import AgentRegistration from './pages/AgentRegistration';
 import AgentManagement from './pages/AgentManagement';
 import UserProfiles from './pages/UserProfiles';
 import AgentDashboard from './pages/AgentDashboard';
+import AgentAppointments from './pages/AgentAppointments';
 import UserDashboard from './pages/UserDashboard';
 import AddProperty from './pages/AddProperty';
 import AdminProperties from './pages/AdminProperties';
+import AdminAppointments from './pages/AdminAppointments';
 import UserProfile from './pages/UserProfile';
 import SavedProperties from './pages/SavedProperties';
 import PropertyHistory from './pages/PropertyHistory';
+import UserAppointments from './pages/UserAppointments';
 import AdminProfile from './pages/AdminProfile';
 import AgentProfile from './pages/AgentProfile';
 import ValidationTest from './pages/ValidationTest';
@@ -129,6 +132,11 @@ const AppContent = () => {
           <AdminDashboard />
         </ProtectedRoute>
       } />
+      <Route path="/admin/appointments" element={
+        <ProtectedRoute requireAdmin={true}>
+          <AdminAppointments />
+        </ProtectedRoute>
+      } />
       <Route path="/admin/agents/add" element={
         <ProtectedRoute requireAdmin={true}>
           <AgentRegistration />
@@ -200,6 +208,11 @@ const AppContent = () => {
           <AgentDashboard />
         </ProtectedRoute>
       } />
+      <Route path="/agent/appointments" element={
+        <ProtectedRoute requireAgent={true}>
+          <AgentAppointments />
+        </ProtectedRoute>
+      } />
       <Route path="/agent/properties" element={
         <ProtectedRoute requireAgent={true}>
           <AgentProperties />
@@ -230,6 +243,11 @@ const AppContent = () => {
       <Route path="/profile" element={
         <ProtectedRoute>
           <UserProfile />
+        </ProtectedRoute>
+      } />
+      <Route path="/appointments" element={
+        <ProtectedRoute>
+          <UserAppointments />
         </ProtectedRoute>
       } />
       <Route path="/saved-properties" element={

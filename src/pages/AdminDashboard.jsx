@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { dashboardStats, salesData, alerts, purchaseRequests, marketNews } from '../data/mockData';
-import { propertyAPI } from '../services/api';
+import { propertyAPI, visitAPI } from '../services/api';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -54,6 +54,8 @@ const AdminDashboard = () => {
   const [newsFilter, setNewsFilter] = useState('all');
   const [propertiesCount, setPropertiesCount] = useState(0);
   const [propertiesLoading, setPropertiesLoading] = useState(true);
+  const [visitRequests, setVisitRequests] = useState([]);
+  const [decision, setDecision] = useState({ open: false, id: null, suggestDate: '', suggestTime: '' });
 
   useEffect(() => {
     const fetchPropertiesCount = async () => {
@@ -71,6 +73,38 @@ const AdminDashboard = () => {
 
     fetchPropertiesCount();
   }, []);
+
+  useEffect(() => {
+    const fetchAssignedVisits = async () => {
+      try {
+        const res = await visitAPI.assignedToMe();
+        if (res.success) setVisitRequests(res.data || []);
+      } catch (e) { console.warn('Failed to load assigned visits'); }
+    };
+    fetchAssignedVisits();
+  }, []);
+
+  const approveVisit = async (id) => {
+    try {
+      const res = await visitAPI.updateVisitStatus(id, 'approved');
+      if (res.success) {
+        setVisitRequests(prev => prev.filter(v => v._id !== id));
+        alert('Visit approved. Share contact details with the requester.');
+      }
+    } catch (e) { alert('Failed to approve'); }
+  };
+  const openRejectModal = (id) => setDecision({ open: true, id, suggestDate: '', suggestTime: '' });
+  const closeRejectModal = () => setDecision({ open: false, id: null, suggestDate: '', suggestTime: '' });
+  const rejectVisit = async () => {
+    try {
+      const { id, suggestDate, suggestTime } = decision;
+      await visitAPI.updateVisitStatus(id, 'rejected');
+      setVisitRequests(prev => prev.filter(v => v._id !== id));
+      closeRejectModal();
+      const suggestion = suggestDate && suggestTime ? ` Suggested: ${suggestDate} ${suggestTime}` : '';
+      alert(`Visit rejected.${suggestion}`);
+    } catch (e) { alert('Failed to reject'); }
+  };
 
   const handleLogout = () => {
     logout();
@@ -288,6 +322,33 @@ const AdminDashboard = () => {
                 icon={Activity}
                 color="red"
               />
+            </div>
+          </div>
+
+          {/* Pending Visit Requests */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Pending Visit Requests</h2>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6">
+                {visitRequests.length === 0 ? (
+                  <div className="text-sm text-gray-600">No pending requests.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {visitRequests.map(v => (
+                      <div key={v._id} className="flex items-center justify-between p-4 border border-gray-100 rounded">
+                        <div>
+                          <div className="font-medium text-gray-900">{v.property?.title || 'Property'}</div>
+                          <div className="text-sm text-gray-600">Requested for: {new Date(v.scheduledAt).toLocaleString()}</div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button onClick={() => approveVisit(v._id)} className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">Approve</button>
+                          <button onClick={() => openRejectModal(v._id)} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Reject</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -582,6 +643,7 @@ const MinimalSidebar = ({ onClose }) => {
   const menuItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
     { label: 'Properties', icon: Home, path: '/admin/properties' },
+    { label: 'Appointments', icon: Calendar, path: '/admin/appointments' },
     { label: 'Add Property', icon: Plus, path: '/admin/properties/add' },
     { label: 'Agents', icon: Users, path: '/admin/agents' },
     { label: 'Add Agent', icon: UserPlus, path: '/admin/agents/add' },

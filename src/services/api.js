@@ -373,6 +373,84 @@ export const propertyAPI = {
   },
 };
 
+// Visit API functions
+export const visitAPI = {
+  // Create a visit request
+  createVisitRequest: async ({ propertyId, scheduledAt, note }) => {
+    try {
+      const response = await apiRequest('/visits', {
+        method: 'POST',
+        includeAuth: true,
+        body: JSON.stringify({ propertyId, scheduledAt, note }),
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+  // Reschedule by requester
+  reschedule: async (visitId, scheduledAt, note) => {
+    try {
+      const response = await apiRequest(`/visits/${visitId}/reschedule`, {
+        method: 'PUT',
+        includeAuth: true,
+        body: JSON.stringify({ scheduledAt, note }),
+      });
+      return response;
+    } catch (error) { throw error; }
+  },
+  // Reschedule by recipient (keep approved)
+  recipientReschedule: async (visitId, scheduledAt) => {
+    try {
+      const response = await apiRequest(`/visits/${visitId}/recipient-reschedule`, {
+        method: 'PUT',
+        includeAuth: true,
+        body: JSON.stringify({ scheduledAt }),
+      });
+      return response;
+    } catch (error) { throw error; }
+  },
+  // Cancel by requester
+  cancel: async (visitId) => {
+    try {
+      const response = await apiRequest(`/visits/${visitId}`, {
+        method: 'DELETE',
+        includeAuth: true,
+      });
+      return response;
+    } catch (error) { throw error; }
+  },
+  // Update status (approve/reject)
+  updateVisitStatus: async (visitId, status) => {
+    try {
+      const response = await apiRequest(`/visits/${visitId}/status`, {
+        method: 'PUT',
+        includeAuth: true,
+        body: JSON.stringify({ status }),
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+  // List my requests
+  myRequests: async (status) => {
+    try {
+      const endpoint = status ? `/visits/my?status=${encodeURIComponent(status)}` : '/visits/my';
+      const response = await apiRequest(endpoint, { method: 'GET', includeAuth: true });
+      return response;
+    } catch (error) { throw error; }
+  },
+  // List requests assigned to me
+  assignedToMe: async (status) => {
+    try {
+      const endpoint = status ? `/visits/assigned?status=${encodeURIComponent(status)}` : '/visits/assigned';
+      const response = await apiRequest(endpoint, { method: 'GET', includeAuth: true });
+      return response;
+    } catch (error) { throw error; }
+  },
+};
+
 // Export default API object
 const api = {
   auth: authAPI,
