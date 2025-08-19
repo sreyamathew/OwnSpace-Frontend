@@ -30,12 +30,16 @@ const PropertyDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [savedProperties, setSavedProperties] = useState([]);
 
   useEffect(() => {
     if (id) {
       fetchProperty();
     }
-  }, [id]);
+    if (user) {
+      fetchSavedProperties();
+    }
+  }, [id, user]);
 
   const fetchProperty = async () => {
     try {
@@ -53,6 +57,47 @@ const PropertyDetail = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchSavedProperties = async () => {
+    try {
+      // Get saved properties from localStorage for now
+      // In a real app, this would be an API call
+      const saved = JSON.parse(localStorage.getItem(`savedProperties_${user.id}`) || '[]');
+      setSavedProperties(saved);
+    } catch (error) {
+      console.error('Error fetching saved properties:', error);
+    }
+  };
+
+  const toggleSaveProperty = async () => {
+    if (!user) {
+      // Redirect to login or show login modal
+      alert('Please login to save properties');
+      return;
+    }
+
+    try {
+      const isSaved = savedProperties.some(p => p._id === property._id);
+      
+      if (isSaved) {
+        // Remove from saved
+        const updatedSaved = savedProperties.filter(p => p._id !== property._id);
+        setSavedProperties(updatedSaved);
+        localStorage.setItem(`savedProperties_${user.id}`, JSON.stringify(updatedSaved));
+      } else {
+        // Add to saved
+        const updatedSaved = [...savedProperties, property];
+        setSavedProperties(updatedSaved);
+        localStorage.setItem(`savedProperties_${user.id}`, JSON.stringify(updatedSaved));
+      }
+    } catch (error) {
+      console.error('Error toggling save property:', error);
+    }
+  };
+
+  const isPropertySaved = () => {
+    return savedProperties.some(p => p._id === property._id);
   };
 
   const formatPrice = (price) => {
@@ -123,8 +168,15 @@ const PropertyDetail = () => {
               <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
                 <Share2 className="h-5 w-5 text-gray-600" />
               </button>
-              <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
-                <Heart className="h-5 w-5 text-gray-600" />
+              <button 
+                onClick={toggleSaveProperty}
+                className={`p-2 rounded-full transition-colors ${
+                  isPropertySaved() ? 'bg-red-100 hover:bg-red-200' : 'bg-gray-100 hover:bg-gray-200'
+                }`}
+              >
+                <Heart className={`h-5 w-5 ${
+                  isPropertySaved() ? 'text-red-600 fill-current' : 'text-gray-600'
+                }`} />
               </button>
             </div>
           </div>
@@ -309,8 +361,15 @@ const PropertyDetail = () => {
                 <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
                   Schedule Tour
                 </button>
-                <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
-                  Save Property
+                <button 
+                  onClick={toggleSaveProperty}
+                  className={`w-full px-4 py-2 rounded-md transition-colors ${
+                    isPropertySaved() 
+                      ? 'bg-red-600 text-white hover:bg-red-700 border border-red-600' 
+                      : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {isPropertySaved() ? 'Saved ✓' : 'Save Property'}
                 </button>
               </div>
             </div>

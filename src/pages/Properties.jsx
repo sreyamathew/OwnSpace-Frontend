@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Search,
   Filter,
@@ -17,6 +18,7 @@ import { propertyAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const Properties = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
@@ -82,6 +84,10 @@ const Properties = () => {
 
   const isPropertySaved = (propertyId) => {
     return savedProperties.some(p => p._id === propertyId);
+  };
+
+  const handleViewDetails = (propertyId) => {
+    navigate(`/property/${propertyId}`);
   };
 
   const fetchProperties = async (filterParams = {}) => {
@@ -536,7 +542,7 @@ const Properties = () => {
                       isPropertySaved(property._id) ? 'bg-red-100 hover:bg-red-200' : 'bg-white hover:bg-gray-50'
                     }`}
                   >
-                    <Heart className={`h-5 w-5 ${isPropertySaved(property._id) ? 'text-red-600' : 'text-gray-600'}`} />
+                    <Heart className={`h-5 w-5 ${isPropertySaved(property._id) ? 'text-red-600 fill-current' : 'text-gray-600'}`} />
                   </button>
                   <div className="absolute top-4 left-4 px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-600">
                     {property.propertyType}
@@ -622,14 +628,17 @@ const Properties = () => {
                     </div>
                   </div>
                   
-                  <div className="mt-4 flex space-x-2">
-                    <button className="flex-1 bg-gray-900 text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-800 transition-colors duration-200">
-                      View Details
-                    </button>
-                    <button className="flex-1 border border-gray-900 text-gray-900 py-2 px-4 rounded-lg font-medium hover:bg-gray-100 transition-colors duration-200">
-                      Schedule Visit
-                    </button>
-                  </div>
+                                     <div className="mt-4 flex space-x-2">
+                     <button 
+                       onClick={() => handleViewDetails(property._id)}
+                       className="flex-1 bg-gray-900 text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-800 transition-colors duration-200"
+                     >
+                       View Details
+                     </button>
+                     <button className="flex-1 border border-gray-900 text-gray-900 py-2 px-4 rounded-lg font-medium hover:bg-gray-100 transition-colors duration-200">
+                       Schedule Visit
+                     </button>
+                   </div>
                 </div>
               </div>
             ))}
