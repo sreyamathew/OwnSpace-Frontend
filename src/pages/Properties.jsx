@@ -150,10 +150,80 @@ const Properties = () => {
   const handleFilterChange = (filterName, value) => {
     const newFilters = { ...filters, [filterName]: value };
     setFilters(newFilters);
-    // Do not apply automatically; wait for Search button click
+    
+    // Apply filters immediately for better user experience
+    if (value !== '') {
+      // If a filter is being set, apply it immediately
+      const updatedFilters = { ...filters, [filterName]: value };
+      handleSearchWithFilters(updatedFilters);
+    } else {
+      // If a filter is being cleared, reapply remaining filters
+      const updatedFilters = { ...filters, [filterName]: value };
+      if (updatedFilters.propertyType || updatedFilters.priceRange || updatedFilters.bedrooms || updatedFilters.location) {
+        handleSearchWithFilters(updatedFilters);
+      } else {
+        // No filters left, reset to all properties
+        resetAllFilters();
+      }
+    }
   };
 
-  const resetAllFilters = () => {
+  const handleSearchWithFilters = async (currentFilters) => {
+    // Build filter parameters for API call
+    const filterParams = {};
+    
+    if (currentFilters.propertyType) {
+      filterParams.propertyType = currentFilters.propertyType;
+    }
+    
+    if (currentFilters.priceRange) {
+      const [min, max] = currentFilters.priceRange.split('-').map(val => {
+        if (val === '999999999') return '';
+        return val;
+      });
+      if (min) filterParams.minPrice = min;
+      if (max && max !== '999999999') filterParams.maxPrice = max;
+    }
+    
+    if (currentFilters.bedrooms) {
+      filterParams.bedrooms = currentFilters.bedrooms;
+    }
+    
+    if (currentFilters.location) {
+      filterParams.city = currentFilters.location;
+    }
+    
+    // Add sorting parameter
+    if (sortBy !== 'relevance') {
+      filterParams.sortBy = sortBy;
+    }
+    
+    console.log('Fetching properties with filters:', filterParams);
+    
+    try {
+      setLoading(true);
+      const response = await propertyAPI.getAllProperties(filterParams);
+      
+      if (response.success) {
+        const fetchedProperties = response.data.properties || [];
+        setProperties(fetchedProperties);
+        setFilteredProperties(fetchedProperties);
+        
+        // Extract unique locations from fetched properties
+        const locations = [...new Set(fetchedProperties.map(p => p.address?.city).filter(Boolean))];
+        setAvailableLocations(locations);
+      } else {
+        setError('Failed to fetch properties');
+      }
+    } catch (error) {
+      console.error('Error fetching filtered properties:', error);
+      setError('Failed to fetch properties');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetAllFilters = async () => {
     const resetFilters = {
       propertyType: '',
       priceRange: '',
@@ -164,13 +234,39 @@ const Properties = () => {
     setSearchTerm('');
     setSortBy('relevance');
     
-    // Reset to show all properties
-    setFilteredProperties(properties);
+    // Reset to show all properties by refetching without filters
+    try {
+      setLoading(true);
+      const response = await propertyAPI.getAllProperties({});
+      
+      if (response.success) {
+        const fetchedProperties = response.data.properties || [];
+        setProperties(fetchedProperties);
+        setFilteredProperties(fetchedProperties);
+        
+        // Extract unique locations from fetched properties
+        const locations = [...new Set(fetchedProperties.map(p => p.address?.city).filter(Boolean))];
+        setAvailableLocations(locations);
+      } else {
+        setError('Failed to fetch properties');
+      }
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+      setError('Failed to fetch properties');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSortChange = (value) => {
     setSortBy(value);
-    // Do not apply automatically; wait for Search button click
+    // Apply filters immediately when sorting changes
+    if (filters.propertyType || filters.priceRange || filters.bedrooms || filters.location) {
+      handleSearch();
+    } else {
+      // If no filters are applied, just re-sort the current properties
+      applyFilters(filters, value, searchTerm, false);
+    }
   };
 
   const applyFilters = (currentFilters, currentSort, overrideSearchTerm, applyFacetFilters = true) => {
@@ -261,15 +357,23 @@ const Properties = () => {
     setFilteredProperties(filteredProperties);
   };
 
-  const handleSearch = () => {
-    applyFilters(filters, sortBy);
+  const handleSearch = async () => {
+    // Use the shared filter function
+    handleSearchWithFilters(filters);
   };
 
   // Update search term and apply filters
   const handleSearchTermChange = (value) => {
     setSearchTerm(value);
-    // Live text search only; facet filters apply when Search button is clicked
-    applyFilters(filters, sortBy, value, false);
+    
+    // If there are active filters, apply them with the new search term
+    if (filters.propertyType || filters.priceRange || filters.bedrooms || filters.location) {
+      // Apply search filter to current filtered results
+      applyFilters(filters, sortBy, value, false);
+    } else {
+      // No filters, just apply search to all properties
+      applyFilters(filters, sortBy, value, false);
+    }
   };
 
   const formatPrice = (price) => {
@@ -447,17 +551,17 @@ const Properties = () => {
                 <select 
                   value={filters.propertyType}
                   onChange={(e) => handleFilterChange('propertyType', e.target.value)}
-                  className="px-4 py-3 border border-gray-700 bg-gray-900 text-white rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-gray-600"
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">All Property Types</option>
-                  <option value="apartment">Apartment</option>
-                  <option value="house">House</option>
-                  <option value="villa">Villa</option>
-                  <option value="condo">Condo</option>
-                  <option value="townhouse">Townhouse</option>
-                  <option value="commercial">Commercial</option>
-                  <option value="land">Land</option>
-                  <option value="other">Other</option>
+                  <option value="Apartment">Apartment</option>
+                  <option value="House">House</option>
+                  <option value="Villa">Villa</option>
+                  <option value="Condo">Condo</option>
+                  <option value="Townhouse">Townhouse</option>
+                  <option value="Commercial">Commercial</option>
+                  <option value="Land">Land</option>
+                  <option value="Other">Other</option>
                 </select>
                 <button 
                   onClick={handleSearch}
@@ -482,6 +586,21 @@ const Properties = () => {
                   <Filter className="h-5 w-5 text-gray-500" />
                   <span className="font-medium text-gray-700">Filters:</span>
                 </div>
+                <select 
+                  value={filters.propertyType}
+                  onChange={(e) => handleFilterChange('propertyType', e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">All Property Types</option>
+                  <option value="Apartment">Apartment</option>
+                  <option value="House">House</option>
+                  <option value="Villa">Villa</option>
+                  <option value="Condo">Condo</option>
+                  <option value="Townhouse">Townhouse</option>
+                  <option value="Commercial">Commercial</option>
+                  <option value="Land">Land</option>
+                  <option value="Other">Other</option>
+                </select>
                 <select 
                   value={filters.priceRange}
                   onChange={(e) => handleFilterChange('priceRange', e.target.value)}
