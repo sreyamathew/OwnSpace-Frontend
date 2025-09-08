@@ -19,10 +19,13 @@ import {
   TrendingUp,
   Star,
   Users,
-  Home
+  Home,
+  Lock,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AgentSidebar from '../components/AgentSidebar';
+import ChangePasswordModal from '../components/ChangePasswordModal';
 
 const AgentProfile = () => {
   const navigate = useNavigate();
@@ -31,6 +34,12 @@ const AgentProfile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errors, setErrors] = useState({});
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  
+  // Check if agent has temporary password
+  const hasTemporaryPassword = user?.agentProfile?.tempPassword === true || 
+    user?.agentProfile?.passwordChanged === false ||
+    (user?.userType === 'agent' && user?.agentProfile?.passwordChanged === undefined);
   
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -219,6 +228,37 @@ const AgentProfile = () => {
           {errors.general && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-800">{errors.general}</p>
+            </div>
+          )}
+
+          {/* Security Notice for Temporary Password */}
+          {hasTemporaryPassword && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <AlertTriangle className="h-5 w-5 text-amber-400" />
+                </div>
+                <div className="ml-3 flex-1">
+                  <h3 className="text-sm font-medium text-amber-800">
+                    Security Notice
+                  </h3>
+                  <div className="mt-2 text-sm text-amber-700">
+                    <p>
+                      You are currently using a temporary password. For security reasons, 
+                      please change your password to a secure one of your choice.
+                    </p>
+                  </div>
+                  <div className="mt-3">
+                    <button
+                      onClick={() => setShowChangePasswordModal(true)}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-amber-800 bg-amber-100 hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
+                    >
+                      <Lock className="h-4 w-4 mr-2" />
+                      Change Password
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -601,12 +641,29 @@ const AgentProfile = () => {
                   <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
                     Schedule Appointment
                   </button>
+                  <button 
+                    onClick={() => setShowChangePasswordModal(true)}
+                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors flex items-center"
+                  >
+                    <Lock className="h-4 w-4 mr-2" />
+                    Change Password
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
+        onSuccess={() => {
+          // Logout user after password change
+          navigate('/login?message=password-changed');
+        }}
+      />
     </div>
   );
 };

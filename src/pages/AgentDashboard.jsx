@@ -51,6 +51,7 @@ const AgentDashboard = () => {
     }
   }, [location, navigate]);
 
+
   useEffect(() => {
     const fetchAgentProperties = async () => {
       try {
@@ -154,6 +155,7 @@ const AgentDashboard = () => {
 
         <main className="p-6">
           <div className="max-w-5xl mx-auto">
+
             {/* Success Message */}
             {successMessage && (
               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -303,6 +305,7 @@ const AgentDashboard = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };

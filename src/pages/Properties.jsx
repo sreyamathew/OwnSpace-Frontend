@@ -551,7 +551,7 @@ const Properties = () => {
                 <select 
                   value={filters.propertyType}
                   onChange={(e) => handleFilterChange('propertyType', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 text-black"
                 >
                   <option value="">All Property Types</option>
                   <option value="Apartment">Apartment</option>
@@ -716,7 +716,7 @@ const Properties = () => {
                   
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <div className="text-2xl font-bold text-green-600">₹{formatPrice(property.price)}</div>
+                      <div className="text-2xl font-bold text-green-600">{formatPrice(property.price)}</div>
                     </div>
                     <div className="text-right">
                       <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">

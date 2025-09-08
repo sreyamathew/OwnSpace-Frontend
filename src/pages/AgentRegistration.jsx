@@ -5,8 +5,6 @@ import {
   User, 
   Mail, 
   Lock, 
-  Eye, 
-  EyeOff, 
   ArrowRight,
   CheckCircle,
   Building,
@@ -30,29 +28,21 @@ import {
   validateEmail, 
   validatePhone, 
   validateLicenseNumber,
-  validatePassword, 
-  validateConfirmPassword, 
-  getFieldValidationMessage,
-  getPasswordStrength 
+  getFieldValidationMessage
 } from '../utils/validation';
 
 const AgentRegistration = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
   const [focusErrors, setFocusErrors] = useState({});
-  const [passwordStrength, setPasswordStrength] = useState({ strength: 0, label: 'No password', color: 'gray' });
   
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    password: '',
-    confirmPassword: '',
     licenseNumber: '',
     agency: '',
     experience: '',
@@ -86,19 +76,13 @@ const AgentRegistration = () => {
     
     // Clear focus error only if the input becomes valid
     if (focusErrors[name] && type !== 'file') {
-      const additionalData = name === 'confirmPassword' ? { password: formData.password } : {};
-      const errorMessage = getFieldValidationMessage(name, newValue, additionalData);
+      const errorMessage = getFieldValidationMessage(name, newValue);
       if (!errorMessage) {
         setFocusErrors(prev => ({
           ...prev,
           [name]: ''
         }));
       }
-    }
-
-    // Update password strength in real-time
-    if (name === 'password') {
-      setPasswordStrength(getPasswordStrength(newValue));
     }
   };
 
@@ -114,8 +98,7 @@ const AgentRegistration = () => {
   const handleInputBlur = (e) => {
     const { name, value } = e.target;
     // Show validation error when user leaves the field
-    const additionalData = name === 'confirmPassword' ? { password: formData.password } : {};
-    const errorMessage = getFieldValidationMessage(name, value, additionalData);
+    const errorMessage = getFieldValidationMessage(name, value);
     if (errorMessage) {
       setFocusErrors(prev => ({
         ...prev,
@@ -143,18 +126,6 @@ const AgentRegistration = () => {
     const phoneErrors = validatePhone(formData.phone);
     if (phoneErrors.length > 0) {
       newErrors.phone = phoneErrors[0];
-    }
-    
-    // Validate password
-    const passwordErrors = validatePassword(formData.password);
-    if (passwordErrors.length > 0) {
-      newErrors.password = passwordErrors[0];
-    }
-    
-    // Validate confirm password
-    const confirmPasswordErrors = validateConfirmPassword(formData.password, formData.confirmPassword);
-    if (confirmPasswordErrors.length > 0) {
-      newErrors.confirmPassword = confirmPasswordErrors[0];
     }
     
     // Validate license number
@@ -191,7 +162,6 @@ const AgentRegistration = () => {
       const agentData = {
         name: formData.name,
         email: formData.email,
-        password: formData.password,
         phone: formData.phone,
         licenseNumber: formData.licenseNumber,
         agency: formData.agency,
@@ -207,15 +177,13 @@ const AgentRegistration = () => {
       const response = await authAPI.registerAgent(agentData);
       
       if (response.success) {
-        setSuccessMessage('Agent registered successfully! The agent can now login with their credentials.');
+        setSuccessMessage('Agent registered successfully! Login credentials have been sent to their email address. The agent can now access their dashboard using the temporary password provided in the email.');
         
         // Reset form
         setFormData({
           name: '',
           email: '',
           phone: '',
-          password: '',
-          confirmPassword: '',
           licenseNumber: '',
           agency: '',
           experience: '',
@@ -493,108 +461,24 @@ const AgentRegistration = () => {
                   </div>
                 </div>
 
-                {/* Security */}
+                {/* Security Notice */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Security</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Password */}
-                    <div>
-                      <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                        Password *
-                      </label>
-                      <div className="mt-1 relative">
-                        <input
-                          id="password"
-                          name="password"
-                          type={showPassword ? 'text' : 'password'}
-                          required
-                          value={formData.password}
-                          onChange={handleInputChange}
-                          onFocus={handleInputFocus}
-                          onBlur={handleInputBlur}
-                          className={`block w-full px-3 py-2 pl-10 pr-10 border ${
-                            errors.password || focusErrors.password ? 'border-red-300' : 'border-gray-300'
-                          } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                          placeholder="••••••••"
-                        />
-                        <Lock className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
-                        <button
-                          type="button"
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-5 w-5 text-gray-400" />
-                          ) : (
-                            <Eye className="h-5 w-5 text-gray-400" />
-                          )}
-                        </button>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <Lock className="h-5 w-5 text-blue-400" />
                       </div>
-                      {/* Password Strength Indicator */}
-                      {formData.password && (
-                        <div className="mt-2">
-                          <div className="flex items-center space-x-2">
-                            <div className="flex-1 bg-gray-200 rounded-full h-2">
-                              <div 
-                                className={`h-2 rounded-full transition-all duration-300 ${
-                                  passwordStrength.color === 'red' ? 'bg-red-500' :
-                                  passwordStrength.color === 'yellow' ? 'bg-yellow-500' :
-                                  passwordStrength.color === 'green' ? 'bg-green-500' : 'bg-gray-300'
-                                }`}
-                                style={{ width: `${(passwordStrength.strength / 6) * 100}%` }}
-                              ></div>
-                            </div>
-                            <span className={`text-xs font-medium ${
-                              passwordStrength.color === 'red' ? 'text-red-600' :
-                              passwordStrength.color === 'yellow' ? 'text-yellow-600' :
-                              passwordStrength.color === 'green' ? 'text-green-600' : 'text-gray-500'
-                            }`}>
-                              {passwordStrength.label}
-                            </span>
-                          </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-blue-800">
+                          Security Information
+                        </h3>
+                        <div className="mt-2 text-sm text-blue-700">
+                          <p>
+                            A temporary password will be automatically generated and sent to the agent's email address. 
+                            The agent will be required to change this password on their first login for security reasons.
+                          </p>
                         </div>
-                      )}
-                      {(errors.password || focusErrors.password) && (
-                        <p className="mt-1 text-sm text-red-600">{errors.password || focusErrors.password}</p>
-                      )}
-                    </div>
-
-                    {/* Confirm Password */}
-                    <div>
-                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                        Confirm Password *
-                      </label>
-                      <div className="mt-1 relative">
-                        <input
-                          id="confirmPassword"
-                          name="confirmPassword"
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          required
-                          value={formData.confirmPassword}
-                          onChange={handleInputChange}
-                          onFocus={handleInputFocus}
-                          onBlur={handleInputBlur}
-                          className={`block w-full px-3 py-2 pl-10 pr-10 border ${
-                            errors.confirmPassword || focusErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                          } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                          placeholder="••••••••"
-                        />
-                        <Lock className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
-                        <button
-                          type="button"
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        >
-                          {showConfirmPassword ? (
-                            <EyeOff className="h-5 w-5 text-gray-400" />
-                          ) : (
-                            <Eye className="h-5 w-5 text-gray-400" />
-                          )}
-                        </button>
                       </div>
-                      {(errors.confirmPassword || focusErrors.confirmPassword) && (
-                        <p className="mt-1 text-sm text-red-600">{errors.confirmPassword || focusErrors.confirmPassword}</p>
-                      )}
                     </div>
                   </div>
                 </div>

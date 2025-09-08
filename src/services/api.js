@@ -235,6 +235,21 @@ export const authAPI = {
       throw error;
     }
   },
+
+  // Change password
+  changePassword: async (data) => {
+    try {
+      const response = await apiRequest('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        includeAuth: true
+      });
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 // Health check function

@@ -68,6 +68,12 @@ const Login = () => {
     if (urlError) {
       setErrors({ general: decodeURIComponent(urlError) });
     }
+
+    // Check for success message in URL params
+    const message = searchParams.get('message');
+    if (message === 'password-changed') {
+      setSuccessMessage('Password changed successfully! Please login with your new password.');
+    }
   }, [isAuthenticated, isAdmin, isAgent, navigate, searchParams]);
 
   const handleInputChange = (e) => {
