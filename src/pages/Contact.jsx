@@ -56,7 +56,7 @@ const Contact = () => {
     {
       icon: Phone,
       title: 'Phone',
-      details: '+1 (555) 123-4567',
+      details: '+91 (807) 859-2261',
       description: 'Mon-Fri from 8am to 6pm'
     },
     {
@@ -68,8 +68,8 @@ const Contact = () => {
     {
       icon: MapPin,
       title: 'Office',
-      details: '123 Real Estate Ave',
-      description: 'Business District, City 12345'
+      details: 'Ownspace Real Estate',
+      description: 'MG Road , Ernakulam District'
     },
     {
       icon: Clock,
@@ -85,21 +85,21 @@ const Contact = () => {
       title: 'Sales Team',
       description: 'Get in touch with our sales team for pricing and demos',
       email: 'sales@ownspace.com',
-      phone: '+1 (555) 123-4567'
+      phone: '+91 (807) 859-2261'
     },
     {
       icon: Building,
       title: 'Technical Support',
       description: 'Need help with our platform? Our tech team is here to help',
       email: 'support@ownspace.com',
-      phone: '+1 (555) 123-4568'
+      phone: '+91 (807) 859-2261'
     },
     {
       icon: MessageCircle,
       title: 'General Inquiries',
       description: 'For general questions and information about our services',
       email: 'info@ownspace.com',
-      phone: '+1 (555) 123-4569'
+      phone: '+91 (807) 859-2261'
     }
   ];
 
@@ -418,7 +418,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-1">Phone</h4>
-                      <p className="text-gray-600">+91 484 123 4567</p>
+                      <p className="text-gray-600">+91 807 859 2261</p>
                     </div>
                   </div>
 
