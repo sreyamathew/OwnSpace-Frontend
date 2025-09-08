@@ -41,6 +41,9 @@ const UserDashboard = () => {
   const [visibleCount, setVisibleCount] = useState(9);
   const [scheduling, setScheduling] = useState({ open: false, property: null, date: '', time: '', note: '' });
   const [profileOpen, setProfileOpen] = useState(false);
+  // Compute local today string (YYYY-MM-DD) to restrict past dates
+  const todayLocal = new Date();
+  const minDate = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
 
   useEffect(() => {
     fetchProperties();
@@ -539,6 +542,7 @@ const UserDashboard = () => {
                   type="date"
                   value={scheduling.date}
                   onChange={(e) => setScheduling(prev => ({ ...prev, date: e.target.value }))}
+                  min={minDate}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>

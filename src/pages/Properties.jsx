@@ -35,6 +35,9 @@ const Properties = () => {
   const [error, setError] = useState('');
   const [availableLocations, setAvailableLocations] = useState([]);
   const [scheduling, setScheduling] = useState({ open: false, property: null, date: '', time: '', note: '' });
+  // Compute local today string (YYYY-MM-DD) to restrict past dates
+  const todayLocal = new Date();
+  const minDate = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
 
   useEffect(() => {
     fetchProperties();
@@ -823,6 +826,7 @@ const Properties = () => {
                   type="date"
                   value={scheduling.date}
                   onChange={(e) => setScheduling(prev => ({ ...prev, date: e.target.value }))}
+                  min={minDate}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>

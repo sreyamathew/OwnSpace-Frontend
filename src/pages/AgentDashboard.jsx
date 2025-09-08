@@ -34,7 +34,6 @@ const AgentDashboard = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [visitRequests, setVisitRequests] = useState([]);
-  const [decision, setDecision] = useState({ open: false, id: null, suggestDate: '', suggestTime: '' });
 
   useEffect(() => {
     // Check for success message in URL params
@@ -100,16 +99,13 @@ const AgentDashboard = () => {
     } catch (e) { alert('Failed to approve'); }
   };
 
-  const openRejectModal = (id) => setDecision({ open: true, id, suggestDate: '', suggestTime: '' });
-  const closeRejectModal = () => setDecision({ open: false, id: null, suggestDate: '', suggestTime: '' });
-  const rejectVisit = async () => {
+  const rejectVisit = async (id) => {
     try {
-      const { id, suggestDate, suggestTime } = decision;
-      await visitAPI.updateVisitStatus(id, 'rejected');
-      setVisitRequests(prev => prev.filter(v => v._id !== id));
-      closeRejectModal();
-      const suggestion = suggestDate && suggestTime ? ` Suggested: ${suggestDate} ${suggestTime}` : '';
-      alert(`Visit rejected.${suggestion}`);
+      const res = await visitAPI.updateVisitStatus(id, 'rejected');
+      if (res.success) {
+        setVisitRequests(prev => prev.filter(v => v._id !== id));
+        alert('Visit rejected.');
+      }
     } catch (e) { alert('Failed to reject'); }
   };
 
@@ -273,7 +269,7 @@ const AgentDashboard = () => {
                       </div>
                       <div className="flex items-center space-x-2">
                         <button onClick={() => approveVisit(v._id)} className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">Approve</button>
-                        <button onClick={() => openRejectModal(v._id)} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Reject</button>
+                        <button onClick={() => rejectVisit(v._id)} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Reject</button>
                       </div>
                     </div>
                   ))}
@@ -283,28 +279,7 @@ const AgentDashboard = () => {
           </div>
         </main>
       </div>
-      {/* Reject modal with suggestion */}
-      {decision.open && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Reject & Suggest Time</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Suggest Date</label>
-                <input type="date" value={decision.suggestDate} onChange={(e) => setDecision(prev => ({ ...prev, suggestDate: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Suggest Time</label>
-                <input type="time" value={decision.suggestTime} onChange={(e) => setDecision(prev => ({ ...prev, suggestTime: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
-              </div>
-            </div>
-            <div className="mt-4 flex justify-end space-x-2">
-              <button onClick={closeRejectModal} className="px-4 py-2 border border-gray-300 rounded">Cancel</button>
-              <button onClick={rejectVisit} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Reject</button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
     </div>
   );

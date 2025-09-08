@@ -32,6 +32,9 @@ const PropertyDetail = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [savedProperties, setSavedProperties] = useState([]);
   const [scheduling, setScheduling] = useState({ open: false, date: '', time: '', note: '' });
+  // Compute local today string (YYYY-MM-DD) to restrict past dates
+  const todayLocal = new Date();
+  const minDate = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
 
   useEffect(() => {
     if (id) {
@@ -494,6 +497,7 @@ const PropertyDetail = () => {
                   type="date"
                   value={scheduling.date}
                   onChange={(e) => setScheduling(prev => ({ ...prev, date: e.target.value }))}
+                  min={minDate}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>

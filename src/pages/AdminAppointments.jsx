@@ -8,7 +8,6 @@ const AdminAppointments = () => {
   const [visits, setVisits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [editing, setEditing] = useState({ open: false, id: null, date: '', time: '' });
 
   useEffect(() => {
     const load = async () => {
@@ -22,24 +21,15 @@ const AdminAppointments = () => {
     load();
   }, []);
 
-  const openEdit = (v) => setEditing({ open: true, id: v._id, date: v.scheduledAt?.slice(0,10) || '', time: v.scheduledAt ? new Date(v.scheduledAt).toISOString().slice(11,16) : '' });
-  const closeEdit = () => setEditing({ open: false, id: null, date: '', time: '' });
-  const submitEdit = async () => {
-    try {
-      const { id, date, time } = editing;
-      const scheduledAt = new Date(`${date}T${time}:00`);
-      const res = await visitAPI.recipientReschedule(id, scheduledAt);
-      if (res.success) {
-        setVisits(prev => prev.map(v => v._id === id ? { ...v, scheduledAt: scheduledAt.toISOString() } : v));
-        closeEdit();
-      }
-    } catch (e) { alert('Failed to reschedule'); }
-  };
+  // Edit/reschedule flow removed
 
   const cancel = async (id) => {
     try {
       const res = await visitAPI.updateVisitStatus(id, 'rejected');
-      if (res.success) setVisits(prev => prev.filter(v => v._id !== id));
+      if (res.success) {
+        setVisits(prev => prev.filter(v => v._id !== id));
+        alert('Visit cancelled. The requester has been notified by email.');
+      }
     } catch (e) { alert('Failed to cancel'); }
   };
 
@@ -76,7 +66,6 @@ const AdminAppointments = () => {
                       <div className="text-sm text-gray-600">When: {new Date(v.scheduledAt).toLocaleString()}</div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <button onClick={() => openEdit(v)} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Edit</button>
                       <button onClick={() => cancel(v._id)} className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Cancel</button>
                     </div>
                   </div>
@@ -87,27 +76,7 @@ const AdminAppointments = () => {
         </main>
       </div>
 
-      {editing.open && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Reschedule Appointment</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                <input type="date" value={editing.date} onChange={(e) => setEditing(prev => ({ ...prev, date: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                <input type="time" value={editing.time} onChange={(e) => setEditing(prev => ({ ...prev, time: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded" />
-              </div>
-            </div>
-            <div className="mt-4 flex justify-end space-x-2">
-              <button onClick={closeEdit} className="px-4 py-2 border border-gray-300 rounded">Cancel</button>
-              <button onClick={submitEdit} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Edit/reschedule modal removed */}
     </div>
   );
 };

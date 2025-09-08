@@ -8,6 +8,9 @@ const UserAppointments = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState({ open: false, id: null, date: '', time: '', note: '' });
+  // Compute local today string (YYYY-MM-DD) to restrict past dates in edit modal
+  const todayLocal = new Date();
+  const minDate = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
 
   const load = async (status) => {
     try {
@@ -63,7 +66,10 @@ const UserAppointments = () => {
         <div>No appointments.</div>
       ) : (
         <div className="space-y-3">
-          {visits.map(v => (
+          {visits.map(v => {
+            const status = (v.status || '').toLowerCase();
+            const isFinal = status === 'approved' || status === 'rejected';
+            return (
             <div key={v._id} className="bg-white border border-gray-200 rounded p-4 flex items-center justify-between">
               <div>
                 <div className="font-medium text-gray-900">{v.property?.title || 'Property'}</div>
@@ -71,18 +77,22 @@ const UserAppointments = () => {
                 <div className="text-xs text-gray-500">Status: {v.status}</div>
               </div>
               <div className="flex items-center space-x-2">
-                {v.status === 'approved' && (
+                {status === 'approved' && (
                   <button onClick={() => setTab('approved')} className="px-3 py-1 border border-gray-300 rounded" disabled>Approved</button>
                 )}
-                {v.status !== 'approved' && (
+                {status === 'rejected' && (
+                  <button onClick={() => setTab('rejected')} className="px-3 py-1 border border-gray-300 rounded" disabled>Rejected</button>
+                )}
+                {!isFinal && (
                   <button onClick={() => openEdit(v)} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Edit</button>
                 )}
-                {v.status !== 'approved' && (
+                {!isFinal && (
                   <button onClick={() => cancel(v._id)} className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Cancel</button>
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -93,7 +103,7 @@ const UserAppointments = () => {
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                <input type="date" value={editing.date} onChange={(e) => setEditing(prev => ({ ...prev, date: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded" />
+                <input type="date" value={editing.date} onChange={(e) => setEditing(prev => ({ ...prev, date: e.target.value }))} min={minDate} className="w-full px-3 py-2 border border-gray-300 rounded" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>

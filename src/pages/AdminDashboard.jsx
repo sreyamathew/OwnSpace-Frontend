@@ -55,7 +55,6 @@ const AdminDashboard = () => {
   const [propertiesCount, setPropertiesCount] = useState(0);
   const [propertiesLoading, setPropertiesLoading] = useState(true);
   const [visitRequests, setVisitRequests] = useState([]);
-  const [decision, setDecision] = useState({ open: false, id: null, suggestDate: '', suggestTime: '' });
 
   useEffect(() => {
     const fetchPropertiesCount = async () => {
@@ -93,16 +92,13 @@ const AdminDashboard = () => {
       }
     } catch (e) { alert('Failed to approve'); }
   };
-  const openRejectModal = (id) => setDecision({ open: true, id, suggestDate: '', suggestTime: '' });
-  const closeRejectModal = () => setDecision({ open: false, id: null, suggestDate: '', suggestTime: '' });
-  const rejectVisit = async () => {
+  const rejectVisit = async (id) => {
     try {
-      const { id, suggestDate, suggestTime } = decision;
-      await visitAPI.updateVisitStatus(id, 'rejected');
-      setVisitRequests(prev => prev.filter(v => v._id !== id));
-      closeRejectModal();
-      const suggestion = suggestDate && suggestTime ? ` Suggested: ${suggestDate} ${suggestTime}` : '';
-      alert(`Visit rejected.${suggestion}`);
+      const res = await visitAPI.updateVisitStatus(id, 'rejected');
+      if (res.success) {
+        setVisitRequests(prev => prev.filter(v => v._id !== id));
+        alert('Visit rejected.');
+      }
     } catch (e) { alert('Failed to reject'); }
   };
 
@@ -342,7 +338,7 @@ const AdminDashboard = () => {
                         </div>
                         <div className="flex items-center space-x-2">
                           <button onClick={() => approveVisit(v._id)} className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">Approve</button>
-                          <button onClick={() => openRejectModal(v._id)} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Reject</button>
+                          <button onClick={() => rejectVisit(v._id)} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Reject</button>
                         </div>
                       </div>
                     ))}
