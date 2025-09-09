@@ -437,7 +437,7 @@ const PropertyDetail = () => {
                     </div>
                   </div>
                   
-                  <div className="space-y-3">
+                  {/* <div className="space-y-3">
                     {property.agent.email && (
                       <div className="flex items-center space-x-3">
                         <Mail className="h-4 w-4 text-gray-500" />
@@ -450,7 +450,7 @@ const PropertyDetail = () => {
                         <span className="text-sm text-gray-700">{property.agent.phone}</span>
                       </div>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               )}
               
