@@ -10,10 +10,10 @@ import {
   DollarSign,
   Filter,
   Search,
-  ExternalLink
+  ExternalLink,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { authAPI } from '../services/api';
 import ContactNavbar from '../components/ContactNavbar';
 
 const PropertyHistory = () => {
@@ -22,37 +22,27 @@ const PropertyHistory = () => {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [viewHistory, setViewHistory] = useState([]);
-  const [visibleCount, setVisibleCount] = useState(10);
+  // Show full history without pagination
   const [savedMap, setSavedMap] = useState({});
 
   useEffect(() => {
-    (async () => {
-      try {
-        if (!user) return;
-        const key = `recentlyViewed_${user.id}`;
-        const raw = localStorage.getItem(key) || '[]';
-        const parsed = JSON.parse(raw);
-        const items = Array.isArray(parsed) ? parsed : [];
-        setViewHistory(items);
-        // Initialize saved map from backend
-        try {
-          const res = await authAPI.getSaved();
-          const map = {};
-          if (res?.success && Array.isArray(res.data)) {
-            res.data.forEach(p => { if (p && p._id) map[p._id] = true; });
-          }
-          setSavedMap(map);
-        } catch (_) {}
-      } catch (e) {
-        console.warn('Failed to load recently viewed history:', e);
-        setViewHistory([]);
-      }
-    })();
+    try {
+      if (!user) return;
+      const key = `recentlyViewed_${user.id}`;
+      const raw = localStorage.getItem(key) || '[]';
+      const parsed = JSON.parse(raw);
+      const items = Array.isArray(parsed) ? parsed : [];
+      setViewHistory(items);
+    } catch (e) {
+      console.warn('Failed to load recently viewed history:', e);
+      setViewHistory([]);
+    }
   }, [user]);
 
   const getActionColor = (action) => {
     switch (action) {
       case 'viewed': return 'bg-blue-100 text-blue-800';
+      case 'visit_requested': return 'bg-orange-100 text-orange-800';
       case 'saved': return 'bg-green-100 text-green-800';
       case 'contacted_agent': return 'bg-purple-100 text-purple-800';
       case 'scheduled_visit': return 'bg-orange-100 text-orange-800';
@@ -63,6 +53,7 @@ const PropertyHistory = () => {
   const getActionText = (action) => {
     switch (action) {
       case 'viewed': return 'Viewed';
+      case 'visit_requested': return 'Visit Requested';
       case 'saved': return 'Saved';
       case 'contacted_agent': return 'Contacted Agent';
       case 'scheduled_visit': return 'Scheduled Visit';
@@ -87,7 +78,7 @@ const PropertyHistory = () => {
     return filtered;
   })();
 
-  const visibleHistory = filteredHistory.slice(0, visibleCount);
+  const visibleHistory = filteredHistory; // no limit
 
   const toggleSave = async (propertyId) => {
     if (!user) return;
@@ -129,6 +120,17 @@ const PropertyHistory = () => {
     } catch (_) {
       return `₹${(price || 0).toLocaleString('en-IN')}`;
     }
+  };
+
+  const deleteHistory = (viewedAt) => {
+    try {
+      const key = `recentlyViewed_${user.id}`;
+      const raw = localStorage.getItem(key) || '[]';
+      const arr = JSON.parse(raw);
+      const filtered = (Array.isArray(arr) ? arr : []).filter(i => i && i.viewedAt !== viewedAt);
+      localStorage.setItem(key, JSON.stringify(filtered));
+      setViewHistory(filtered);
+    } catch (e) { console.warn('Failed to delete history record:', e); }
   };
 
   return (
@@ -230,6 +232,13 @@ const PropertyHistory = () => {
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${getActionColor(item.action)}`}>
                           {getActionText(item.action)}
                         </span>
+                        <button
+                          onClick={() => deleteHistory(item.viewedAt)}
+                          className="p-1 rounded hover:bg-gray-100"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4 text-gray-500" />
+                        </button>
                       </div>
                     </div>
 
@@ -289,16 +298,7 @@ const PropertyHistory = () => {
         )}
 
         {/* Summary Stats */}
-        {filteredHistory.length > visibleHistory.length && (
-          <div className="mt-6 flex justify-center">
-            <button
-              onClick={() => setVisibleCount(c => c + 10)}
-              className="px-6 py-2 bg-gray-100 text-gray-800 rounded-md border border-gray-300 hover:bg-gray-200"
-            >
-              Load more
-            </button>
-          </div>
-        )}
+        {/* No load more; full history is shown */}
 
         {filteredHistory.length > 0 && (
           <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">

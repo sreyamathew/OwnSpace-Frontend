@@ -31,7 +31,7 @@ const PropertyDetail = () => {
   const [error, setError] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [savedProperties, setSavedProperties] = useState([]);
-  const [scheduling, setScheduling] = useState({ open: false, date: '', time: '', note: '' });
+  const [scheduling, setScheduling] = useState({ open: false, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
   const isStaffView = user?.userType === 'admin' || user?.userType === 'agent';
   // Compute local today string (YYYY-MM-DD) to restrict past dates
   const todayLocal = new Date();
@@ -76,12 +76,10 @@ const PropertyDetail = () => {
               action: 'viewed'
             };
 
-            // Remove duplicates by propertyId, then unshift the latest
-            const deduped = existingList.filter(i => i && i.propertyId !== viewedItem.propertyId);
-            deduped.unshift(viewedItem);
-            // Keep a larger rolling history so "Load more" can reveal older items
-            const limited = deduped.slice(0, 200);
-            localStorage.setItem(key, JSON.stringify(limited));
+            // Append full history without limit; keep deduped by timestamped entries
+            const deduped = existingList.filter(i => i && !(i.propertyId === viewedItem.propertyId && i.action === 'viewed'));
+            const updated = [viewedItem, ...deduped];
+            localStorage.setItem(key, JSON.stringify(updated));
           } catch (e) {
             console.warn('Failed to record recently viewed property:', e);
           }
@@ -163,30 +161,58 @@ const PropertyDetail = () => {
     return savedProperties.some(p => p._id === property._id);
   };
 
-  const openScheduleModal = () => {
+  const openScheduleModal = async () => {
     if (!user) {
       alert('Please login to schedule a visit');
       return;
     }
-    setScheduling({ open: true, date: '', time: '', note: '' });
+    if (!property) return;
+    setScheduling({ open: true, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: true });
+    try {
+      const res = await visitAPI.getAvailability(property._id);
+      if (res.success) {
+        setScheduling(prev => ({ ...prev, availableDates: res.data.availableDates || [], slotsByDate: res.data.slotsByDate || {}, loading: false }));
+      } else {
+        setScheduling(prev => ({ ...prev, loading: false }));
+      }
+    } catch (e) {
+      console.error('Failed to load availability', e);
+      setScheduling(prev => ({ ...prev, loading: false }));
+    }
   };
 
   const closeScheduleModal = () => {
-    setScheduling({ open: false, date: '', time: '', note: '' });
+    setScheduling({ open: false, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
   };
 
   const submitSchedule = async () => {
     try {
       if (!scheduling.date || !scheduling.time) {
-        alert('Please select date and time');
+        alert('Please select an available date and time');
         return;
       }
       const scheduledAt = new Date(`${scheduling.date}T${scheduling.time}:00`);
       const res = await visitAPI.createVisitRequest({ propertyId: property._id, scheduledAt, note: scheduling.note });
       if (res.success) {
         alert('Visit request sent for approval');
+        try {
+          const key = `recentlyViewed_${user.id}`;
+          const raw = localStorage.getItem(key) || '[]';
+          let list = [];
+          try { list = JSON.parse(raw); if (!Array.isArray(list)) list = []; } catch (_) { list = []; }
+          const historyItem = {
+            propertyId: property._id,
+            title: property.title,
+            price: property.price,
+            location: `${property.address?.city || ''}${property.address?.state ? ', ' + property.address.state : ''}`.trim(),
+            viewedAt: new Date().toISOString(),
+            image: property.images?.[0]?.url || null,
+            action: 'visit_requested'
+          };
+          const updated = [historyItem, ...list];
+          localStorage.setItem(key, JSON.stringify(updated));
+        } catch (_) {}
         closeScheduleModal();
-        recordHistoryAction('scheduled_visit');
       }
     } catch (e) {
       console.error('Failed to create visit request', e);
@@ -491,22 +517,34 @@ const PropertyDetail = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                <input
-                  type="date"
+                <select
                   value={scheduling.date}
-                  onChange={(e) => setScheduling(prev => ({ ...prev, date: e.target.value }))}
-                  min={minDate}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
+                  onChange={(e) => setScheduling(prev => ({ ...prev, date: e.target.value, time: '' }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
+                >
+                  <option value="" disabled>{scheduling.loading ? 'Loading...' : 'Select a date'}</option>
+                  {scheduling.availableDates.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                <input
-                  type="time"
-                  value={scheduling.time}
-                  onChange={(e) => setScheduling(prev => ({ ...prev, time: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
+                <div className="grid grid-cols-3 gap-2">
+                  {(scheduling.date && scheduling.slotsByDate[scheduling.date] ? scheduling.slotsByDate[scheduling.date] : []).length === 0 ? (
+                    <div className="col-span-3 text-sm text-gray-500">{scheduling.date ? 'No slots available for this date' : 'Select a date first'}</div>
+                  ) : (
+                    scheduling.slotsByDate[scheduling.date].map((slot) => (
+                      <button
+                        key={slot.slotId}
+                        onClick={() => setScheduling(prev => ({ ...prev, time: slot.startTime }))}
+                        className={`px-3 py-2 border rounded-md text-sm ${scheduling.time === slot.startTime ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                      >
+                        {slot.startTime} - {slot.endTime}
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Note (optional)</label>

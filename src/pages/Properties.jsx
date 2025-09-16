@@ -121,6 +121,23 @@ const Properties = () => {
       const res = await visitAPI.createVisitRequest({ propertyId: scheduling.property._id, scheduledAt, note: scheduling.note });
       if (res.success) {
         alert('Visit request sent for approval');
+        try {
+          const key = `recentlyViewed_${user.id}`;
+          const raw = localStorage.getItem(key) || '[]';
+          let list = [];
+          try { list = JSON.parse(raw); if (!Array.isArray(list)) list = []; } catch (_) { list = []; }
+          const historyItem = {
+            propertyId: scheduling.property._id,
+            title: scheduling.property.title,
+            price: scheduling.property.price,
+            location: `${scheduling.property.address?.city || ''}${scheduling.property.address?.state ? ', ' + scheduling.property.address.state : ''}`.trim(),
+            viewedAt: new Date().toISOString(),
+            image: scheduling.property.images?.[0]?.url || null,
+            action: 'visit_requested'
+          };
+          const updated = [historyItem, ...list];
+          localStorage.setItem(key, JSON.stringify(updated));
+        } catch (_) {}
         closeScheduleModal();
       }
     } catch (e) {
