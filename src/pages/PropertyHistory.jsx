@@ -13,6 +13,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { authAPI } from '../services/api';
 import ContactNavbar from '../components/ContactNavbar';
 
 const PropertyHistory = () => {
@@ -25,27 +26,28 @@ const PropertyHistory = () => {
   const [savedMap, setSavedMap] = useState({});
 
   useEffect(() => {
-    try {
-      if (!user) return;
-      const key = `recentlyViewed_${user.id}`;
-      const raw = localStorage.getItem(key) || '[]';
-      const parsed = JSON.parse(raw);
-      const items = Array.isArray(parsed) ? parsed : [];
-      setViewHistory(items);
-      // Initialize saved map from savedProperties storage if present
+    (async () => {
       try {
-        const savedRaw = localStorage.getItem(`savedProperties_${user.id}`) || '[]';
-        const savedArr = JSON.parse(savedRaw);
-        const map = {};
-        if (Array.isArray(savedArr)) {
-          savedArr.forEach(p => { if (p && p._id) map[p._id] = true; });
-        }
-        setSavedMap(map);
-      } catch (_) {}
-    } catch (e) {
-      console.warn('Failed to load recently viewed history:', e);
-      setViewHistory([]);
-    }
+        if (!user) return;
+        const key = `recentlyViewed_${user.id}`;
+        const raw = localStorage.getItem(key) || '[]';
+        const parsed = JSON.parse(raw);
+        const items = Array.isArray(parsed) ? parsed : [];
+        setViewHistory(items);
+        // Initialize saved map from backend
+        try {
+          const res = await authAPI.getSaved();
+          const map = {};
+          if (res?.success && Array.isArray(res.data)) {
+            res.data.forEach(p => { if (p && p._id) map[p._id] = true; });
+          }
+          setSavedMap(map);
+        } catch (_) {}
+      } catch (e) {
+        console.warn('Failed to load recently viewed history:', e);
+        setViewHistory([]);
+      }
+    })();
   }, [user]);
 
   const getActionColor = (action) => {
@@ -87,28 +89,15 @@ const PropertyHistory = () => {
 
   const visibleHistory = filteredHistory.slice(0, visibleCount);
 
-  const toggleSave = (propertyId) => {
+  const toggleSave = async (propertyId) => {
     if (!user) return;
     try {
-      const savedKey = `savedProperties_${user.id}`;
-      const raw = localStorage.getItem(savedKey) || '[]';
-      let savedArr = [];
-      try { savedArr = JSON.parse(raw); if (!Array.isArray(savedArr)) savedArr = []; } catch (_) { savedArr = []; }
-
       const isSaved = !!savedMap[propertyId];
       if (isSaved) {
-        // remove
-        savedArr = savedArr.filter(p => p && p._id !== propertyId);
+        await authAPI.removeSaved(propertyId);
       } else {
-        // try to find minimal info from history to store
-        const src = viewHistory.find(v => v.propertyId === propertyId);
-        if (src) {
-          savedArr.push({ _id: propertyId, title: src.title, price: src.price, address: { city: src.location } });
-        } else {
-          savedArr.push({ _id: propertyId });
-        }
+        await authAPI.addSaved(propertyId);
       }
-      localStorage.setItem(savedKey, JSON.stringify(savedArr));
       setSavedMap(prev => ({ ...prev, [propertyId]: !isSaved }));
       // Reflect action label in history item if saved
       setViewHistory(prev => prev.map(i => i.propertyId === propertyId ? { ...i, action: !isSaved ? 'saved' : 'viewed' } : i));

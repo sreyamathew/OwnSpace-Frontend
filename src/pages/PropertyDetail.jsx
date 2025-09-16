@@ -20,7 +20,7 @@ import {
   Share2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { propertyAPI, visitAPI } from '../services/api';
+import { propertyAPI, visitAPI, authAPI } from '../services/api';
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -99,10 +99,8 @@ const PropertyDetail = () => {
 
   const fetchSavedProperties = async () => {
     try {
-      // Get saved properties from localStorage for now
-      // In a real app, this would be an API call
-      const saved = JSON.parse(localStorage.getItem(`savedProperties_${user.id}`) || '[]');
-      setSavedProperties(saved);
+      const res = await authAPI.getSaved();
+      if (res.success) setSavedProperties(res.data || []);
     } catch (error) {
       console.error('Error fetching saved properties:', error);
     }
@@ -117,17 +115,12 @@ const PropertyDetail = () => {
 
     try {
       const isSaved = savedProperties.some(p => p._id === property._id);
-      
       if (isSaved) {
-        // Remove from saved
-        const updatedSaved = savedProperties.filter(p => p._id !== property._id);
-        setSavedProperties(updatedSaved);
-        localStorage.setItem(`savedProperties_${user.id}`, JSON.stringify(updatedSaved));
+        await authAPI.removeSaved(property._id);
+        setSavedProperties(prev => prev.filter(p => p._id !== property._id));
       } else {
-        // Add to saved
-        const updatedSaved = [...savedProperties, property];
-        setSavedProperties(updatedSaved);
-        localStorage.setItem(`savedProperties_${user.id}`, JSON.stringify(updatedSaved));
+        await authAPI.addSaved(property._id);
+        setSavedProperties(prev => [...prev, property]);
       }
     } catch (error) {
       console.error('Error toggling save property:', error);

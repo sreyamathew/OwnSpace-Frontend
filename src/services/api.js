@@ -250,6 +250,22 @@ export const authAPI = {
       throw error;
     }
   },
+  // Saved properties
+  getSaved: async () => {
+    try {
+      return await apiRequest('/auth/saved', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  addSaved: async (propertyId) => {
+    try {
+      return await apiRequest(`/auth/saved/${propertyId}`, { method: 'POST', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  removeSaved: async (propertyId) => {
+    try {
+      return await apiRequest(`/auth/saved/${propertyId}`, { method: 'DELETE', includeAuth: true });
+    } catch (e) { throw e; }
+  },
 };
 
 // Health check function

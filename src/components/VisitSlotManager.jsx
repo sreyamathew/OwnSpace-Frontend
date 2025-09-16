@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { visitAPI } from '../services/api';
+import { Calendar } from 'lucide-react';
 
 const formatHM = (date) => `${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
 
@@ -11,6 +12,7 @@ const VisitSlotManager = ({ propertyId }) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [expanded, setExpanded] = useState(false);
 
   const todayLocal = useMemo(() => new Date(), []);
   const minDate = useMemo(() => `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`, [todayLocal]);
@@ -46,17 +48,17 @@ const VisitSlotManager = ({ propertyId }) => {
     resetMessages();
     if (!date) { setError('Select a date'); return; }
     const times = parseTimes(timesInput);
-    if (times.length === 0) { setError('Enter one or more times like 10:00, 10:30'); return; }
+    if (times.length === 0) { setError('Add times like 10:00, 10:30'); return; }
     setSubmitting(true);
     try {
       const res = await visitAPI.createSlots({ propertyId, date, times });
       if (res.success) {
-        setSuccess('Slots created');
+        setSuccess('Slots added');
         setTimesInput('');
         await loadAvailability();
       }
     } catch (e) {
-      setError(e?.message || 'Failed to create slots');
+      setError(e?.message || 'Failed to add slots');
     } finally { setSubmitting(false); }
   };
 
@@ -66,38 +68,17 @@ const VisitSlotManager = ({ propertyId }) => {
     try {
       const res = await visitAPI.deleteSlot(slotId);
       if (res.success) {
-        setSuccess('Slot deleted');
+        setSuccess('Slot removed');
         await loadAvailability();
       }
     } catch (e) {
-      setError(e?.message || 'Failed to delete slot');
+      setError(e?.message || 'Failed to remove slot');
     } finally { setSubmitting(false); }
   };
 
-  const markUnavailable = async () => {
-    resetMessages();
-    if (!date) { setError('Select a date'); return; }
-    setSubmitting(true);
-    try {
-      const res = await visitAPI.markUnavailable({ propertyId, date });
-      if (res.success) { setSuccess('Date marked unavailable'); await loadAvailability(); }
-    } catch (e) { setError(e?.message || 'Failed to mark unavailable'); }
-    finally { setSubmitting(false); }
-  };
-
-  const unmarkUnavailable = async () => {
-    resetMessages();
-    if (!date) { setError('Select a date'); return; }
-    setSubmitting(true);
-    try {
-      const res = await visitAPI.unmarkUnavailable({ propertyId, date });
-      if (res.success) { setSuccess('Unavailable removed'); await loadAvailability(); }
-    } catch (e) { setError(e?.message || 'Failed to remove unavailable'); }
-    finally { setSubmitting(false); }
-  };
+  // Block/Unblock removed per design requirement
 
   const generateNextHourSlots = () => {
-    // Convenience: generate 2 slots starting next half-hour (e.g., 14:00, 14:30)
     const now = new Date();
     now.setSeconds(0, 0);
     const minute = now.getMinutes();
@@ -112,70 +93,116 @@ const VisitSlotManager = ({ propertyId }) => {
   };
 
   const slotsForDate = date && availability.slotsByDate[date] ? availability.slotsByDate[date] : [];
+  const previewCount = 4;
+  const previewSlots = slotsForDate.slice(0, previewCount);
+  const remaining = Math.max(slotsForDate.length - previewCount, 0);
 
   return (
-    <div className="border rounded-lg p-3 bg-white">
-      <div className="flex items-center justify-between mb-2">
-        <h4 className="text-sm font-semibold text-gray-900">Visit Slot Manager</h4>
-        {loading && <span className="text-xs text-gray-500">Loading...</span>}
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
-          <input
-            type="date"
+    <div className="mt-2 pt-2 border-t border-gray-100">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex items-center gap-2">
+          <Calendar className="h-3.5 w-3.5 text-gray-500" />
+          <div className="text-xs text-gray-600">Visit Slots</div>
+          <div className="text-xs text-gray-400 truncate">{date || 'No date selected'}</div>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            min={minDate}
-            max={maxDate}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Times (HH:mm, comma separated)</label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="e.g., 10:00, 10:30, 11:00"
-              value={timesInput}
-              onChange={(e) => setTimesInput(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
-            <button onClick={generateNextHourSlots} type="button" className="px-2 text-xs border rounded-md hover:bg-gray-50">Auto</button>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-2 mt-3">
-        <button onClick={handleCreateSlots} disabled={submitting} className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">Add Slots</button>
-        <button onClick={markUnavailable} disabled={submitting} className="px-3 py-2 border rounded-md hover:bg-gray-50">Mark Unavailable</button>
-        <button onClick={unmarkUnavailable} disabled={submitting} className="px-3 py-2 border rounded-md hover:bg-gray-50">Unmark Unavailable</button>
-        <button onClick={loadAvailability} disabled={submitting} className="px-3 py-2 border rounded-md hover:bg-gray-50">Refresh</button>
-      </div>
-
-      {(error || success) && (
-        <div className="mt-2 text-xs">
-          {error && <div className="text-red-600">{error}</div>}
-          {success && <div className="text-green-600">{success}</div>}
-        </div>
-      )}
-
-      <div className="mt-3">
-        <div className="text-xs text-gray-600 mb-1">Existing slots for selected date</div>
-        {(!date || slotsForDate.length === 0) ? (
-          <div className="text-xs text-gray-400">{date ? 'No slots added for this date' : 'Select a date to view slots'}</div>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {slotsForDate.map(s => (
-              <div key={s.slotId} className="inline-flex items-center gap-2 px-2 py-1 border rounded-md text-xs">
-                <span>{s.startTime} - {s.endTime}</span>
-                <button onClick={() => handleDeleteSlot(s.slotId)} className="text-red-600 hover:underline">Delete</button>
-              </div>
+            className="h-7 px-2 text-xs border border-gray-300 rounded-md bg-white text-gray-900"
+          >
+            <option value="">Date…</option>
+            {/* Allow manual date entry too */}
+            {availability.availableDates.map(d => (
+              <option key={d} value={d}>{d}</option>
             ))}
-          </div>
+          </select>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="h-7 px-2 text-xs border border-gray-300 rounded-md hover:bg-white"
+          >
+            {expanded ? 'Hide' : 'Manage'}
+          </button>
+        </div>
+      </div>
+
+      {/* Compact preview row */}
+      <div className="mt-1 flex flex-wrap items-center gap-1">
+        {date && previewSlots.length > 0 ? (
+          <>
+            {previewSlots.map(s => (
+              <span key={s.slotId} className="inline-flex items-center px-2 py-0.5 text-[11px] bg-white border border-gray-200 rounded">
+                {s.startTime}-{s.endTime}
+              </span>
+            ))}
+            {remaining > 0 && (
+              <span className="text-[11px] text-gray-500">+{remaining} more</span>
+            )}
+          </>
+        ) : (
+          <span className="text-[11px] text-gray-500">No slots for selected date</span>
         )}
       </div>
+
+      {/* Expanded editor */}
+      {expanded && (
+        <div className="mt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="sm:col-span-1">
+              <label className="block text-[11px] text-gray-600 mb-1">Pick/Type Date</label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                min={minDate}
+                max={maxDate}
+                className="w-full h-8 px-2 text-xs border border-gray-300 rounded-md bg-white"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-[11px] text-gray-600 mb-1">Add 30-min starts (comma separated)</label>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="e.g., 10:00, 10:30"
+                  value={timesInput}
+                  onChange={(e) => setTimesInput(e.target.value)}
+                  className="flex-1 h-8 px-2 text-xs border border-gray-300 rounded-md bg-white"
+                />
+                <button onClick={generateNextHourSlots} type="button" className="h-8 px-2 text-[11px] border border-gray-300 rounded-md hover:bg-gray-50 shrink-0">Auto</button>
+                <button onClick={handleCreateSlots} disabled={submitting} className="h-8 px-3 text-[11px] bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 shrink-0">Add</button>
+              </div>
+            </div>
+          </div>
+
+          {(error || success || loading) && (
+            <div className="mt-2 text-[11px]">
+              {loading && <div className="text-gray-500">Loading…</div>}
+              {error && <div className="text-red-600">{error}</div>}
+              {success && <div className="text-green-600">{success}</div>}
+            </div>
+          )}
+
+          <div className="mt-2">
+            <div className="flex flex-wrap items-center gap-1">
+              {slotsForDate.length === 0 ? (
+                <span className="text-[11px] text-gray-500">No slots yet</span>
+              ) : (
+                slotsForDate.map(s => (
+                  <div key={s.slotId} className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] bg-white border border-gray-200 rounded">
+                    <span>{s.startTime}-{s.endTime}</span>
+                    <button onClick={() => handleDeleteSlot(s.slotId)} className="text-red-600 hover:underline">×</button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button onClick={loadAvailability} disabled={submitting} className="h-7 px-3 text-[11px] border border-gray-300 rounded-md hover:bg-gray-50">Refresh</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
