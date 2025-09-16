@@ -403,6 +403,58 @@ export const visitAPI = {
       throw error;
     }
   },
+  // Fetch availability for a property (public)
+  getAvailability: async (propertyId) => {
+    try {
+      const response = await apiRequest(`/visits/availability/${propertyId}`, {
+        method: 'GET',
+      });
+      return response;
+    } catch (error) { throw error; }
+  },
+  // Create slots for a given date (agent/admin)
+  createSlots: async ({ propertyId, date, times }) => {
+    try {
+      const response = await apiRequest('/visits/slots', {
+        method: 'POST',
+        includeAuth: true,
+        body: JSON.stringify({ propertyId, date, times }),
+      });
+      return response;
+    } catch (error) { throw error; }
+  },
+  // Delete a slot (agent/admin)
+  deleteSlot: async (slotId) => {
+    try {
+      const response = await apiRequest(`/visits/slots/${slotId}`, {
+        method: 'DELETE',
+        includeAuth: true,
+      });
+      return response;
+    } catch (error) { throw error; }
+  },
+  // Mark date unavailable (agent/admin)
+  markUnavailable: async ({ propertyId, date }) => {
+    try {
+      const response = await apiRequest('/visits/unavailable', {
+        method: 'POST',
+        includeAuth: true,
+        body: JSON.stringify({ propertyId, date }),
+      });
+      return response;
+    } catch (error) { throw error; }
+  },
+  // Remove unavailable date (agent/admin)
+  unmarkUnavailable: async ({ propertyId, date }) => {
+    try {
+      const response = await apiRequest('/visits/unavailable', {
+        method: 'DELETE',
+        includeAuth: true,
+        body: JSON.stringify({ propertyId, date }),
+      });
+      return response;
+    } catch (error) { throw error; }
+  },
   // Reschedule by requester
   reschedule: async (visitId, scheduledAt, note) => {
     try {

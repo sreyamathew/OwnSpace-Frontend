@@ -34,7 +34,7 @@ const Properties = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [availableLocations, setAvailableLocations] = useState([]);
-  const [scheduling, setScheduling] = useState({ open: false, property: null, date: '', time: '', note: '' });
+  const [scheduling, setScheduling] = useState({ open: false, property: null, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
   // Compute local today string (YYYY-MM-DD) to restrict past dates
   const todayLocal = new Date();
   const minDate = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
@@ -94,24 +94,35 @@ const Properties = () => {
     navigate(`/property/${propertyId}`);
   };
 
-  const openScheduleModal = (property) => {
+  const openScheduleModal = async (property) => {
     if (!user) {
       alert('Please login to schedule a visit');
       navigate('/login');
       return;
     }
-    setScheduling({ open: true, property, date: '', time: '', note: '' });
+    setScheduling({ open: true, property, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: true });
+    try {
+      const res = await visitAPI.getAvailability(property._id);
+      if (res.success) {
+        setScheduling(prev => ({ ...prev, availableDates: res.data.availableDates || [], slotsByDate: res.data.slotsByDate || {}, loading: false }));
+      } else {
+        setScheduling(prev => ({ ...prev, loading: false }));
+      }
+    } catch (e) {
+      console.error('Failed to load availability', e);
+      setScheduling(prev => ({ ...prev, loading: false }));
+    }
   };
 
   const closeScheduleModal = () => {
-    setScheduling({ open: false, property: null, date: '', time: '', note: '' });
+    setScheduling({ open: false, property: null, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
   };
 
   const submitSchedule = async () => {
     if (!scheduling.property) return;
     try {
       if (!scheduling.date || !scheduling.time) {
-        alert('Please select date and time');
+        alert('Please select an available date and time');
         return;
       }
       const scheduledAt = new Date(`${scheduling.date}T${scheduling.time}:00`);
@@ -822,22 +833,34 @@ const Properties = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                <input
-                  type="date"
+                <select
                   value={scheduling.date}
-                  onChange={(e) => setScheduling(prev => ({ ...prev, date: e.target.value }))}
-                  min={minDate}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                />
+                  onChange={(e) => setScheduling(prev => ({ ...prev, date: e.target.value, time: '' }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
+                >
+                  <option value="" disabled>{scheduling.loading ? 'Loading...' : 'Select a date'}</option>
+                  {scheduling.availableDates.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                <input
-                  type="time"
-                  value={scheduling.time}
-                  onChange={(e) => setScheduling(prev => ({ ...prev, time: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                />
+                <div className="grid grid-cols-3 gap-2">
+                  {(scheduling.date && scheduling.slotsByDate[scheduling.date] ? scheduling.slotsByDate[scheduling.date] : []).length === 0 ? (
+                    <div className="col-span-3 text-sm text-gray-500">{scheduling.date ? 'No slots available for this date' : 'Select a date first'}</div>
+                  ) : (
+                    scheduling.slotsByDate[scheduling.date].map((slot) => (
+                      <button
+                        key={slot.slotId}
+                        onClick={() => setScheduling(prev => ({ ...prev, time: slot.startTime }))}
+                        className={`px-3 py-2 border rounded-md text-sm ${scheduling.time === slot.startTime ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                      >
+                        {slot.startTime} - {slot.endTime}
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Note (optional)</label>

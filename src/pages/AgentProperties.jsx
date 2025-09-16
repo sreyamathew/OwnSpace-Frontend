@@ -20,6 +20,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { propertyAPI } from '../services/api';
 import AgentSidebar from '../components/AgentSidebar';
+import VisitSlotManager from '../components/VisitSlotManager';
 
 const AgentProperties = () => {
   const navigate = useNavigate();
@@ -290,6 +291,9 @@ const AgentProperties = () => {
                         <Eye className="h-3 w-3" />
                         <span>{property.views || 0}</span>
                       </div>
+                    </div>
+                    <div className="mt-3">
+                      <VisitSlotManager propertyId={property._id} />
                     </div>
                   </div>
                 </div>

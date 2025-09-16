@@ -10,7 +10,8 @@ import {
   FileText,
   Settings,
   Building,
-  X
+  X,
+  Calendar
 } from 'lucide-react';
 
 const MinimalSidebar = ({ onClose }) => {
@@ -21,6 +22,7 @@ const MinimalSidebar = ({ onClose }) => {
     { label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
     { label: 'Profile', icon: Users, path: '/admin/profile' },
     { label: 'Properties', icon: Home, path: '/admin/properties' },
+    { label: 'Appointments', icon: Calendar, path: '/admin/appointments' },
     { label: 'Add Property', icon: Plus, path: '/admin/properties/add' },
     { label: 'Agents', icon: Users, path: '/admin/agents' },
     { label: 'Add Agent', icon: UserPlus, path: '/admin/agents/add' },

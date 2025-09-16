@@ -32,6 +32,7 @@ const PropertyDetail = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [savedProperties, setSavedProperties] = useState([]);
   const [scheduling, setScheduling] = useState({ open: false, date: '', time: '', note: '' });
+  const isStaffView = user?.userType === 'admin' || user?.userType === 'agent';
   // Compute local today string (YYYY-MM-DD) to restrict past dates
   const todayLocal = new Date();
   const minDate = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
@@ -268,16 +269,18 @@ const PropertyDetail = () => {
               <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
                 <Share2 className="h-5 w-5 text-gray-600" />
               </button>
-              <button 
-                onClick={toggleSaveProperty}
-                className={`p-2 rounded-full transition-colors ${
-                  isPropertySaved() ? 'bg-red-100 hover:bg-red-200' : 'bg-gray-100 hover:bg-gray-200'
-                }`}
-              >
-                <Heart className={`h-5 w-5 ${
-                  isPropertySaved() ? 'text-red-600 fill-current' : 'text-gray-600'
-                }`} />
-              </button>
+              {!isStaffView && (
+                <button 
+                  onClick={toggleSaveProperty}
+                  className={`p-2 rounded-full transition-colors ${
+                    isPropertySaved() ? 'bg-red-100 hover:bg-red-200' : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
+                >
+                  <Heart className={`h-5 w-5 ${
+                    isPropertySaved() ? 'text-red-600 fill-current' : 'text-gray-600'
+                  }`} />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -423,7 +426,7 @@ const PropertyDetail = () => {
           {/* Agent Info Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Agent</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{isStaffView ? 'Agent' : 'Contact Agent'}</h3>
               
               {property.agent && (
                 <div className="mb-6">
@@ -454,39 +457,41 @@ const PropertyDetail = () => {
                 </div>
               )}
               
-              <div className="space-y-3">
-                <button
-                  onClick={() => {
-                    recordHistoryAction('contacted_agent');
-                    alert('Agent has been contacted (demo).');
-                  }}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Contact Agent
-                </button>
-                <button
-                  onClick={openScheduleModal}
-                  className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-                >
-                  Schedule Tour
-                </button>
-                <button 
-                  onClick={toggleSaveProperty}
-                  className={`w-full px-4 py-2 rounded-md transition-colors ${
-                    isPropertySaved() 
-                      ? 'bg-red-600 text-white hover:bg-red-700 border border-red-600' 
-                      : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  {isPropertySaved() ? 'Saved ✓' : 'Save Property'}
-                </button>
-              </div>
+              {!isStaffView && (
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      recordHistoryAction('contacted_agent');
+                      alert('Agent has been contacted (demo).');
+                    }}
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Contact Agent
+                  </button>
+                  <button
+                    onClick={openScheduleModal}
+                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    Schedule Tour
+                  </button>
+                  <button 
+                    onClick={toggleSaveProperty}
+                    className={`w-full px-4 py-2 rounded-md transition-colors ${
+                      isPropertySaved() 
+                        ? 'bg-red-600 text-white hover:bg-red-700 border border-red-600' 
+                        : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {isPropertySaved() ? 'Saved ✓' : 'Save Property'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
-      {/* Schedule Modal */}
-      {scheduling.open && (
+      {/* Schedule Modal (users only) */}
+      {!isStaffView && scheduling.open && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Schedule Visit</h3>

@@ -21,6 +21,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { propertyAPI } from '../services/api';
 import MinimalSidebar from '../components/MinimalSidebar';
+import VisitSlotManager from '../components/VisitSlotManager';
 
 const AdminProperties = () => {
   const navigate = useNavigate();
@@ -285,6 +286,11 @@ const AdminProperties = () => {
                         <Eye className="h-3 w-3" />
                         <span>{property.views || 0}</span>
                       </div>
+                    </div>
+
+                    {/* Visit Slot Management */}
+                    <div className="mt-4">
+                      <VisitSlotManager propertyId={property._id} />
                     </div>
                   </div>
                 </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
   ShoppingCart, 
@@ -41,6 +41,7 @@ import {
   LayoutDashboard
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import MinimalSidebar from '../components/MinimalSidebar';
 import { dashboardStats, salesData, alerts, purchaseRequests, marketNews } from '../data/mockData';
 import { propertyAPI, visitAPI } from '../services/api';
 
@@ -631,65 +632,7 @@ const AdminDashboard = () => {
   );
 };
 
-// Minimal Sidebar Component
-const MinimalSidebar = ({ onClose }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const menuItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
-    { label: 'Properties', icon: Home, path: '/admin/properties' },
-    { label: 'Appointments', icon: Calendar, path: '/admin/appointments' },
-    { label: 'Add Property', icon: Plus, path: '/admin/properties/add' },
-    { label: 'Agents', icon: Users, path: '/admin/agents' },
-    { label: 'Add Agent', icon: UserPlus, path: '/admin/agents/add' },
-    { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
-    { label: 'Reports', icon: FileText, path: '/admin/reports' },
-    { label: 'Settings', icon: Settings, path: '/admin/settings' }
-  ];
-
-  const isActive = (path) => location.pathname === path;
-
-  return (
-    <div className="h-full bg-white border-r border-gray-200">
-      {/* Logo */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
-        <div className="flex items-center space-x-2">
-          <Building className="h-6 w-6 text-blue-600" />
-          <span className="text-lg font-semibold text-gray-900">OwnSpace</span>
-        </div>
-        {onClose && (
-          <button onClick={onClose} className="lg:hidden p-1 rounded-md text-gray-600 hover:bg-gray-100">
-            <X className="h-5 w-5" />
-          </button>
-        )}
-      </div>
-
-      {/* Navigation */}
-      <nav className="p-4">
-        <div className="space-y-2">
-          {menuItems.map((item) => (
-            <button
-              key={item.path}
-              onClick={() => {
-                navigate(item.path);
-                onClose && onClose();
-              }}
-              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive(item.path)
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
-    </div>
-  );
-};
+//
 
 // Stats Card Component
 const StatsCard = ({ title, value, icon: Icon, color = 'blue' }) => {
