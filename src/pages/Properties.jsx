@@ -110,6 +110,14 @@ const Properties = () => {
     setScheduling({ open: false, property: null, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
   };
 
+  const isPastSlot = (dateStr, startTime) => {
+    try {
+      const slotDate = new Date(`${dateStr}T${startTime}:00`);
+      const now = new Date();
+      return slotDate.getTime() <= now.getTime();
+    } catch (_) { return false; }
+  };
+
   const submitSchedule = async () => {
     if (!scheduling.property) return;
     try {
@@ -117,7 +125,13 @@ const Properties = () => {
         alert('Please select an available date and time');
         return;
       }
+      // Prevent past selections (local system time)
       const scheduledAt = new Date(`${scheduling.date}T${scheduling.time}:00`);
+      const now = new Date();
+      if (scheduledAt.getTime() <= now.getTime()) {
+        alert('Cannot schedule a visit in the past or present. Please select a future time.');
+        return;
+      }
       const res = await visitAPI.createVisitRequest({ propertyId: scheduling.property._id, scheduledAt, note: scheduling.note });
       if (res.success) {
         alert('Visit request sent for approval');
@@ -859,15 +873,19 @@ const Properties = () => {
                   {(scheduling.date && scheduling.slotsByDate[scheduling.date] ? scheduling.slotsByDate[scheduling.date] : []).length === 0 ? (
                     <div className="col-span-3 text-sm text-gray-500">{scheduling.date ? 'No slots available for this date' : 'Select a date first'}</div>
                   ) : (
-                    scheduling.slotsByDate[scheduling.date].map((slot) => (
-                      <button
-                        key={slot.slotId}
-                        onClick={() => setScheduling(prev => ({ ...prev, time: slot.startTime }))}
-                        className={`px-3 py-2 border rounded-md text-sm ${scheduling.time === slot.startTime ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                      >
-                        {slot.startTime} - {slot.endTime}
-                      </button>
-                    ))
+                    scheduling.slotsByDate[scheduling.date].map((slot) => {
+                      const disabled = isPastSlot(scheduling.date, slot.startTime);
+                      return (
+                        <button
+                          key={slot.slotId}
+                          onClick={() => !disabled && setScheduling(prev => ({ ...prev, time: slot.startTime }))}
+                          disabled={disabled}
+                          className={`px-3 py-2 border rounded-md text-sm ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 text-gray-400' : (scheduling.time === slot.startTime ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 hover:bg-gray-50')}`}
+                        >
+                          {slot.startTime} - {slot.endTime}
+                        </button>
+                      );
+                    })
                   )}
                 </div>
               </div>

@@ -29,6 +29,12 @@ const UserAppointments = () => {
     try {
       const { id, date, time, note } = editing;
       const scheduledAt = new Date(`${date}T${time}:00`);
+      // Prevent past selections (local system time)
+      const now = new Date();
+      if (scheduledAt.getTime() <= now.getTime()) {
+        alert('Cannot schedule a visit in the past or present. Please select a future time.');
+        return;
+      }
       const res = await visitAPI.reschedule(id, scheduledAt, note);
       if (res.success) {
         // Goes back to pending

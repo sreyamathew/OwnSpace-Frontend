@@ -171,7 +171,30 @@ const PropertyDetail = () => {
     try {
       const res = await visitAPI.getAvailability(property._id);
       if (res.success) {
-        setScheduling(prev => ({ ...prev, availableDates: res.data.availableDates || [], slotsByDate: res.data.slotsByDate || {}, loading: false }));
+        // Filter out past dates
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().split('T')[0];
+        
+        // Filter available dates to only include today and future dates
+        const filteredDates = (res.data.availableDates || []).filter(date => date >= todayStr);
+        
+        // Filter slots for today to only include future times
+        const filteredSlotsByDate = { ...res.data.slotsByDate };
+        if (filteredSlotsByDate[todayStr]) {
+          const now = new Date();
+          filteredSlotsByDate[todayStr] = filteredSlotsByDate[todayStr].filter(slot => {
+            const slotTime = new Date(`${todayStr}T${slot.startTime}:00`);
+            return slotTime > now;
+          });
+        }
+        
+        setScheduling(prev => ({ 
+          ...prev, 
+          availableDates: filteredDates, 
+          slotsByDate: filteredSlotsByDate, 
+          loading: false 
+        }));
       } else {
         setScheduling(prev => ({ ...prev, loading: false }));
       }
@@ -184,6 +207,15 @@ const PropertyDetail = () => {
   const closeScheduleModal = () => {
     setScheduling({ open: false, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
   };
+  
+  // Function to check if a time slot is in the past
+  const isPastSlot = (dateStr, startTime) => {
+    try {
+      const slotDate = new Date(`${dateStr}T${startTime}:00`);
+      const now = new Date();
+      return slotDate.getTime() <= now.getTime();
+    } catch (_) { return false; }
+  };
 
   const submitSchedule = async () => {
     try {
@@ -191,7 +223,13 @@ const PropertyDetail = () => {
         alert('Please select an available date and time');
         return;
       }
+      // Prevent past selections (local system time)
       const scheduledAt = new Date(`${scheduling.date}T${scheduling.time}:00`);
+      const now = new Date();
+      if (scheduledAt.getTime() <= now.getTime()) {
+        alert('Cannot schedule a visit in the past or present. Please select a future time.');
+        return;
+      }
       const res = await visitAPI.createVisitRequest({ propertyId: property._id, scheduledAt, note: scheduling.note });
       if (res.success) {
         alert('Visit request sent for approval');
@@ -534,15 +572,19 @@ const PropertyDetail = () => {
                   {(scheduling.date && scheduling.slotsByDate[scheduling.date] ? scheduling.slotsByDate[scheduling.date] : []).length === 0 ? (
                     <div className="col-span-3 text-sm text-gray-500">{scheduling.date ? 'No slots available for this date' : 'Select a date first'}</div>
                   ) : (
-                    scheduling.slotsByDate[scheduling.date].map((slot) => (
-                      <button
-                        key={slot.slotId}
-                        onClick={() => setScheduling(prev => ({ ...prev, time: slot.startTime }))}
-                        className={`px-3 py-2 border rounded-md text-sm ${scheduling.time === slot.startTime ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                      >
-                        {slot.startTime} - {slot.endTime}
-                      </button>
-                    ))
+                    scheduling.slotsByDate[scheduling.date].map((slot) => {
+                      const disabled = isPastSlot(scheduling.date, slot.startTime);
+                      return (
+                        <button
+                          key={slot.slotId}
+                          onClick={() => !disabled && setScheduling(prev => ({ ...prev, time: slot.startTime }))}
+                          disabled={disabled}
+                          className={`px-3 py-2 border rounded-md text-sm ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 text-gray-400' : (scheduling.time === slot.startTime ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 hover:bg-gray-50')}`}
+                        >
+                          {slot.startTime} - {slot.endTime}
+                        </button>
+                      );
+                    })
                   )}
                 </div>
               </div>

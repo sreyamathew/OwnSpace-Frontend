@@ -122,7 +122,13 @@ const UserDashboard = () => {
         alert('Please select date and time');
         return;
       }
+      // Prevent past selections (local system time)
       const scheduledAt = new Date(`${scheduling.date}T${scheduling.time}:00`);
+      const now = new Date();
+      if (scheduledAt.getTime() <= now.getTime()) {
+        alert('Cannot schedule a visit in the past or present. Please select a future time.');
+        return;
+      }
       const res = await visitAPI.createVisitRequest({ propertyId: scheduling.property._id, scheduledAt, note: scheduling.note });
       if (res.success) {
         alert('Visit request sent for approval');
