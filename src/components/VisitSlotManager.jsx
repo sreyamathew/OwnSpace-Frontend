@@ -36,6 +36,41 @@ const VisitSlotManager = ({ propertyId }) => {
     } finally { setLoading(false); }
   };
 
+  // Filter out slots that have passed while user is viewing
+  const filterAvailabilityForNow = (avail) => {
+    try {
+      const now = new Date();
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const todayStr = today.toISOString().split('T')[0];
+      const slotsByDate = { ...(avail?.slotsByDate || {}) };
+      const availableDates = Array.from(avail?.availableDates || []);
+      if (slotsByDate[todayStr]) {
+        slotsByDate[todayStr] = slotsByDate[todayStr].filter(slot => {
+          try {
+            const dt = new Date(`${todayStr}T${slot.startTime}:00`);
+            return dt.getTime() > now.getTime();
+          } catch (_) { return false; }
+        });
+      }
+      // Remove any dates that have no remaining slots
+      const filteredDates = availableDates.filter(d => (slotsByDate[d]?.length || 0) > 0);
+      return { availableDates: filteredDates, slotsByDate };
+    } catch (_) {
+      return avail;
+    }
+  };
+
+  // Interval to dynamically hide expired slots without refresh
+  React.useEffect(() => {
+    // Initial filter once
+    setAvailability(prev => filterAvailabilityForNow(prev));
+    const id = setInterval(() => {
+      setAvailability(prev => filterAvailabilityForNow(prev));
+    }, 30000);
+    return () => clearInterval(id);
+  }, []);
+
   useEffect(() => { loadAvailability(); }, [propertyId]);
 
   const parseTimes = (input) => input

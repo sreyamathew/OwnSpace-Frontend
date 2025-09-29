@@ -96,7 +96,23 @@ const Properties = () => {
     try {
       const res = await visitAPI.getAvailability(property._id);
       if (res.success) {
-        setScheduling(prev => ({ ...prev, availableDates: res.data.availableDates || [], slotsByDate: res.data.slotsByDate || {}, loading: false }));
+        // Filter out past slots (today) on initial load
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const todayStr = today.toISOString().split('T')[0];
+        const slotsByDate = { ...(res.data?.slotsByDate || {}) };
+        const availableDates = Array.from(res.data?.availableDates || []);
+        const now = new Date();
+        if (slotsByDate[todayStr]) {
+          slotsByDate[todayStr] = slotsByDate[todayStr].filter(slot => {
+            try {
+              const dt = new Date(`${todayStr}T${slot.startTime}:00`);
+              return dt.getTime() > now.getTime();
+            } catch (_) { return false; }
+          });
+        }
+        const filteredDates = availableDates.filter(d => (slotsByDate[d]?.length || 0) > 0);
+        setScheduling(prev => ({ ...prev, availableDates: filteredDates, slotsByDate, loading: false }));
       } else {
         setScheduling(prev => ({ ...prev, loading: false }));
       }
@@ -105,6 +121,42 @@ const Properties = () => {
       setScheduling(prev => ({ ...prev, loading: false }));
     }
   };
+
+  // Filter scheduling state to hide slots that have passed while modal is open
+  const filterSchedulingForNow = (sched) => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = today.toISOString().split('T')[0];
+      const now = new Date();
+      const slotsByDate = { ...(sched?.slotsByDate || {}) };
+      const availableDates = Array.from(sched?.availableDates || []);
+
+      if (slotsByDate[todayStr]) {
+        slotsByDate[todayStr] = slotsByDate[todayStr].filter(slot => {
+          try {
+            const dt = new Date(`${todayStr}T${slot.startTime}:00`);
+            return dt.getTime() > now.getTime();
+          } catch (_) { return false; }
+        });
+      }
+
+      const filteredDates = availableDates.filter(d => (slotsByDate[d]?.length || 0) > 0);
+      return { ...sched, availableDates: filteredDates, slotsByDate };
+    } catch (_) {
+      return sched;
+    }
+  };
+
+  // Interval to dynamically update scheduling view without refresh
+  React.useEffect(() => {
+    if (!scheduling.open) return;
+    setScheduling(prev => filterSchedulingForNow(prev));
+    const id = setInterval(() => {
+      setScheduling(prev => filterSchedulingForNow(prev));
+    }, 30000);
+    return () => clearInterval(id);
+  }, [scheduling.open]);
 
   const closeScheduleModal = () => {
     setScheduling({ open: false, property: null, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
