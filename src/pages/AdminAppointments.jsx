@@ -8,6 +8,10 @@ const AdminAppointments = () => {
   const [visits, setVisits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [visitNotes, setVisitNotes] = useState('');
+  const [selectedVisit, setSelectedVisit] = useState(null);
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [statusToUpdate, setStatusToUpdate] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -21,6 +25,13 @@ const AdminAppointments = () => {
     load();
   }, []);
 
+  // Check if a visit's scheduled time has passed
+  const isVisitPast = (scheduledAt) => {
+    const now = new Date();
+    const visitTime = new Date(scheduledAt);
+    return visitTime < now;
+  };
+
   // Edit/reschedule flow removed
 
   const cancel = async (id) => {
@@ -31,6 +42,36 @@ const AdminAppointments = () => {
         alert('Visit cancelled. The requester has been notified by email.');
       }
     } catch (e) { alert('Failed to cancel'); }
+  };
+  
+  const openNotesModal = (visit, status) => {
+    setSelectedVisit(visit);
+    setStatusToUpdate(status);
+    setVisitNotes('');
+    setShowNotesModal(true);
+  };
+
+  const updateVisitStatus = async () => {
+    if (!selectedVisit) return;
+    
+    try {
+      const res = await visitAPI.updateVisitAfterScheduled(
+        selectedVisit._id, 
+        statusToUpdate, 
+        visitNotes
+      );
+      
+      if (res.success) {
+        setVisits(prev => prev.filter(v => v._id !== selectedVisit._id));
+        alert(`Visit marked as ${statusToUpdate === 'visited' ? 'Visited' : 'Not Visited'}`);
+        setShowNotesModal(false);
+      } else {
+        alert(res.message || 'Failed to update visit status');
+      }
+    } catch (e) {
+      console.error('Error updating visit status:', e);
+      alert(e.message || 'Failed to update visit status');
+    }
   };
 
   return (
@@ -66,7 +107,29 @@ const AdminAppointments = () => {
                       <div className="text-sm text-gray-600">When: {new Date(v.scheduledAt).toLocaleString()}</div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <button onClick={() => cancel(v._id)} className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Cancel</button>
+                      {isVisitPast(v.scheduledAt) ? (
+                        <>
+                          <button 
+                            onClick={() => openNotesModal(v, 'visited')} 
+                            className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                          >
+                            Mark as Visited
+                          </button>
+                          <button 
+                            onClick={() => openNotesModal(v, 'not_visited')} 
+                            className="px-3 py-1 bg-amber-600 text-white rounded hover:bg-amber-700"
+                          >
+                            Mark as Not Visited
+                          </button>
+                        </>
+                      ) : (
+                        <button 
+                          onClick={() => cancel(v._id)} 
+                          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          Cancel
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -76,7 +139,42 @@ const AdminAppointments = () => {
         </main>
       </div>
 
-      {/* Edit/reschedule modal removed */}
+      {/* Notes Modal */}
+      {showNotesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">
+              {statusToUpdate === 'visited' ? 'Mark as Visited' : 'Mark as Not Visited'}
+            </h3>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Visit Notes (Optional)
+              </label>
+              <textarea
+                value={visitNotes}
+                onChange={(e) => setVisitNotes(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows="4"
+                placeholder="Add any notes about the visit outcome..."
+              ></textarea>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowNotesModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={updateVisitStatus}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Update Status
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

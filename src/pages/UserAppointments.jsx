@@ -60,8 +60,8 @@ const UserAppointments = () => {
       <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-4">My Appointments</h1>
       <div className="mb-4 flex space-x-2">
-        {['all','pending','approved','rejected'].map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`px-3 py-1 rounded ${tab===t ? 'bg-blue-100 text-blue-700' : 'border border-gray-300 text-gray-700'}`}>{t[0].toUpperCase()+t.slice(1)}</button>
+        {['all','pending','approved','rejected','visited','not_visited'].map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`px-3 py-1 rounded ${tab===t ? 'bg-blue-100 text-blue-700' : 'border border-gray-300 text-gray-700'}`}>{t === 'not_visited' ? 'Not Visited' : t[0].toUpperCase()+t.slice(1)}</button>
         ))}
       </div>
       {loading ? (
@@ -80,7 +80,15 @@ const UserAppointments = () => {
               <div>
                 <div className="font-medium text-gray-900">{v.property?.title || 'Property'}</div>
                 <div className="text-sm text-gray-600">When: {new Date(v.scheduledAt).toLocaleString()}</div>
-                <div className="text-xs text-gray-500">Status: {v.status}</div>
+                <div className={`text-sm ${
+                  status === 'visited' ? 'text-green-600 font-medium' : 
+                  status === 'not_visited' ? 'text-amber-600 font-medium' : 
+                  status === 'approved' ? 'text-blue-600' : 
+                  status === 'rejected' ? 'text-red-600' : 
+                  'text-gray-500'
+                }`}>
+                  Status: {status === 'not_visited' ? 'Not Visited' : status.charAt(0).toUpperCase() + status.slice(1)}
+                </div>
               </div>
               <div className="flex items-center space-x-2">
                 {status === 'approved' && (
@@ -89,10 +97,16 @@ const UserAppointments = () => {
                 {status === 'rejected' && (
                   <button onClick={() => setTab('rejected')} className="px-3 py-1 border border-gray-300 rounded" disabled>Rejected</button>
                 )}
-                {!isFinal && (
+                {status === 'visited' && (
+                  <button className="px-3 py-1 bg-green-100 text-green-700 border border-green-300 rounded" disabled>Visited</button>
+                )}
+                {status === 'not_visited' && (
+                  <button className="px-3 py-1 bg-amber-100 text-amber-700 border border-amber-300 rounded" disabled>Not Visited</button>
+                )}
+                {!isFinal && status !== 'visited' && status !== 'not_visited' && (
                   <button onClick={() => openEdit(v)} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Edit</button>
                 )}
-                {!isFinal && (
+                {!isFinal && status !== 'visited' && status !== 'not_visited' && (
                   <button onClick={() => cancel(v._id)} className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Cancel</button>
                 )}
               </div>

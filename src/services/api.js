@@ -516,6 +516,19 @@ export const visitAPI = {
       throw error;
     }
   },
+  // Update visit status after scheduled time (visited/not_visited)
+  updateVisitAfterScheduled: async (visitId, status, visitNotes) => {
+    try {
+      const response = await apiRequest(`/visits/${visitId}/status`, {
+        method: 'PUT',
+        includeAuth: true,
+        body: JSON.stringify({ status, visitNotes }),
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
   // List my requests
   myRequests: async (status) => {
     try {
