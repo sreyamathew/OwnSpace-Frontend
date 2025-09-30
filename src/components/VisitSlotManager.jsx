@@ -36,41 +36,6 @@ const VisitSlotManager = ({ propertyId }) => {
     } finally { setLoading(false); }
   };
 
-  // Filter out slots that have passed while user is viewing
-  const filterAvailabilityForNow = (avail) => {
-    try {
-      const now = new Date();
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      const todayStr = today.toISOString().split('T')[0];
-      const slotsByDate = { ...(avail?.slotsByDate || {}) };
-      const availableDates = Array.from(avail?.availableDates || []);
-      if (slotsByDate[todayStr]) {
-        slotsByDate[todayStr] = slotsByDate[todayStr].filter(slot => {
-          try {
-            const dt = new Date(`${todayStr}T${slot.startTime}:00`);
-            return dt.getTime() > now.getTime();
-          } catch (_) { return false; }
-        });
-      }
-      // Remove any dates that have no remaining slots
-      const filteredDates = availableDates.filter(d => (slotsByDate[d]?.length || 0) > 0);
-      return { availableDates: filteredDates, slotsByDate };
-    } catch (_) {
-      return avail;
-    }
-  };
-
-  // Interval to dynamically hide expired slots without refresh
-  React.useEffect(() => {
-    // Initial filter once
-    setAvailability(prev => filterAvailabilityForNow(prev));
-    const id = setInterval(() => {
-      setAvailability(prev => filterAvailabilityForNow(prev));
-    }, 30000);
-    return () => clearInterval(id);
-  }, []);
-
   useEffect(() => { loadAvailability(); }, [propertyId]);
 
   const parseTimes = (input) => input
@@ -79,80 +44,16 @@ const VisitSlotManager = ({ propertyId }) => {
     .filter(Boolean)
     .filter(t => /^\d{2}:\d{2}$/.test(t));
 
-  // Function to validate if a time slot is valid (not in the past and at least 10 minutes in the future if today)
-  const isValidTimeSlot = (dateStr, timeStr) => {
-    try {
-      const now = new Date();
-      const slotDateTime = new Date(`${dateStr}T${timeStr}:00`);
-      
-      // If date is in the past, reject
-      if (dateStr < minDate) {
-        return { valid: false, message: 'Cannot create slots for past dates' };
-      }
-      
-      // If date is today, ensure time is at least 10 minutes in the future
-      if (dateStr === minDate) {
-        // Add 10 minutes to current time for minimum buffer
-        const bufferTime = new Date(now);
-        bufferTime.setMinutes(bufferTime.getMinutes() + 10);
-        
-        if (slotDateTime <= bufferTime) {
-          return { 
-            valid: false, 
-            message: 'For today, time slots must be at least 10 minutes in the future' 
-          };
-        }
-      }
-      
-      return { valid: true };
-    } catch (e) {
-      return { valid: false, message: 'Invalid date or time format' };
-    }
-  };
-
   const handleCreateSlots = async () => {
     resetMessages();
     if (!date) { setError('Select a date'); return; }
     const times = parseTimes(timesInput);
     if (times.length === 0) { setError('Add times like 10:00, 10:30'); return; }
-    
-    // Validate each time slot
-    const invalidTimes = [];
-    const validTimes = [];
-    
-    for (const time of times) {
-      const validation = isValidTimeSlot(date, time);
-      if (validation.valid) {
-        validTimes.push(time);
-      } else {
-        invalidTimes.push(`${time} (${validation.message})`);
-      }
-    }
-    
-    if (validTimes.length === 0) {
-      setError(`All times are invalid: ${invalidTimes.join(', ')}`);
-      return;
-    }
-    
     setSubmitting(true);
     try {
-      const res = await visitAPI.createSlots({ propertyId, date, times: validTimes });
+      const res = await visitAPI.createSlots({ propertyId, date, times });
       if (res.success) {
-        // Handle both frontend and backend validation results
-        const frontendSkipped = invalidTimes.length > 0 
-          ? `Frontend skipped: ${invalidTimes.join(', ')}. ` 
-          : '';
-          
-        const backendSkipped = res.skipped && res.skipped.length > 0
-          ? `Backend skipped: ${res.skipped.map(s => `${s.time} (${s.reason})`).join(', ')}.`
-          : '';
-          
-        if (frontendSkipped || backendSkipped) {
-          setSuccess(`Added ${res.data.length} slots. ${frontendSkipped}${backendSkipped}`);
-        } else {
-          setSuccess('All slots added successfully');
-        }
-        
+        setSuccess('Slots added');
         setTimesInput('');
         await loadAvailability();
       }
@@ -180,17 +81,10 @@ const VisitSlotManager = ({ propertyId }) => {
   const generateNextHourSlots = () => {
     const now = new Date();
     now.setSeconds(0, 0);
-    
-    // Add 10 minutes buffer to current time
-    const bufferTime = new Date(now);
-    bufferTime.setMinutes(bufferTime.getMinutes() + 10);
-    
-    // Round to nearest 30-minute interval after the buffer time
-    const minute = bufferTime.getMinutes();
-    const start = new Date(bufferTime);
+    const minute = now.getMinutes();
+    const start = new Date(now);
     start.setMinutes(minute < 30 ? 30 : 0);
     if (minute >= 30) start.setHours(start.getHours() + 1);
-    
     const t1 = formatHM(start);
     const t2Date = new Date(start);
     t2Date.setMinutes(start.getMinutes() + 30);

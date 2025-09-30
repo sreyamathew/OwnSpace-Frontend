@@ -6,34 +6,42 @@ import { useAuth } from '../contexts/AuthContext';
 const AgentAppointments = () => {
   const { user } = useAuth();
   const [visits, setVisits] = useState([]);
+  const [pastVisits, setPastVisits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [visitNotes, setVisitNotes] = useState('');
-  const [selectedVisit, setSelectedVisit] = useState(null);
-  const [showNotesModal, setShowNotesModal] = useState(false);
-  const [statusToUpdate, setStatusToUpdate] = useState('');
+  const [activeTab, setActiveTab] = useState('upcoming');
   
-  // Compute local today string (YYYY-MM-DD) to restrict past dates in edit modal
-  const todayLocal = new Date();
-  const minDate = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
-
   useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const res = await visitAPI.assignedToMe('approved');
-        if (res.success) setVisits(res.data || []);
-      } catch (e) { setError('Failed to load appointments'); }
-      finally { setLoading(false); }
-    };
-    load();
+    loadVisits();
   }, []);
 
-  // Check if a visit's scheduled time has passed
-  const isVisitPast = (scheduledAt) => {
-    const now = new Date();
-    const visitTime = new Date(scheduledAt);
-    return visitTime < now;
+  const loadVisits = async () => {
+    try {
+      setLoading(true);
+      const res = await visitAPI.assignedToMe('approved');
+      if (res.success) {
+        const now = new Date();
+        const upcoming = [];
+        const past = [];
+        
+        // Separate visits into upcoming and past
+        res.data.forEach(visit => {
+          const visitDate = new Date(visit.scheduledAt);
+          if (visitDate > now) {
+            upcoming.push(visit);
+          } else {
+            past.push(visit);
+          }
+        });
+        
+        setVisits(upcoming);
+        setPastVisits(past);
+      }
+    } catch (e) { 
+      setError('Failed to load appointments'); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const cancel = async (id) => {
@@ -46,34 +54,28 @@ const AgentAppointments = () => {
     } catch (e) { alert('Failed to cancel'); }
   };
 
-  const openNotesModal = (visit, status) => {
-    setSelectedVisit(visit);
-    setStatusToUpdate(status);
-    setVisitNotes('');
-    setShowNotesModal(true);
+  const markVisited = async (id) => {
+    try {
+      const res = await visitAPI.updateVisitOutcome(id, 'visited');
+      if (res.success) {
+        setPastVisits(prev => 
+          prev.map(v => v._id === id ? { ...v, status: 'visited' } : v)
+        );
+        alert('Visit marked as visited.');
+      }
+    } catch (e) { alert('Failed to update visit status'); }
   };
 
-  const updateVisitStatus = async () => {
-    if (!selectedVisit) return;
-    
+  const markNotVisited = async (id) => {
     try {
-      const res = await visitAPI.updateVisitAfterScheduled(
-        selectedVisit._id, 
-        statusToUpdate, 
-        visitNotes
-      );
-      
+      const res = await visitAPI.updateVisitOutcome(id, 'not visited');
       if (res.success) {
-        setVisits(prev => prev.filter(v => v._id !== selectedVisit._id));
-        alert(`Visit marked as ${statusToUpdate === 'visited' ? 'Visited' : 'Not Visited'}`);
-        setShowNotesModal(false);
-      } else {
-        alert(res.message || 'Failed to update visit status');
+        setPastVisits(prev => 
+          prev.map(v => v._id === id ? { ...v, status: 'not visited' } : v)
+        );
+        alert('Visit marked as not visited.');
       }
-    } catch (e) {
-      console.error('Error updating visit status:', e);
-      alert(e.message || 'Failed to update visit status');
-    }
+    } catch (e) { alert('Failed to update visit status'); }
   };
 
   return (
@@ -91,95 +93,98 @@ const AgentAppointments = () => {
 
         <main className="p-6">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Approved Appointments</h2>
+            {/* Tabs */}
+            <div className="mb-6 border-b border-gray-200">
+              <div className="flex space-x-8">
+                <button
+                  onClick={() => setActiveTab('upcoming')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'upcoming'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Upcoming Visits
+                </button>
+                <button
+                  onClick={() => setActiveTab('past')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'past'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Past Visits
+                </button>
+              </div>
+            </div>
+
             {loading ? (
               <div>Loading...</div>
             ) : error ? (
               <div className="text-red-600">{error}</div>
-            ) : visits.length === 0 ? (
-              <div>No approved visits.</div>
-            ) : (
-              <div className="space-y-3">
-                {visits.map(v => (
-                  <div key={v._id} className="bg-white border border-gray-200 rounded p-4 flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-gray-900">{v.property?.title || 'Property'}</div>
-                      <div className="text-sm text-gray-600">When: {new Date(v.scheduledAt).toLocaleString()}</div>
-                      {isVisitPast(v.scheduledAt) && (
-                        <div className="text-xs text-amber-600 mt-1">
-                          This visit time has passed. Please update the status.
+            ) : activeTab === 'upcoming' ? (
+              <>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Appointments</h2>
+                {visits.length === 0 ? (
+                  <div>No upcoming visits.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {visits.map(v => (
+                      <div key={v._id} className="bg-white border border-gray-200 rounded p-4 flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-gray-900">{v.property?.title || 'Property'}</div>
+                          <div className="text-sm text-gray-600">When: {new Date(v.scheduledAt).toLocaleString()}</div>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {isVisitPast(v.scheduledAt) ? (
-                        <>
-                          <button 
-                            onClick={() => openNotesModal(v, 'visited')} 
-                            className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                          >
-                            Mark as Visited
-                          </button>
-                          <button 
-                            onClick={() => openNotesModal(v, 'not_visited')} 
-                            className="px-3 py-1 bg-amber-600 text-white rounded hover:bg-amber-700"
-                          >
-                            Mark as Not Visited
-                          </button>
-                        </>
-                      ) : (
-                        <button 
-                          onClick={() => cancel(v._id)} 
-                          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-                        >
-                          Cancel
-                        </button>
-                      )}
-                    </div>
+                        <div className="flex items-center space-x-2">
+                          <button onClick={() => cancel(v._id)} className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Cancel</button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )}
+              </>
+            ) : (
+              <>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Past Appointments</h2>
+                {pastVisits.length === 0 ? (
+                  <div>No past visits.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {pastVisits.map(v => (
+                      <div key={v._id} className="bg-white border border-gray-200 rounded p-4 flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-gray-900">{v.property?.title || 'Property'}</div>
+                          <div className="text-sm text-gray-600">When: {new Date(v.scheduledAt).toLocaleString()}</div>
+                          <div className="text-sm text-gray-600">Status: {v.status}</div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {v.status !== 'visited' && (
+                            <button 
+                              onClick={() => markVisited(v._id)} 
+                              className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                            >
+                              Mark as Visited
+                            </button>
+                          )}
+                          {v.status !== 'not visited' && (
+                            <button 
+                              onClick={() => markNotVisited(v._id)} 
+                              className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                            >
+                              Mark as Not Visited
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </main>
       </div>
-
-      {/* Notes Modal */}
-      {showNotesModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">
-              {statusToUpdate === 'visited' ? 'Mark as Visited' : 'Mark as Not Visited'}
-            </h3>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Visit Notes (Optional)
-              </label>
-              <textarea
-                value={visitNotes}
-                onChange={(e) => setVisitNotes(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows="4"
-                placeholder="Add any notes about the visit outcome..."
-              ></textarea>
-            </div>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowNotesModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={updateVisitStatus}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                Update Status
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

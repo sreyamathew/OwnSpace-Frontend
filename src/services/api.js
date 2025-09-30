@@ -516,13 +516,13 @@ export const visitAPI = {
       throw error;
     }
   },
-  // Update visit status after scheduled time (visited/not_visited)
-  updateVisitAfterScheduled: async (visitId, status, visitNotes) => {
+  // Update visit status (visited/not visited)
+  updateVisitOutcome: async (visitId, status) => {
     try {
-      const response = await apiRequest(`/visits/${visitId}/status`, {
+      const response = await apiRequest(`/visits/${visitId}/visit-status`, {
         method: 'PUT',
         includeAuth: true,
-        body: JSON.stringify({ status, visitNotes }),
+        body: JSON.stringify({ status }),
       });
       return response;
     } catch (error) {

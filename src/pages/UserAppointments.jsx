@@ -3,7 +3,7 @@ import { visitAPI } from '../services/api';
 import ContactNavbar from '../components/ContactNavbar';
 
 const UserAppointments = () => {
-  const [tab, setTab] = useState('approved');
+  const [tab, setTab] = useState('pending');
   const [visits, setVisits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -29,12 +29,6 @@ const UserAppointments = () => {
     try {
       const { id, date, time, note } = editing;
       const scheduledAt = new Date(`${date}T${time}:00`);
-      // Prevent past selections (local system time)
-      const now = new Date();
-      if (scheduledAt.getTime() <= now.getTime()) {
-        alert('Cannot schedule a visit in the past or present. Please select a future time.');
-        return;
-      }
       const res = await visitAPI.reschedule(id, scheduledAt, note);
       if (res.success) {
         // Goes back to pending
@@ -60,8 +54,8 @@ const UserAppointments = () => {
       <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-4">My Appointments</h1>
       <div className="mb-4 flex space-x-2">
-        {['all','pending','approved','rejected','visited','not_visited'].map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`px-3 py-1 rounded ${tab===t ? 'bg-blue-100 text-blue-700' : 'border border-gray-300 text-gray-700'}`}>{t === 'not_visited' ? 'Not Visited' : t[0].toUpperCase()+t.slice(1)}</button>
+        {['all','pending','approved','rejected','visited','not visited'].map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`px-3 py-1 rounded ${tab===t ? 'bg-blue-100 text-blue-700' : 'border border-gray-300 text-gray-700'}`}>{t[0].toUpperCase()+t.slice(1)}</button>
         ))}
       </div>
       {loading ? (
@@ -74,20 +68,19 @@ const UserAppointments = () => {
         <div className="space-y-3">
           {visits.map(v => {
             const status = (v.status || '').toLowerCase();
-            const isFinal = status === 'approved' || status === 'rejected';
+            const isFinal = status === 'approved' || status === 'rejected' || status === 'visited' || status === 'not visited';
             return (
             <div key={v._id} className="bg-white border border-gray-200 rounded p-4 flex items-center justify-between">
               <div>
                 <div className="font-medium text-gray-900">{v.property?.title || 'Property'}</div>
                 <div className="text-sm text-gray-600">When: {new Date(v.scheduledAt).toLocaleString()}</div>
-                <div className={`text-sm ${
-                  status === 'visited' ? 'text-green-600 font-medium' : 
-                  status === 'not_visited' ? 'text-amber-600 font-medium' : 
-                  status === 'approved' ? 'text-blue-600' : 
-                  status === 'rejected' ? 'text-red-600' : 
-                  'text-gray-500'
-                }`}>
-                  Status: {status === 'not_visited' ? 'Not Visited' : status.charAt(0).toUpperCase() + status.slice(1)}
+                <div className="text-xs text-gray-500">
+                  Status: <span className={`font-medium ${
+                    status === 'visited' ? 'text-green-600' : 
+                    status === 'not visited' ? 'text-red-600' : 
+                    status === 'approved' ? 'text-blue-600' : 
+                    status === 'rejected' ? 'text-gray-600' : 'text-yellow-600'
+                  }`}>{v.status}</span>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
@@ -100,13 +93,13 @@ const UserAppointments = () => {
                 {status === 'visited' && (
                   <button className="px-3 py-1 bg-green-100 text-green-700 border border-green-300 rounded" disabled>Visited</button>
                 )}
-                {status === 'not_visited' && (
-                  <button className="px-3 py-1 bg-amber-100 text-amber-700 border border-amber-300 rounded" disabled>Not Visited</button>
+                {status === 'not visited' && (
+                  <button className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded" disabled>Not Visited</button>
                 )}
-                {!isFinal && status !== 'visited' && status !== 'not_visited' && (
+                {!isFinal && (
                   <button onClick={() => openEdit(v)} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Edit</button>
                 )}
-                {!isFinal && status !== 'visited' && status !== 'not_visited' && (
+                {!isFinal && (
                   <button onClick={() => cancel(v._id)} className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Cancel</button>
                 )}
               </div>
