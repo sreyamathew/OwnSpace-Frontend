@@ -159,21 +159,29 @@ const AgentAppointments = () => {
                           <div className="text-sm text-gray-600">Status: {v.status}</div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          {v.status !== 'visited' && (
-                            <button 
-                              onClick={() => markVisited(v._id)} 
-                              className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                            >
-                              Mark as Visited
-                            </button>
-                          )}
-                          {v.status !== 'not visited' && (
-                            <button 
-                              onClick={() => markNotVisited(v._id)} 
-                              className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700"
-                            >
-                              Mark as Not Visited
-                            </button>
+                          {v.status === 'visited' ? (
+                            <div className="px-3 py-1 bg-green-100 text-green-800 rounded border border-green-300">
+                              Status: Visited
+                            </div>
+                          ) : v.status === 'not visited' ? (
+                            <div className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded border border-yellow-300">
+                              Status: Not Visited
+                            </div>
+                          ) : (
+                            <>
+                              <button 
+                                onClick={() => markVisited(v._id)} 
+                                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                              >
+                                Mark as Visited
+                              </button>
+                              <button 
+                                onClick={() => markNotVisited(v._id)} 
+                                className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                              >
+                                Mark as Not Visited
+                              </button>
+                            </>
                           )}
                         </div>
                       </div>
