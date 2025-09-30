@@ -48,66 +48,94 @@ const UserAppointments = () => {
     } catch (e) { alert('Failed to cancel'); }
   };
 
+  // Get the display heading based on selected tab
+  const getHeading = () => {
+    const tabName = tab.charAt(0).toUpperCase() + tab.slice(1);
+    return tab === 'all' ? 'All Appointments' : `${tabName} Appointments`;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <ContactNavbar />
-      <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">My Appointments</h1>
-      <div className="mb-4 flex space-x-2">
-        {['all','pending','approved','rejected','visited','not visited'].map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`px-3 py-1 rounded ${tab===t ? 'bg-blue-100 text-blue-700' : 'border border-gray-300 text-gray-700'}`}>{t[0].toUpperCase()+t.slice(1)}</button>
-        ))}
-      </div>
-      {loading ? (
-        <div>Loading...</div>
-      ) : error ? (
-        <div className="text-red-600">{error}</div>
-      ) : visits.length === 0 ? (
-        <div>No appointments.</div>
-      ) : (
-        <div className="space-y-3">
-          {visits.map(v => {
-            const status = (v.status || '').toLowerCase();
-            const isFinal = status === 'approved' || status === 'rejected' || status === 'visited' || status === 'not visited';
-            return (
-            <div key={v._id} className="bg-white border border-gray-200 rounded p-4 flex items-center justify-between">
-              <div>
-                <div className="font-medium text-gray-900">{v.property?.title || 'Property'}</div>
-                <div className="text-sm text-gray-600">When: {new Date(v.scheduledAt).toLocaleString()}</div>
-                <div className="text-xs text-gray-500">
-                  Status: <span className={`font-medium ${
-                    status === 'visited' ? 'text-green-600' : 
-                    status === 'not visited' ? 'text-red-600' : 
-                    status === 'approved' ? 'text-blue-600' : 
-                    status === 'rejected' ? 'text-gray-600' : 'text-yellow-600'
-                  }`}>{v.status}</span>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                {status === 'approved' && (
-                  <button onClick={() => setTab('approved')} className="px-3 py-1 border border-gray-300 rounded" disabled>Approved</button>
-                )}
-                {status === 'rejected' && (
-                  <button onClick={() => setTab('rejected')} className="px-3 py-1 border border-gray-300 rounded" disabled>Rejected</button>
-                )}
-                {status === 'visited' && (
-                  <button className="px-3 py-1 bg-green-100 text-green-700 border border-green-300 rounded" disabled>Visited</button>
-                )}
-                {status === 'not visited' && (
-                  <button className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded" disabled>Not Visited</button>
-                )}
-                {!isFinal && (
-                  <button onClick={() => openEdit(v)} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Edit</button>
-                )}
-                {!isFinal && (
-                  <button onClick={() => cancel(v._id)} className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Cancel</button>
-                )}
-              </div>
-            </div>
-            );
-          })}
+      <div className="flex relative min-h-[calc(100vh-64px)]">
+        {/* Fixed Sidebar */}
+        <div className="w-64 bg-white border-r border-gray-200 shadow-sm fixed top-[64px] bottom-0 left-0 overflow-y-auto">
+          <div className="p-4">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Filter By Status</h2>
+            <nav className="space-y-1">
+              {['all', 'pending', 'approved', 'rejected', 'visited', 'not visited'].map(status => (
+                <button
+                  key={status}
+                  onClick={() => setTab(status)}
+                  className={`w-full text-left px-4 py-2 rounded-md transition-colors duration-150 ${
+                    tab === status 
+                      ? 'bg-blue-50 text-blue-700 font-medium' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </button>
+              ))}
+            </nav>
+          </div>
         </div>
-      )}
+
+        {/* Main Content - with left margin to accommodate fixed sidebar */}
+        <div className="flex-1 p-6 ml-64">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">{getHeading()}</h1>
+          
+          {loading ? (
+            <div className="flex justify-center items-center h-40">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+            </div>
+          ) : error ? (
+            <div className="p-4 bg-red-50 text-red-600 rounded-md">{error}</div>
+          ) : visits.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">No appointments found.</div>
+          ) : (
+            <div className="space-y-4">
+              {visits.map(v => {
+                const status = (v.status || '').toLowerCase();
+                const isFinal = status === 'approved' || status === 'rejected' || status === 'visited' || status === 'not visited';
+                return (
+                <div key={v._id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-gray-900">{v.property?.title || 'Property'}</div>
+                    <div className="text-sm text-gray-600 mt-1">When: {new Date(v.scheduledAt).toLocaleString()}</div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Status: <span className={`font-medium ${
+                        status === 'visited' ? 'text-green-600' : 
+                        status === 'not visited' ? 'text-red-600' : 
+                        status === 'approved' ? 'text-blue-600' : 
+                        status === 'rejected' ? 'text-gray-600' : 'text-yellow-600'
+                      }`}>{v.status}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {status === 'approved' && (
+                      <button onClick={() => setTab('approved')} className="px-3 py-1 border border-gray-300 rounded" disabled>Approved</button>
+                    )}
+                    {status === 'rejected' && (
+                      <button onClick={() => setTab('rejected')} className="px-3 py-1 border border-gray-300 rounded" disabled>Rejected</button>
+                    )}
+                    {status === 'visited' && (
+                      <button className="px-3 py-1 bg-green-100 text-green-700 border border-green-300 rounded" disabled>Visited</button>
+                    )}
+                    {status === 'not visited' && (
+                      <button className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded" disabled>Not Visited</button>
+                    )}
+                    {!isFinal && (
+                      <button onClick={() => openEdit(v)} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Edit</button>
+                    )}
+                    {!isFinal && (
+                      <button onClick={() => cancel(v._id)} className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Cancel</button>
+                    )}
+                  </div>
+                </div>
+                );
+              })}
+            </div>
+          )}
 
       {editing.open && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
@@ -134,6 +162,7 @@ const UserAppointments = () => {
           </div>
         </div>
       )}
+        </div>
       </div>
     </div>
   );
