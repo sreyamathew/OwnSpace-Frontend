@@ -1,8 +1,21 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { visitAPI } from '../services/api';
 import { Calendar } from 'lucide-react';
 
 const formatHM = (date) => `${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+
+// Helper function to check if a slot is expired
+const isSlotExpired = (dateStr, timeStr) => {
+  try {
+    const now = new Date();
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const slotDate = new Date(`${dateStr}T00:00:00`);
+    slotDate.setHours(hours, minutes, 0, 0);
+    return slotDate <= now;
+  } catch (e) {
+    return false;
+  }
+};
 
 const VisitSlotManager = ({ propertyId }) => {
   const [availability, setAvailability] = useState({ availableDates: [], slotsByDate: {} });
@@ -36,7 +49,62 @@ const VisitSlotManager = ({ propertyId }) => {
     } finally { setLoading(false); }
   };
 
+  // Filter out expired slots from the current availability data
+  const filterExpiredSlots = useCallback(() => {
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const currentTime = formatHM(now);
+    
+    const updatedSlotsByDate = { ...availability.slotsByDate };
+    let hasChanges = false;
+    
+    // Check each date
+    Object.keys(updatedSlotsByDate).forEach(dateStr => {
+      // For today, filter out slots with start time in the past
+      if (dateStr === currentDate) {
+        const filteredSlots = updatedSlotsByDate[dateStr].filter(slot => 
+          slot.startTime > currentTime
+        );
+        
+        if (filteredSlots.length !== updatedSlotsByDate[dateStr].length) {
+          updatedSlotsByDate[dateStr] = filteredSlots;
+          hasChanges = true;
+        }
+      }
+      
+      // Remove dates that are in the past
+      if (dateStr < currentDate) {
+        delete updatedSlotsByDate[dateStr];
+        hasChanges = true;
+      }
+    });
+    
+    // Update state only if changes were made
+    if (hasChanges) {
+      // Recalculate available dates
+      const updatedAvailableDates = Object.keys(updatedSlotsByDate)
+        .filter(d => updatedSlotsByDate[d].length > 0)
+        .sort();
+      
+      setAvailability(prev => ({
+        ...prev,
+        availableDates: updatedAvailableDates,
+        slotsByDate: updatedSlotsByDate
+      }));
+    }
+  }, [availability]);
+  
+  // Load availability on mount and when propertyId changes
   useEffect(() => { loadAvailability(); }, [propertyId]);
+  
+  // Set up interval to check for expired slots every minute
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      filterExpiredSlots();
+    }, 60 * 1000); // Check every minute
+    
+    return () => clearInterval(intervalId);
+  }, [filterExpiredSlots]);
 
   const parseTimes = (input) => input
     .split(',')
@@ -44,11 +112,37 @@ const VisitSlotManager = ({ propertyId }) => {
     .filter(Boolean)
     .filter(t => /^\d{2}:\d{2}$/.test(t));
 
+  // Validate if a time slot is at least 10 minutes in the future
+  const validateTimeSlot = (dateStr, timeStr) => {
+    try {
+      const now = new Date();
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const slotDate = new Date(`${dateStr}T00:00:00`);
+      slotDate.setHours(hours, minutes, 0, 0);
+      
+      // Add 10 minutes to current time for minimum threshold
+      const minValidTime = new Date(now);
+      minValidTime.setMinutes(now.getMinutes() + 10);
+      
+      return slotDate >= minValidTime;
+    } catch (e) {
+      return false;
+    }
+  };
+
   const handleCreateSlots = async () => {
     resetMessages();
     if (!date) { setError('Select a date'); return; }
     const times = parseTimes(timesInput);
     if (times.length === 0) { setError('Add times like 10:00, 10:30'); return; }
+    
+    // Validate each time slot is at least 10 minutes in the future
+    const invalidTimes = times.filter(time => !validateTimeSlot(date, time));
+    if (invalidTimes.length > 0) {
+      setError(`Time slot${invalidTimes.length > 1 ? 's' : ''} cannot be added. ${invalidTimes.join(', ')} ${invalidTimes.length > 1 ? 'are' : 'is'} in the past or less than 10 minutes from now. Please try a different time.`);
+      return;
+    }
+    
     setSubmitting(true);
     try {
       const res = await visitAPI.createSlots({ propertyId, date, times });
@@ -79,16 +173,37 @@ const VisitSlotManager = ({ propertyId }) => {
   // Block/Unblock removed per design requirement
 
   const generateNextHourSlots = () => {
+    if (!date) {
+      setError('Please select a date first');
+      return;
+    }
+    
     const now = new Date();
     now.setSeconds(0, 0);
-    const minute = now.getMinutes();
-    const start = new Date(now);
+    
+    // Add 10 minutes to current time to ensure we're only suggesting valid slots
+    const futureTime = new Date(now);
+    futureTime.setMinutes(now.getMinutes() + 10);
+    
+    const minute = futureTime.getMinutes();
+    const start = new Date(futureTime);
+    
+    // Round to next 30-minute interval
     start.setMinutes(minute < 30 ? 30 : 0);
     if (minute >= 30) start.setHours(start.getHours() + 1);
+    
     const t1 = formatHM(start);
     const t2Date = new Date(start);
     t2Date.setMinutes(start.getMinutes() + 30);
     const t2 = formatHM(t2Date);
+    
+    // Validate the suggested times for the selected date
+    if (!validateTimeSlot(date, t1) || !validateTimeSlot(date, t2)) {
+      setError('Cannot suggest valid time slots for today. Please try a future date.');
+      return;
+    }
+    
+    resetMessages();
     setTimesInput(`${t1}, ${t2}`);
   };
 
@@ -176,10 +291,10 @@ const VisitSlotManager = ({ propertyId }) => {
           </div>
 
           {(error || success || loading) && (
-            <div className="mt-2 text-[11px]">
-              {loading && <div className="text-gray-500">Loading…</div>}
-              {error && <div className="text-red-600">{error}</div>}
-              {success && <div className="text-green-600">{success}</div>}
+            <div className="mt-2">
+              {loading && <div className="text-gray-500 text-[11px]">Loading…</div>}
+              {error && <div className="text-red-600 text-xs p-2 bg-red-50 border border-red-100 rounded-md">{error}</div>}
+              {success && <div className="text-green-600 text-xs p-2 bg-green-50 border border-green-100 rounded-md">{success}</div>}
             </div>
           )}
 
