@@ -554,11 +554,52 @@ export const visitAPI = {
   },
 };
 
+// Offer API functions
+export const offerAPI = {
+  // Create a new offer (interest in buying)
+  createOffer: async ({ propertyId, investorId, agentId, amount, message, preferredDate }) => {
+    try {
+      const response = await apiRequest('/offers', {
+        method: 'POST',
+        includeAuth: true,
+        body: JSON.stringify({ propertyId, investorId, agentId, amount, message, preferredDate }),
+      });
+      return response;
+    } catch (error) { throw error; }
+  },
+  // Get offers created by me
+  getMyOffers: async () => {
+    try {
+      const response = await apiRequest('/offers/my', { method: 'GET', includeAuth: true });
+      return response;
+    } catch (error) { throw error; }
+  },
+  // For admin/agent: get offers received for my properties
+  getOffersForMyProperties: async () => {
+    try {
+      const response = await apiRequest('/offers/received', { method: 'GET', includeAuth: true });
+      return response;
+    } catch (error) { throw error; }
+  },
+  // Update status (Approved/Rejected/Pending)
+  updateOfferStatus: async (offerId, status) => {
+    try {
+      const response = await apiRequest(`/offers/${offerId}`, {
+        method: 'PUT',
+        includeAuth: true,
+        body: JSON.stringify({ status }),
+      });
+      return response;
+    } catch (error) { throw error; }
+  },
+};
+
 // Export default API object
 const api = {
   auth: authAPI,
   agent: agentAPI,
   property: propertyAPI,
+  offer: offerAPI,
   healthCheck,
 };
 

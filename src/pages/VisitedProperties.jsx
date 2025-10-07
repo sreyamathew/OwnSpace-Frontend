@@ -3,13 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import ContactNavbar from '../components/ContactNavbar';
 import Footer from '../components/Footer';
 import { visitAPI } from '../services/api';
+import OfferForm from '../components/OfferForm';
+import { useAuth } from '../contexts/AuthContext';
 import { MapPin, User as UserIcon, Calendar as CalendarIcon, Home as HomeIcon } from 'lucide-react';
 
 const VisitedProperties = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
   const [error, setError] = useState('');
+  const [offerFor, setOfferFor] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -91,10 +95,16 @@ const VisitedProperties = () => {
                         </div>
                       )}
                     </div>
-                    <div className="mt-3">
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setOfferFor(it)}
+                        className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      >
+                        Interest in Buying
+                      </button>
                       <button
                         onClick={() => navigate(`/property/${it.property?._id}`)}
-                        className="w-full px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
                       >
                         View Details
                       </button>
@@ -107,6 +117,23 @@ const VisitedProperties = () => {
         </div>
       </main>
       <Footer />
+      {offerFor && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">I'm Interested in Buying</h3>
+              <button onClick={() => setOfferFor(null)} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <OfferForm
+              propertyId={offerFor?.property?._id}
+              investorId={user?.userId || user?._id}
+              agentId={offerFor?.property?.agent?._id}
+              onClose={() => setOfferFor(null)}
+              onSuccess={() => setOfferFor(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

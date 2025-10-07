@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { propertyAPI, visitAPI, authAPI } from '../services/api';
+import OfferForm from '../components/OfferForm';
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -32,6 +33,7 @@ const PropertyDetail = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [savedProperties, setSavedProperties] = useState([]);
   const [scheduling, setScheduling] = useState({ open: false, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
+  const [offerOpen, setOfferOpen] = useState(false);
   const isStaffView = user?.userType === 'admin' || user?.userType === 'agent';
   // Compute local today string (YYYY-MM-DD) to restrict past dates
   const todayLocal = new Date();
@@ -520,7 +522,9 @@ const PropertyDetail = () => {
           {/* Agent Info Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">{isStaffView ? 'Agent' : 'Contact Agent'}</h3>
+              {isStaffView && (
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Agent</h3>
+              )}
               
               {property.agent && (
                 <div className="mb-6">
@@ -555,12 +559,12 @@ const PropertyDetail = () => {
                 <div className="space-y-3">
                   <button
                     onClick={() => {
-                      recordHistoryAction('contacted_agent');
-                      alert('Agent has been contacted (demo).');
+                      if (!user) { alert('Please login first'); return; }
+                      setOfferOpen(true);
                     }}
                     className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                   >
-                    Contact Agent
+                    Interest in Buying
                   </button>
                   <button
                     onClick={openScheduleModal}
@@ -640,6 +644,24 @@ const PropertyDetail = () => {
               <button onClick={closeScheduleModal} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">Cancel</button>
               <button onClick={submitSchedule} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Send Request</button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Offer Modal */}
+      {!isStaffView && offerOpen && property && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">I'm Interested in Buying</h3>
+              <button onClick={() => setOfferOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <OfferForm
+              propertyId={property._id}
+              investorId={user?.userId || user?._id}
+              agentId={property?.agent?._id}
+              onClose={() => setOfferOpen(false)}
+              onSuccess={() => { try { recordHistoryAction('offer_submitted'); } catch (_) {} }}
+            />
           </div>
         </div>
       )}

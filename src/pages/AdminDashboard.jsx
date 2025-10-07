@@ -44,6 +44,7 @@ import { useAuth } from '../contexts/AuthContext';
 import MinimalSidebar from '../components/MinimalSidebar';
 import { dashboardStats, salesData, alerts, purchaseRequests, marketNews } from '../data/mockData';
 import { propertyAPI, visitAPI } from '../services/api';
+import OfferRequestsSection from '../components/OfferRequestsSection';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -456,59 +457,7 @@ const AdminDashboard = () => {
           {/* Offer/Purchase Request Management */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Purchase Request Management</h2>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-6">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Property</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Investor</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Amount</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {purchaseRequests.map((request) => (
-                        <tr key={request.id} className="border-b border-gray-100">
-                          <td className="py-3 px-4 text-gray-900">{request.property}</td>
-                          <td className="py-3 px-4 text-gray-900">{request.investor}</td>
-                          <td className="py-3 px-4 text-gray-900">${request.amount.toLocaleString()}</td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              request.status === 'approved' ? 'bg-green-100 text-green-800' :
-                              request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
-                            }`}>
-                              {request.status}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            {request.status === 'pending' && (
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => handleApproveRequest(request.id)}
-                                  className="p-1 text-green-600 hover:bg-green-100 rounded"
-                                >
-                                  <Check className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleRejectRequest(request.id)}
-                                  className="p-1 text-red-600 hover:bg-red-100 rounded"
-                                >
-                                  <XCircle className="h-4 w-4" />
-                                </button>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+            <OfferRequestsSection />
           </div>
 
           {/* Sale Finalization Tool */}

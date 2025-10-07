@@ -4,6 +4,7 @@ import { Plus, Building, User, MapPin, Bed, Bath, Square, CheckCircle, X, LogOut
 import { useAuth } from '../contexts/AuthContext';
 import AgentSidebar from '../components/AgentSidebar';
 import { propertyAPI, visitAPI } from '../services/api';
+import OfferRequestsSection from '../components/OfferRequestsSection';
 
 const ActionCard = ({ icon: Icon, title, description, onClick }) => {
   return (
@@ -276,6 +277,11 @@ const AgentDashboard = () => {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Offer Requests */}
+          <div className="mt-10">
+            <OfferRequestsSection />
           </div>
         </main>
       </div>
