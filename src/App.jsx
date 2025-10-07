@@ -37,6 +37,7 @@ import EditProperty from './pages/EditProperty';
 import AgentProperties from './pages/AgentProperties';
 import PropertyDetail from './pages/PropertyDetail';
 import VisitedProperties from './pages/VisitedProperties';
+import PurchaseDetails from './pages/PurchaseDetails';
 
 const AppContent = () => {
   return (
@@ -264,6 +265,11 @@ const AppContent = () => {
       <Route path="/visited-properties" element={
         <ProtectedRoute>
           <VisitedProperties />
+        </ProtectedRoute>
+      } />
+      <Route path="/purchase-details" element={
+        <ProtectedRoute>
+          <PurchaseDetails />
         </ProtectedRoute>
       } />
       <Route path="/make-admin" element={
