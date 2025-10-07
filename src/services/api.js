@@ -581,6 +581,13 @@ export const offerAPI = {
       return response;
     } catch (error) { throw error; }
   },
+  // Explicitly fetch offers by agent id (agent/admin)
+  getOffersByAgent: async (agentId) => {
+    try {
+      const response = await apiRequest(`/offers/agent/${agentId}`, { method: 'GET', includeAuth: true });
+      return response;
+    } catch (error) { throw error; }
+  },
   // Update status (Approved/Rejected/Pending)
   updateOfferStatus: async (offerId, status) => {
     try {

@@ -19,7 +19,12 @@ const OfferRequestsSection = ({ userId }) => {
       let response;
       if (isAdmin() || isAgent()) {
         try {
-          response = await offerAPI.getOffersForMyProperties();
+          // Prefer agent-specific endpoint when agent
+          if (isAgent() && user?._id) {
+            response = await offerAPI.getOffersByAgent(user._id);
+          } else {
+            response = await offerAPI.getOffersForMyProperties();
+          }
         } catch (e) {
           // If not authorized or other handled error, show empty list instead of red error
           console.warn('Received offers fetch failed, falling back to empty list:', e?.message);
@@ -31,7 +36,8 @@ const OfferRequestsSection = ({ userId }) => {
       } else {
         response = await offerAPI.getMyOffers();
       }
-      setOffers(response?.offers || []);
+      const data = Array.isArray(response?.offers) ? response.offers : Array.isArray(response?.data?.offers) ? response.data.offers : [];
+      setOffers(data);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching offers:', err);
@@ -180,7 +186,7 @@ const OfferRequestsSection = ({ userId }) => {
                     {offer.message || 'No message'}
                   </div>
                   <div className="text-xs text-gray-400">
-                    {new Date(offer.createdAt).toLocaleDateString()}
+                    Preferred: {offer.preferredDate ? new Date(offer.preferredDate).toLocaleDateString() : 'N/A'} • Submitted: {new Date(offer.createdAt || offer.timestamp).toLocaleDateString()}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
