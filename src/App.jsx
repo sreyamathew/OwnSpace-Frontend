@@ -36,6 +36,7 @@ import MakeAdmin from './pages/MakeAdmin';
 import EditProperty from './pages/EditProperty';
 import AgentProperties from './pages/AgentProperties';
 import PropertyDetail from './pages/PropertyDetail';
+import VisitedProperties from './pages/VisitedProperties';
 
 const AppContent = () => {
   return (
@@ -258,6 +259,11 @@ const AppContent = () => {
       <Route path="/property-history" element={
         <ProtectedRoute>
           <PropertyHistory />
+        </ProtectedRoute>
+      } />
+      <Route path="/visited-properties" element={
+        <ProtectedRoute>
+          <VisitedProperties />
         </ProtectedRoute>
       } />
       <Route path="/make-admin" element={

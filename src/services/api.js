@@ -537,6 +537,13 @@ export const visitAPI = {
       return response;
     } catch (error) { throw error; }
   },
+  // Visited properties convenience fetch
+  getVisited: async () => {
+    try {
+      const response = await apiRequest('/visits/my?status=visited', { method: 'GET', includeAuth: true });
+      return response;
+    } catch (error) { throw error; }
+  },
   // List requests assigned to me
   assignedToMe: async (status) => {
     try {
