@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Home, Building, Users, Phone, LogIn, UserPlus, Info, Settings, LogOut, LayoutDashboard, User, Heart, History, ChevronDown, Calendar } from 'lucide-react';
+import { Menu, X, Home, Building, Users, Phone, LogIn, UserPlus, Info, Settings, LogOut, LayoutDashboard, User, Heart, History, ChevronDown, Calendar, Eye, Receipt } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const ContactNavbar = () => {
@@ -150,12 +150,28 @@ const ContactNavbar = () => {
                             <span>View History</span>
                           </Link>
                           <Link
+                            to="/visited-properties"
+                            onClick={() => setIsProfileOpen(false)}
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            <Eye className="h-4 w-4" />
+                            <span>Visited Properties</span>
+                          </Link>
+                          <Link
                             to="/appointments"
                             onClick={() => setIsProfileOpen(false)}
                             className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           >
                             <Calendar className="h-4 w-4" />
                             <span>Appointments</span>
+                          </Link>
+                          <Link
+                            to="/purchase-details"
+                            onClick={() => setIsProfileOpen(false)}
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            <Receipt className="h-4 w-4" />
+                            <span>Purchase Details</span>
                           </Link>
                           <div className="border-t border-gray-100"></div>
                           <button
@@ -296,6 +312,30 @@ const ContactNavbar = () => {
                       >
                         <History className="h-5 w-5" />
                         <span>View History</span>
+                      </Link>
+                      <Link
+                        to="/visited-properties"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center space-x-3 mx-3 px-3 py-2 rounded-sm text-base font-light text-gray-600 hover:text-black hover:bg-gray-50 transition-colors duration-200"
+                      >
+                        <Eye className="h-5 w-5" />
+                        <span>Visited Properties</span>
+                      </Link>
+                      <Link
+                        to="/appointments"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center space-x-3 mx-3 px-3 py-2 rounded-sm text-base font-light text-gray-600 hover:text-black hover:bg-gray-50 transition-colors duration-200"
+                      >
+                        <Calendar className="h-5 w-5" />
+                        <span>Appointments</span>
+                      </Link>
+                      <Link
+                        to="/purchase-details"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center space-x-3 mx-3 px-3 py-2 rounded-sm text-base font-light text-gray-600 hover:text-black hover:bg-gray-50 transition-colors duration-200"
+                      >
+                        <Receipt className="h-5 w-5" />
+                        <span>Purchase Details</span>
                       </Link>
                     </>
                   )}

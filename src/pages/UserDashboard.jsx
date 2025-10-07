@@ -24,7 +24,7 @@ import { propertyAPI, visitAPI } from '../services/api';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [properties, setProperties] = useState([]);
   const [filteredProperties, setFilteredProperties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +41,9 @@ const UserDashboard = () => {
   const [visibleCount, setVisibleCount] = useState(9);
   const [scheduling, setScheduling] = useState({ open: false, property: null, date: '', time: '', note: '' });
   const [profileOpen, setProfileOpen] = useState(false);
+  const [visitedOpen, setVisitedOpen] = useState(false);
+  const [visitedLoading, setVisitedLoading] = useState(false);
+  const [visitedItems, setVisitedItems] = useState([]);
   // Compute local today string (YYYY-MM-DD) to restrict past dates
   const todayLocal = new Date();
   const minDate = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
@@ -101,6 +104,31 @@ const UserDashboard = () => {
     });
     setSearchTerm('');
     fetchProperties();
+  };
+
+  const fetchVisited = async () => {
+    try {
+      setVisitedLoading(true);
+      const res = await visitAPI.myRequests('visited');
+      if (res?.success) {
+        setVisitedItems(Array.isArray(res.data) ? res.data : []);
+      } else {
+        setVisitedItems([]);
+      }
+    } catch (e) {
+      console.error('Failed to fetch visited properties', e);
+      setVisitedItems([]);
+    } finally {
+      setVisitedLoading(false);
+    }
+  };
+
+  const toggleVisitedOpen = async () => {
+    const next = !visitedOpen;
+    setVisitedOpen(next);
+    if (next && visitedItems.length === 0) {
+      await fetchVisited();
+    }
   };
 
   const handlePropertyView = (propertyId) => {
@@ -185,13 +213,76 @@ const UserDashboard = () => {
               <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
               <div className="relative">
                 <button
+                  onClick={toggleVisitedOpen}
+                  className="hidden sm:flex items-center px-3 py-2 text-sm rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
+                  aria-haspopup="true"
+                  aria-expanded={visitedOpen}
+                >
+                  <span className="mr-2">Visited Properties</span>
+                  <svg className={`h-4 w-4 transform transition-transform ${visitedOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd"/></svg>
+                </button>
+                <button
+                  onClick={toggleVisitedOpen}
+                  className="sm:hidden p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors ml-2"
+                  aria-label="Visited Properties"
+                >
+                  <Eye className="h-5 w-5 text-gray-600" />
+                </button>
+                {visitedOpen && (
+                  <div className="absolute right-0 mt-2 w-80 max-w-[90vw] bg-white border border-gray-200 rounded-md shadow-lg z-20">
+                    <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-900">Visited Properties</span>
+                      <button onClick={() => setVisitedOpen(false)} className="text-xs text-gray-500 hover:text-gray-700">Close</button>
+                    </div>
+                    <div className="max-h-80 overflow-auto">
+                      {visitedLoading ? (
+                        <div className="p-4 text-sm text-gray-500">Loading...</div>
+                      ) : visitedItems.length === 0 ? (
+                        <div className="p-4 text-sm text-gray-500">No visited properties yet.</div>
+                      ) : (
+                        visitedItems.map(item => (
+                          <button
+                            key={item._id}
+                            onClick={() => { setVisitedOpen(false); navigate(`/property/${item.property?._id}`); }}
+                            className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="min-w-0 pr-3">
+                                <div className="text-sm font-medium text-gray-900 truncate">{item.property?.title || 'Property'}</div>
+                                <div className="mt-1 flex items-center text-xs text-gray-600 truncate">
+                                  <MapPin className="h-3 w-3 mr-1" />
+                                  <span className="truncate">{item.property?.address?.city}{item.property?.address?.state ? `, ${item.property.address.state}` : ''}</span>
+                                </div>
+                              </div>
+                              <div className="flex-shrink-0 text-right">
+                                <div className="text-xs text-gray-500">{new Date(item.scheduledAt).toLocaleDateString()}</div>
+                                <div className="text-xs text-gray-400">{new Date(item.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                    <div className="p-2 border-t border-gray-100">
+                      <button
+                        onClick={() => { setVisitedOpen(false); navigate('/appointments'); }}
+                        className="w-full text-center text-sm text-blue-600 hover:text-blue-700 py-1"
+                      >
+                        View all appointments
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="relative">
+                <button
                   onClick={() => setProfileOpen(o => !o)}
                   className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
                 >
                   <User className="h-5 w-5 text-gray-600" />
                 </button>
                 {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-20">
                     <button
                       onClick={() => { setProfileOpen(false); navigate('/profile'); }}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -199,10 +290,40 @@ const UserDashboard = () => {
                       Profile
                     </button>
                     <button
+                      onClick={() => { setProfileOpen(false); navigate('/saved-properties'); }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Saved Properties
+                    </button>
+                    <button
+                      onClick={() => { setProfileOpen(false); navigate('/property-history'); }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      View History
+                    </button>
+                    <button
+                      onClick={() => { setProfileOpen(false); navigate('/visited-properties'); }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Visited Properties
+                    </button>
+                    <button
                       onClick={() => { setProfileOpen(false); navigate('/appointments'); }}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     >
                       Appointments
+                    </button>
+                    <button
+                      onClick={() => { setProfileOpen(false); navigate('/purchase-details'); }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Purchase Details
+                    </button>
+                    <button
+                      onClick={() => { setProfileOpen(false); try { logout(); } catch (e) {} navigate('/'); }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Logout
                     </button>
                   </div>
                 )}
