@@ -282,7 +282,7 @@ const UserDashboard = () => {
                   <User className="h-5 w-5 text-gray-600" />
                 </button>
                 {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-20">
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                     <button
                       onClick={() => { setProfileOpen(false); navigate('/profile'); }}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -312,6 +312,12 @@ const UserDashboard = () => {
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     >
                       Appointments
+                    </button>
+                    <button
+                      onClick={() => { setProfileOpen(false); navigate('/purchase-details'); }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Purchase Details
                     </button>
                     <button
                       onClick={() => { setProfileOpen(false); try { logout(); } catch (e) {} navigate('/'); }}
