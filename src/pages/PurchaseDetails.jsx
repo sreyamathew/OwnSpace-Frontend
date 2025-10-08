@@ -307,7 +307,13 @@ const PurchaseDetails = () => {
                           <h3 className="text-lg font-semibold text-gray-900 mb-1">{propertyTitle}</h3>
                           <p className="text-sm text-gray-600 mb-2">{addressString}</p>
                         </div>
-                        {renderStatus(o?.status)}
+                        {o?.advancePaid ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <span className="mr-1">🔵</span>Advance Paid
+                          </span>
+                        ) : (
+                          renderStatus(o?.status)
+                        )}
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
