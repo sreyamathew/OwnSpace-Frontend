@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ContactNavbar from '../components/ContactNavbar';
 import Footer from '../components/Footer';
 import { offerAPI } from '../services/api';
@@ -13,6 +14,7 @@ const FILTERS = [
 
 const PurchaseDetails = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -324,6 +326,23 @@ const PurchaseDetails = () => {
                         </div>
                       </div>
                       
+                      {(o?.status?.toLowerCase() === 'accepted' || o?.status?.toLowerCase() === 'approved') && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-600 text-sm">Ready to proceed?</span>
+                            <button
+                              onClick={() => navigate(`/payment/${o._id}`)}
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                                <path fillRule="evenodd" d="M4.5 6.75A2.25 2.25 0 016.75 4.5h10.5a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25H6.75a2.25 2.25 0 01-2.25-2.25V6.75zm3 1.5A.75.75 0 018 7.5h8a.75.75 0 010 1.5H8a.75.75 0 01-.75-.75zm0 3A.75.75 0 018 10.5h8a.75.75 0 010 1.5H8a.75.75 0 01-.75-.75zm0 3a.75.75 0 01.75-.75h5a.75.75 0 010 1.5H8a.75.75 0 01-.75-.75z" clipRule="evenodd" />
+                              </svg>
+                              Pay Advance
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       {o?.message && (
                         <div className="mt-4 pt-4 border-t border-gray-200">
                           <span className="text-gray-500 text-sm">Message:</span>

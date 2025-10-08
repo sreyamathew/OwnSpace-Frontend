@@ -39,6 +39,7 @@ import PropertyDetail from './pages/PropertyDetail';
 import VisitedProperties from './pages/VisitedProperties';
 import PurchaseDetails from './pages/PurchaseDetails';
 import PurchaseRequestManagement from './pages/PurchaseRequestManagement';
+import Payment from './pages/Payment';
 
 const AppContent = () => {
   return (
@@ -281,6 +282,11 @@ const AppContent = () => {
       <Route path="/purchase-details" element={
         <ProtectedRoute>
           <PurchaseDetails />
+        </ProtectedRoute>
+      } />
+      <Route path="/payment/:offerId" element={
+        <ProtectedRoute>
+          <Payment />
         </ProtectedRoute>
       } />
       <Route path="/make-admin" element={
