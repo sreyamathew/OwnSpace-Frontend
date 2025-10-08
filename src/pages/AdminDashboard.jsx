@@ -456,6 +456,9 @@ const AdminDashboard = () => {
 
           {/* Pending Purchase Requests */}
           <div id="purchase-requests" className="mb-8">
+            <div className="sticky top-0 bg-gray-50 z-10 pb-2">
+              <h2 className="text-xl font-semibold text-gray-900">Purchase Requests</h2>
+            </div>
             <OfferRequestsSection showOnlyPending={true} />
           </div>
 
