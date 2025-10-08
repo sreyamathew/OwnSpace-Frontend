@@ -10,6 +10,7 @@ const FILTERS = [
   { key: 'pending', label: 'Pending (Requested Purchase)' },
   { key: 'accepted', label: 'Accepted' },
   { key: 'rejected', label: 'Rejected' },
+  { key: 'advance', label: 'Advance Paid' },
 ];
 
 const PurchaseDetails = () => {
@@ -96,6 +97,7 @@ const PurchaseDetails = () => {
     return offers.filter(o => {
       const s = (o?.status || '').toLowerCase();
       if (target === 'accepted') return s === 'accepted' || s === 'approved';
+      if (target === 'advance') return Boolean(o?.advancePaid);
       return s === target;
     });
   }, [offers, selectedFilter]);
@@ -121,6 +123,7 @@ const PurchaseDetails = () => {
             const count = f.key === 'all' ? offers.length : offers.filter(o => {
               const s = (o?.status || '').toLowerCase();
               if (f.key === 'accepted') return s === 'accepted' || s === 'approved';
+              if (f.key === 'advance') return Boolean(o?.advancePaid);
               return s === f.key;
             }).length;
             
@@ -152,6 +155,7 @@ const PurchaseDetails = () => {
           const count = f.key === 'all' ? offers.length : offers.filter(o => {
             const s = (o?.status || '').toLowerCase();
             if (f.key === 'accepted') return s === 'accepted' || s === 'approved';
+            if (f.key === 'advance') return Boolean(o?.advancePaid);
             return s === f.key;
           }).length;
           
