@@ -74,6 +74,11 @@ const Login = () => {
     if (message === 'password-changed') {
       setSuccessMessage('Password changed successfully! Please login with your new password.');
     }
+
+    const reason = searchParams.get('reason');
+    if (reason === 'expired') {
+      setErrors({ general: 'Session expired. Please log in again.' });
+    }
   }, [isAuthenticated, isAdmin, isAgent, navigate, searchParams]);
 
   const handleInputChange = (e) => {

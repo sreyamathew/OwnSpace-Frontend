@@ -130,7 +130,7 @@ const AgentDashboard = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 font-sans text-gray-800 text-sm">
       <AgentSidebar />
 
       <div className="flex-1 ml-64">
@@ -142,7 +142,7 @@ const AgentDashboard = () => {
             </div>
             <button
               onClick={() => { logout(); navigate('/login'); }}
-              className="inline-flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
+              className="inline-flex items-center justify-center space-x-2 h-9 px-4 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               <LogOut className="h-4 w-4" />
               <span>Logout</span>
@@ -151,7 +151,7 @@ const AgentDashboard = () => {
         </header>
 
         <main className="p-6">
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-6xl mx-auto">
 
             {/* Success Message */}
             {successMessage && (
@@ -163,7 +163,7 @@ const AgentDashboard = () => {
                   </div>
                   <button
                     onClick={() => setSuccessMessage('')}
-                    className="text-green-400 hover:text-green-600"
+                    className="h-6 w-6 inline-flex items-center justify-center text-green-400 hover:text-green-600"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -198,7 +198,7 @@ const AgentDashboard = () => {
                 <h2 className="text-lg font-semibold text-gray-900">Recent Properties</h2>
                 <button
                   onClick={() => navigate('/agent/properties')}
-                  className="text-sm text-blue-600 hover:text-blue-700"
+                  className="inline-flex items-center justify-center h-8 px-3 rounded-md text-blue-600 hover:text-blue-700"
                 >
                   View all
                 </button>
@@ -211,7 +211,7 @@ const AgentDashboard = () => {
               ) : properties.length === 0 ? (
                 <div className="py-10 text-sm text-gray-600">No properties yet. Add your first property.</div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {properties.slice(0, 6).map((property) => (
                     <div key={property._id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
                       <div className="relative h-32 bg-gray-100">
@@ -225,7 +225,7 @@ const AgentDashboard = () => {
                           <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                         )}
                       </div>
-                      <div className="p-3">
+                      <div className="p-4">
                         <h3 className="text-[13px] font-semibold text-gray-900 line-clamp-1">{property.title || 'Untitled Property'}</h3>
                         <div className="mt-0.5 flex items-center text-gray-600">
                           <MapPin className="h-4 w-4 mr-1" />
@@ -269,8 +269,8 @@ const AgentDashboard = () => {
                         <div className="text-sm text-gray-600">Requested for: {new Date(v.scheduledAt).toLocaleString()}</div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <button onClick={() => approveVisit(v._id)} className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">Approve</button>
-                        <button onClick={() => rejectVisit(v._id)} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Reject</button>
+                        <button onClick={() => approveVisit(v._id)} className="inline-flex items-center justify-center h-8 px-3 rounded-md bg-green-600 text-white hover:bg-green-700">Approve</button>
+                        <button onClick={() => rejectVisit(v._id)} className="inline-flex items-center justify-center h-8 px-3 rounded-md border border-gray-300 hover:bg-gray-50">Reject</button>
                       </div>
                     </div>
                   ))}
@@ -284,7 +284,9 @@ const AgentDashboard = () => {
           <div className="sticky top-0 bg-gray-50 z-10 pb-2">
             <h2 className="text-xl font-semibold text-gray-900">Purchase Requests</h2>
           </div>
-          <OfferRequestsSection showOnlyPending={true} />
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <OfferRequestsSection showOnlyPending={true} />
+          </div>
         </div>
         </main>
       </div>

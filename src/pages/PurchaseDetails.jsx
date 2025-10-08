@@ -13,7 +13,7 @@ const FILTERS = [
 ];
 
 const PurchaseDetails = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,10 +42,18 @@ const PurchaseDetails = () => {
     } catch (e) {
       console.error('Failed to fetch offers', e);
       // More specific error handling
-      if (e.message?.includes('403')) {
+      if (e.code === 'AUTH' || e.message?.includes('401')) {
+        // Token expired or unauthorized: ensure local logout and navigate
+        try { logout(); } catch (_) {}
+        const from = encodeURIComponent('/purchase-details');
+        setError('Authentication expired. Redirecting to login...');
+        setTimeout(() => {
+          window.location.href = `/login?expired=1&from=${from}`;
+        }, 300);
+      } else if (e.message?.includes('403')) {
         setError('Access denied. Please make sure you are logged in correctly.');
-      } else if (e.message?.includes('401')) {
-        setError('Authentication required. Please log in again.');
+      } else if (e.code === 'NETWORK') {
+        setError('Cannot reach the server. Please ensure the backend is running and try again.');
       } else {
         setError('Failed to load purchase requests. Please try again later.');
       }
@@ -62,11 +70,15 @@ const PurchaseDetails = () => {
 
   useEffect(() => {
     if (user) {
-      // Reduced polling frequency to 30 seconds to prevent excessive API calls
-      const id = setInterval(fetchOffers, 30000);
+      // Reduced polling frequency to 30 seconds; pause if last error was auth/network
+      const id = setInterval(() => {
+        // Avoid spamming when server is down or auth just expired
+        if (error && (error.toLowerCase().includes('redirecting') || error.toLowerCase().includes('cannot reach'))) return;
+        fetchOffers();
+      }, 30000);
       return () => clearInterval(id);
     }
-  }, [user, fetchOffers]);
+  }, [user, fetchOffers, error]);
 
   // Cleanup effect to prevent memory leaks
   useEffect(() => {
@@ -326,20 +338,27 @@ const PurchaseDetails = () => {
                         </div>
                       </div>
                       
-                      {(o?.status?.toLowerCase() === 'accepted' || o?.status?.toLowerCase() === 'approved') && (
+                      {(o?.status && ['accepted','approved'].includes(o.status.toLowerCase())) && !o?.advancePaid && (
                         <div className="mt-4 pt-4 border-t border-gray-200">
                           <div className="flex items-center justify-between">
                             <span className="text-gray-600 text-sm">Ready to proceed?</span>
                             <button
-                              onClick={() => navigate(`/payment/${o._id}`)}
+                              onClick={() => navigate(`/pay-advance/${o?.propertyId?._id || o?.propertyId}`)}
                               className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                                 <path fillRule="evenodd" d="M4.5 6.75A2.25 2.25 0 016.75 4.5h10.5a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25H6.75a2.25 2.25 0 01-2.25-2.25V6.75zm3 1.5A.75.75 0 018 7.5h8a.75.75 0 010 1.5H8a.75.75 0 01-.75-.75zm0 3A.75.75 0 018 10.5h8a.75.75 0 010 1.5H8a.75.75 0 01-.75-.75zm0 3a.75.75 0 01.75-.75h5a.75.75 0 010 1.5H8a.75.75 0 01-.75-.75z" clipRule="evenodd" />
                               </svg>
-                              Pay Advance
+                              Pay Advance ₹50,000
                             </button>
                           </div>
+                        </div>
+                      )}
+                      {o?.advancePaid && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            🟢 Advance Paid
+                          </span>
                         </div>
                       )}
 

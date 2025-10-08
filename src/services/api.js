@@ -1,4 +1,5 @@
 // API Configuration
+let __OWNSPACE_REDIRECTING__ = false;
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api`;
 
 // Helper function to get auth token from localStorage
@@ -26,6 +27,24 @@ const createHeaders = (includeAuth = false) => {
   return headers;
 };
 
+// Helper for handling 401/expired tokens globally
+const handleUnauthorizedAndRedirect = () => {
+  try {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  } catch (_) {}
+  if (typeof window !== 'undefined' && !__OWNSPACE_REDIRECTING__) {
+    __OWNSPACE_REDIRECTING__ = true;
+    const fromPath = (window.location && (window.location.pathname + (window.location.search || ''))) || '/';
+    // Small delay to allow UI state updates/logging
+    setTimeout(() => {
+      try {
+        window.location.href = `/login?expired=1&from=${encodeURIComponent(fromPath)}`;
+      } catch (_) {}
+    }, 50);
+  }
+};
+
 // Generic API request function
 const apiRequest = async (endpoint, options = {}) => {
   try {
@@ -41,17 +60,43 @@ const apiRequest = async (endpoint, options = {}) => {
     console.log('Include Auth:', options.includeAuth);
 
     const response = await fetch(url, config);
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (_) {
+      data = {};
+    }
 
     console.log('Response status:', response.status);
     console.log('Response data:', data);
 
     if (!response.ok) {
-      throw new Error(data.message || 'Something went wrong');
+      const msg = data?.message || data?.error || 'Something went wrong';
+      // Handle 401 explicitly: clean auth and redirect to login
+      if (response.status === 401) {
+        handleUnauthorizedAndRedirect();
+        const err = new Error(`${response.status}:${msg}`);
+        err.code = 'AUTH';
+        throw err;
+      }
+      const err = new Error(`${response.status}:${msg}`);
+      err.code = String(response.status);
+      throw err;
     }
 
     return data;
   } catch (error) {
+    // Network down / server not running
+    const message = String(error && error.message || '');
+    const isNetworkError =
+      (error && error.name === 'TypeError' && /Failed to fetch/i.test(message)) ||
+      /NetworkError|Failed to fetch|ERR_CONNECTION_REFUSED/i.test(message);
+    if (isNetworkError) {
+      const err = new Error('Network unavailable: Unable to reach API server');
+      err.code = 'NETWORK';
+      console.error('API Request Error (Network):', message);
+      throw err;
+    }
     console.error('API Request Error:', error);
     throw error;
   }
@@ -599,6 +644,45 @@ export const offerAPI = {
       return response;
     } catch (error) { throw error; }
   },
+  // Mark advance paid
+  markAdvancePaid: async ({ offerId, amount, orderId, paymentId, signature, method }) => {
+    try {
+      const response = await apiRequest(`/offers/${offerId}/advance`, {
+        method: 'POST',
+        includeAuth: true,
+        body: JSON.stringify({ amount, orderId, paymentId, signature, method })
+      });
+      return response;
+    } catch (e) { throw e; }
+  }
+};
+
+// Purchase API
+export const purchaseAPI = {
+  advancePayment: async ({ propertyId }) => {
+    try {
+      const response = await apiRequest('/purchase/advance-payment', {
+        method: 'POST',
+        includeAuth: true,
+        body: JSON.stringify({ propertyId, amount: 50000 })
+      });
+      return response;
+    } catch (e) { throw e; }
+  }
+};
+
+// Payments API
+export const paymentAPI = {
+  createOrder: async ({ amount, currency = 'INR', receipt }) => {
+    try {
+      const response = await apiRequest('/payments/order', {
+        method: 'POST',
+        includeAuth: true,
+        body: JSON.stringify({ amount, currency, receipt })
+      });
+      return response;
+    } catch (e) { throw e; }
+  }
 };
 
 // Export default API object
@@ -607,6 +691,7 @@ const api = {
   agent: agentAPI,
   property: propertyAPI,
   offer: offerAPI,
+  payment: paymentAPI,
   healthCheck,
 };
 

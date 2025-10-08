@@ -40,6 +40,7 @@ import VisitedProperties from './pages/VisitedProperties';
 import PurchaseDetails from './pages/PurchaseDetails';
 import PurchaseRequestManagement from './pages/PurchaseRequestManagement';
 import Payment from './pages/Payment';
+import PayAdvance from './pages/PayAdvance';
 
 const AppContent = () => {
   return (
@@ -287,6 +288,11 @@ const AppContent = () => {
       <Route path="/payment/:offerId" element={
         <ProtectedRoute>
           <Payment />
+        </ProtectedRoute>
+      } />
+      <Route path="/pay-advance/:propertyId" element={
+        <ProtectedRoute>
+          <PayAdvance />
         </ProtectedRoute>
       } />
       <Route path="/make-admin" element={
