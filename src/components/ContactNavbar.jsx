@@ -173,6 +173,14 @@ const ContactNavbar = () => {
                             <Receipt className="h-4 w-4" />
                             <span>Purchase Details</span>
                           </Link>
+                          <Link
+                            to="/purchase-history"
+                            onClick={() => setIsProfileOpen(false)}
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            <History className="h-4 w-4" />
+                            <span>Purchase History</span>
+                          </Link>
                           <div className="border-t border-gray-100"></div>
                           <button
                             onClick={() => {
@@ -336,6 +344,14 @@ const ContactNavbar = () => {
                       >
                         <Receipt className="h-5 w-5" />
                         <span>Purchase Details</span>
+                      </Link>
+                      <Link
+                        to="/purchase-history"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center space-x-3 mx-3 px-3 py-2 rounded-sm text-base font-light text-gray-600 hover:text-black hover:bg-gray-50 transition-colors duration-200"
+                      >
+                        <History className="h-5 w-5" />
+                        <span>Purchase History</span>
                       </Link>
                     </>
                   )}
