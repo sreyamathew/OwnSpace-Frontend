@@ -18,7 +18,8 @@ const AgentAppointments = () => {
   const loadVisits = async () => {
     try {
       setLoading(true);
-      const res = await visitAPI.assignedToMe('approved');
+      // Fetch all assigned visits (not just approved) to show complete history
+      const res = await visitAPI.assignedToMe();
       if (res.success) {
         const now = new Date();
         const upcoming = [];
@@ -28,8 +29,12 @@ const AgentAppointments = () => {
         res.data.forEach(visit => {
           const visitDate = new Date(visit.scheduledAt);
           if (visitDate > now) {
-            upcoming.push(visit);
+            // Only show approved visits in upcoming
+            if (visit.status === 'approved') {
+              upcoming.push(visit);
+            }
           } else {
+            // Show all past visits regardless of status
             past.push(visit);
           }
         });
@@ -148,41 +153,57 @@ const AgentAppointments = () => {
               <>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Past Appointments</h2>
                 {pastVisits.length === 0 ? (
-                  <div>No past visits.</div>
+                  <div className="text-gray-600">No past visits.</div>
                 ) : (
                   <div className="space-y-3">
                     {pastVisits.map(v => (
-                      <div key={v._id} className="bg-white border border-gray-200 rounded p-4 flex items-center justify-between">
-                        <div>
-                          <div className="font-medium text-gray-900">{v.property?.title || 'Property'}</div>
-                          <div className="text-sm text-gray-600">When: {new Date(v.scheduledAt).toLocaleString()}</div>
-                          <div className="text-sm text-gray-600">Status: {v.status}</div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {v.status === 'visited' ? (
-                            <div className="px-3 py-1 bg-green-100 text-green-800 rounded border border-green-300">
-                              Status: Visited
+                      <div key={v._id} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900 text-lg mb-2">{v.property?.title || 'Property'}</div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                              <div><strong>Date & Time:</strong> {new Date(v.scheduledAt).toLocaleString()}</div>
+                              <div><strong>Requester:</strong> {v.requester?.name || 'Unknown User'}</div>
+                              <div><strong>Property Address:</strong> {v.property?.address || 'Address not available'}</div>
+                              <div><strong>Contact:</strong> {v.requester?.email || 'Email not available'}</div>
+                              {v.note && <div className="md:col-span-2"><strong>Note:</strong> {v.note}</div>}
                             </div>
-                          ) : v.status === 'not visited' ? (
-                            <div className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded border border-yellow-300">
-                              Status: Not Visited
+                          </div>
+                          <div className="ml-4 flex flex-col items-end space-y-2">
+                            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              v.status === 'visited' 
+                                ? 'bg-green-100 text-green-800 border border-green-300'
+                                : v.status === 'not visited'
+                                ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                                : v.status === 'approved'
+                                ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                                : v.status === 'rejected'
+                                ? 'bg-red-100 text-red-800 border border-red-300'
+                                : 'bg-gray-100 text-gray-800 border border-gray-300'
+                            }`}>
+                              {v.status === 'visited' ? 'Visited' : 
+                               v.status === 'not visited' ? 'Not Visited' :
+                               v.status === 'approved' ? 'Approved' :
+                               v.status === 'rejected' ? 'Rejected' :
+                               v.status}
                             </div>
-                          ) : (
-                            <>
-                              <button 
-                                onClick={() => markVisited(v._id)} 
-                                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                              >
-                                Mark as Visited
-                              </button>
-                              <button 
-                                onClick={() => markNotVisited(v._id)} 
-                                className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700"
-                              >
-                                Mark as Not Visited
-                              </button>
-                            </>
-                          )}
+                            {v.status === 'approved' && (
+                              <div className="flex space-x-2">
+                                <button 
+                                  onClick={() => markVisited(v._id)} 
+                                  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                                >
+                                  Mark Visited
+                                </button>
+                                <button 
+                                  onClick={() => markNotVisited(v._id)} 
+                                  className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm"
+                                >
+                                  Mark Not Visited
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
