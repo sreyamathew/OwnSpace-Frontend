@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { offerAPI } from '../services/api';
-import { CheckCircle, XCircle, AlertCircle, Filter, Search, Building, User, DollarSign, Calendar, Clock, Eye, LogOut, Menu } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Search, Building, User, DollarSign, Calendar, Clock, Eye, LogOut, Menu } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import OfferRequestsSection from '../components/OfferRequestsSection';
 import MinimalSidebar from '../components/MinimalSidebar';
 import AgentSidebar from '../components/AgentSidebar';
 
@@ -257,73 +256,55 @@ const PurchaseRequestManagement = () => {
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-blue-50 rounded-lg">
-                  <Building className="h-6 w-6 text-blue-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Requests</p>
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total</p>
                   <p className="text-2xl font-bold text-gray-900">{filterCounts.all}</p>
                 </div>
+                <Building className="h-8 w-8 text-blue-600" />
               </div>
             </div>
             
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-yellow-50 rounded-lg">
-                  <Clock className="h-6 w-6 text-yellow-600" />
-                </div>
-                <div className="ml-4">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div>
                   <p className="text-sm font-medium text-gray-600">Pending</p>
-                  <p className="text-2xl font-bold text-gray-900">{filterCounts.pending}</p>
+                  <p className="text-2xl font-bold text-yellow-600">{filterCounts.pending}</p>
                 </div>
+                <Clock className="h-8 w-8 text-yellow-600" />
               </div>
             </div>
             
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-green-50 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Processed</p>
+                  <p className="text-2xl font-bold text-green-600">{filterCounts.accepted + filterCounts.rejected}</p>
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Accepted</p>
-                  <p className="text-2xl font-bold text-gray-900">{filterCounts.accepted}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-red-50 rounded-lg">
-                  <XCircle className="h-6 w-6 text-red-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Rejected</p>
-                  <p className="text-2xl font-bold text-gray-900">{filterCounts.rejected}</p>
-                </div>
+                <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
             </div>
           </div>
 
           {/* Filters and Search */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex flex-col lg:flex-row gap-4">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               {/* Filter Buttons */}
               <div className="flex flex-wrap gap-2">
                 {FILTERS.map((filter) => (
                   <button
                     key={filter.key}
                     onClick={() => setSelectedFilter(filter.key)}
-                    className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       selectedFilter === filter.key
-                        ? 'bg-blue-600 text-white shadow-md'
+                        ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    <span>{filter.label}</span>
+                    {filter.label}
                     <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
                       selectedFilter === filter.key
                         ? 'bg-blue-500 text-white'
@@ -336,15 +317,15 @@ const PurchaseRequestManagement = () => {
               </div>
               
               {/* Search Bar */}
-              <div className="flex-1 max-w-md">
+              <div className="flex-1 max-w-sm">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search by property, investor, or message..."
+                    placeholder="Search requests..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -352,140 +333,115 @@ const PurchaseRequestManagement = () => {
           </div>
 
           {/* Purchase Requests */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="px-4 py-3 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">
                 Purchase Requests ({filteredOffers.length})
               </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Showing {selectedFilter === 'all' ? 'all' : selectedFilter} requests
-              </p>
             </div>
 
             {error && (
-              <div className="px-6 py-4 bg-red-50 border-b border-red-200">
-                <p className="text-red-600">{error}</p>
+              <div className="px-4 py-3 bg-red-50 border-b border-red-200">
+                <p className="text-red-600 text-sm">{error}</p>
               </div>
             )}
 
             {filteredOffers.length === 0 ? (
-              <div className="px-6 py-12 text-center">
-                <div className="text-gray-400 mb-4">
-                  <AlertCircle className="h-12 w-12 mx-auto" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No requests found</h3>
-                <p className="text-gray-500">
+              <div className="px-4 py-8 text-center">
+                <AlertCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">
                   {searchTerm 
-                    ? 'No requests match your search criteria.'
-                    : 'No purchase requests found for the selected filter.'
+                    ? 'No requests match your search.'
+                    : 'No purchase requests found.'
                   }
                 </p>
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
                 {filteredOffers.map((offer) => (
-                  <div key={offer._id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
-                    <div className="flex items-start justify-between">
+                  <div key={offer._id} className="p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-between">
                       {/* Property Info */}
-                      <div className="flex items-start space-x-4 flex-1">
-                        <div className="h-16 w-16 flex-shrink-0">
+                      <div className="flex items-center space-x-3 flex-1">
+                        <div className="h-12 w-12 flex-shrink-0">
                           {offer.propertyId?.images?.[0] ? (
                             <img 
-                              className="h-16 w-16 rounded-lg object-cover" 
+                              className="h-12 w-12 rounded-lg object-cover" 
                               src={offer.propertyId.images[0]} 
                               alt={offer.propertyId.title} 
                             />
                           ) : (
-                            <div className="h-16 w-16 rounded-lg bg-gray-200 flex items-center justify-center text-gray-500">
-                              <Building className="h-6 w-6" />
+                            <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center">
+                              <Building className="h-5 w-5 text-gray-500" />
                             </div>
                           )}
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h4 className="text-lg font-semibold text-gray-900 truncate">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <h4 className="text-sm font-semibold text-gray-900 truncate">
                               {offer.propertyId?.title || 'Unknown Property'}
                             </h4>
                             {getStatusBadge(offer.status)}
                           </div>
                           
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                            <div className="flex items-center text-gray-600">
-                              <DollarSign className="h-4 w-4 mr-2 text-gray-400" />
-                              <span className="font-medium">${offer.propertyId?.price?.toLocaleString() || 'N/A'}</span>
-                            </div>
-                            
-                            <div className="flex items-center text-gray-600">
-                              <User className="h-4 w-4 mr-2 text-gray-400" />
-                              <span>{offer.investorId?.name || 'Unknown Investor'}</span>
-                            </div>
-                            
-                            <div className="flex items-center text-gray-600">
-                              <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                              <span>{new Date(offer.createdAt || offer.timestamp).toLocaleDateString()}</span>
-                            </div>
-                          </div>
-                          
-                          <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium text-gray-700">Offer Amount</span>
-                              <span className="text-lg font-bold text-green-600">
-                                ${offer.offerAmount?.toLocaleString() || 'N/A'}
-                              </span>
-                            </div>
-                            
-                            {offer.message && (
-                              <p className="text-sm text-gray-600 mb-2">
-                                <span className="font-medium">Message:</span> {offer.message}
-                              </p>
-                            )}
-                            
-                            {offer.preferredDate && (
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Preferred Date:</span> {new Date(offer.preferredDate).toLocaleDateString()}
-                              </p>
-                            )}
+                          <div className="flex items-center space-x-4 text-xs text-gray-500">
+                            <span className="flex items-center">
+                              <User className="h-3 w-3 mr-1" />
+                              {offer.investorId?.name || 'Unknown'}
+                            </span>
+                            <span className="flex items-center">
+                              <DollarSign className="h-3 w-3 mr-1" />
+                              ${offer.offerAmount?.toLocaleString() || 'N/A'}
+                            </span>
+                            <span className="flex items-center">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {new Date(offer.createdAt || offer.timestamp).toLocaleDateString()}
+                            </span>
                           </div>
                         </div>
                       </div>
                       
                       {/* Actions */}
-                      <div className="flex flex-col items-end space-y-2 ml-4">
+                      <div className="flex items-center space-x-2 ml-4">
                         {['pending','Pending'].includes(offer.status) ? (
-                          <div className="flex space-x-2">
+                          <>
                             <button
                               onClick={() => handleStatusUpdate(offer._id, 'Approved')}
-                              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm font-medium"
+                              className="inline-flex items-center px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-xs font-medium"
                             >
-                              <CheckCircle className="h-4 w-4 mr-1" />
+                              <CheckCircle className="h-3 w-3 mr-1" />
                               Approve
                             </button>
                             <button
                               onClick={() => handleStatusUpdate(offer._id, 'Rejected')}
-                              className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm font-medium"
+                              className="inline-flex items-center px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-xs font-medium"
                             >
-                              <XCircle className="h-4 w-4 mr-1" />
+                              <XCircle className="h-3 w-3 mr-1" />
                               Reject
                             </button>
-                          </div>
+                          </>
                         ) : (
                           <div className="text-right">
-                            <p className="text-sm text-gray-500">
-                              {['accepted','Approved'].includes(offer.status) ? 'Approved' : 'Rejected'} on
+                            <p className="text-xs text-gray-500">
+                              {['accepted','Approved'].includes(offer.status) ? 'Approved' : 'Rejected'}
                             </p>
-                            <p className="text-sm font-medium text-gray-700">
+                            <p className="text-xs font-medium text-gray-700">
                               {new Date(offer.updatedAt).toLocaleDateString()}
                             </p>
                           </div>
                         )}
-                        
-                        <button className="inline-flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors">
-                          <Eye className="h-4 w-4 mr-1" />
-                          View Details
-                        </button>
                       </div>
                     </div>
+                    
+                    {/* Message */}
+                    {offer.message && (
+                      <div className="mt-2 pl-15">
+                        <p className="text-xs text-gray-600 bg-gray-50 rounded p-2">
+                          <span className="font-medium">Message:</span> {offer.message}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -498,3 +454,4 @@ const PurchaseRequestManagement = () => {
 };
 
 export default PurchaseRequestManagement;
+
