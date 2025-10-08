@@ -178,6 +178,14 @@ const AdminSidebar = () => {
         { label: 'Profile', path: '/admin/profile' }
       ]
     }
+    ,
+    {
+      key: 'purchaseRequestManagement',
+      label: 'Purchase Management',
+      icon: FileText,
+      expandable: false,
+      path: '/admin/purchase-requests'
+    }
   ];
 
   const isActive = (path) => {

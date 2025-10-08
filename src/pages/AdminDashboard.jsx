@@ -454,10 +454,9 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Offer/Purchase Request Management */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Purchase Request Management</h2>
-            <OfferRequestsSection />
+          {/* Pending Purchase Requests */}
+          <div id="purchase-requests" className="mb-8">
+            <OfferRequestsSection showOnlyPending={true} />
           </div>
 
           {/* Sale Finalization Tool */}

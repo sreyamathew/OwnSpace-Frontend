@@ -314,12 +314,6 @@ const UserDashboard = () => {
                       Appointments
                     </button>
                     <button
-                      onClick={() => { setProfileOpen(false); navigate('/purchase-details'); }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      Purchase Details
-                    </button>
-                    <button
                       onClick={() => { setProfileOpen(false); try { logout(); } catch (e) {} navigate('/'); }}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     >

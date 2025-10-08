@@ -72,6 +72,12 @@ const AgentSidebar = () => {
       current: location.pathname === '/agent/reports'
     },
     {
+      name: 'Purchase Management',
+      href: '/agent/purchase-requests',
+      icon: FileText,
+      current: location.pathname === '/agent/purchase-requests'
+    },
+    {
       name: 'Messages',
       href: '/agent/messages',
       icon: MessageSquare,

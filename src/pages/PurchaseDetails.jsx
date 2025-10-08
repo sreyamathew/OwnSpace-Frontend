@@ -19,7 +19,14 @@ const PurchaseDetails = () => {
   const fetchOffers = async () => {
     try {
       setLoading(true);
-      const res = await offerAPI.getMyOffers();
+      // Try admin/agent view first
+      let res = null;
+      try {
+        res = await offerAPI.getOffersForMyProperties();
+      } catch (err) {
+        // Fallback: user/buyer view
+        res = await offerAPI.getMyOffers();
+      }
       const list = res?.offers || res?.data?.offers || [];
       setOffers(Array.isArray(list) ? list : []);
       setError('');
@@ -127,6 +134,7 @@ const PurchaseDetails = () => {
               const propertyTitle = o?.propertyId?.title || 'Unknown Property';
               const imageUrl = o?.propertyId?.images?.[0]?.url || o?.propertyId?.images?.[0] || '';
               const amount = typeof o?.offerAmount === 'number' ? formatCurrency.format(o.offerAmount) : 'N/A';
+              const buyerName = o?.investorId?.name || 'Unknown Buyer';
               const submittedAt = o?.createdAt ? new Date(o.createdAt) : (o?.timestamp ? new Date(o.timestamp) : null);
               const preferred = o?.preferredDate ? new Date(o.preferredDate) : null;
               return (
@@ -142,6 +150,10 @@ const PurchaseDetails = () => {
                       {renderStatus(o?.status)}
                     </div>
                     <div className="text-sm text-gray-700">
+                      <div className="flex items-center justify-between py-1">
+                        <span className="text-gray-500">Buyer</span>
+                        <span className="font-medium">{buyerName}</span>
+                      </div>
                       <div className="flex items-center justify-between py-1">
                         <span className="text-gray-500">Offer</span>
                         <span className="font-medium">{amount}</span>

@@ -38,6 +38,7 @@ import AgentProperties from './pages/AgentProperties';
 import PropertyDetail from './pages/PropertyDetail';
 import VisitedProperties from './pages/VisitedProperties';
 import PurchaseDetails from './pages/PurchaseDetails';
+import PurchaseRequestManagement from './pages/PurchaseRequestManagement';
 
 const AppContent = () => {
   return (
@@ -203,6 +204,11 @@ const AppContent = () => {
           <EditProperty />
         </ProtectedRoute>
       } />
+      <Route path="/admin/purchase-requests" element={
+        <ProtectedRoute requireAdmin={true}>
+          <PurchaseRequestManagement />
+        </ProtectedRoute>
+      } />
 
       {/* Agent Routes */}
       <Route path="/agent/dashboard" element={
@@ -233,6 +239,11 @@ const AppContent = () => {
       <Route path="/agent/profile" element={
         <ProtectedRoute requireAgent={true}>
           <AgentProfile />
+        </ProtectedRoute>
+      } />
+      <Route path="/agent/purchase-requests" element={
+        <ProtectedRoute requireAgent={true}>
+          <PurchaseRequestManagement />
         </ProtectedRoute>
       } />
 

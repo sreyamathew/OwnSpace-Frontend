@@ -28,10 +28,16 @@ const MinimalSidebar = ({ onClose }) => {
     { label: 'Add Agent', icon: UserPlus, path: '/admin/agents/add' },
     { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
     { label: 'Reports', icon: FileText, path: '/admin/reports' },
+    { label: 'Purchase Management', icon: FileText, path: '/admin/purchase-requests' },
     { label: 'Settings', icon: Settings, path: '/admin/settings' }
   ];
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => {
+    if (path.includes('#')) {
+      return `${location.pathname}${location.hash}` === path;
+    }
+    return location.pathname === path;
+  };
 
   const handleNavigation = (path) => {
     navigate(path);

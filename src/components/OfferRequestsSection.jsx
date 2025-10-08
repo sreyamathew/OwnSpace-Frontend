@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api`;
 
-const OfferRequestsSection = ({ userId }) => {
+const OfferRequestsSection = ({ userId, showOnlyPending = false }) => {
   const { user, isAdmin, isAgent } = useAuth();
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +37,13 @@ const OfferRequestsSection = ({ userId }) => {
         response = await offerAPI.getMyOffers();
       }
       const data = Array.isArray(response?.offers) ? response.offers : Array.isArray(response?.data?.offers) ? response.data.offers : [];
-      setOffers(data);
+      
+      // Filter to show only pending requests if showOnlyPending is true
+      const filteredData = showOnlyPending 
+        ? data.filter(offer => ['pending', 'Pending'].includes(offer.status))
+        : data;
+      
+      setOffers(filteredData);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching offers:', err);
@@ -58,10 +64,8 @@ const OfferRequestsSection = ({ userId }) => {
   const handleStatusUpdate = async (offerId, status) => {
     try {
       await offerAPI.updateOfferStatus(offerId, status);
-      // Update local state
-      setOffers(offers.map(offer => 
-        offer._id === offerId ? { ...offer, status } : offer
-      ));
+      // Remove handled offer from the Home list immediately (no refresh needed)
+      setOffers(prev => prev.filter(o => o._id !== offerId));
       
       toast.success(`Offer ${status.toLowerCase()} successfully`);
     } catch (err) {
@@ -75,23 +79,26 @@ const OfferRequestsSection = ({ userId }) => {
       case 'accepted':
       case 'Approved':
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Approved
+          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-200">
+            <span className="mr-2">🟢</span>
+            <CheckCircle className="w-4 h-4 mr-1" />
+            Accepted
           </span>
         );
       case 'rejected':
       case 'Rejected':
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-            <XCircle className="w-3 h-3 mr-1" />
+          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-red-50 text-red-700 border border-red-200">
+            <span className="mr-2">🔴</span>
+            <XCircle className="w-4 h-4 mr-1" />
             Rejected
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-            <AlertCircle className="w-3 h-3 mr-1" />
+          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
+            <span className="mr-2">🟡</span>
+            <AlertCircle className="w-4 h-4 mr-1" />
             Pending
           </span>
         );
@@ -107,7 +114,12 @@ const OfferRequestsSection = ({ userId }) => {
   if (offers.length === 0) {
     return (
       <div className="py-10 text-center">
-        <p className="text-gray-500">No offer requests found.</p>
+        <p className="text-gray-500">
+          {showOnlyPending 
+            ? 'No pending purchase requests found.' 
+            : 'No offer requests found.'
+          }
+        </p>
       </div>
     );
   }
@@ -115,9 +127,14 @@ const OfferRequestsSection = ({ userId }) => {
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900">Offer Requests</h3>
+        <h3 className="text-lg font-medium text-gray-900">
+          {showOnlyPending ? 'Pending Purchase Requests' : 'Offer Requests'}
+        </h3>
         <p className="mt-1 text-sm text-gray-500">
-          Manage property purchase offers from investors
+          {showOnlyPending 
+            ? 'Purchase requests that require your action'
+            : 'Manage property purchase offers from investors'
+          }
         </p>
       </div>
       

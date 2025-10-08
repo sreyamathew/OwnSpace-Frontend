@@ -279,9 +279,9 @@ const AgentDashboard = () => {
             </div>
           </div>
 
-          {/* Offer Requests */}
-          <div className="mt-10">
-            <OfferRequestsSection />
+          {/* Pending Purchase Requests */}
+          <div id="purchase-requests" className="mt-10">
+            <OfferRequestsSection showOnlyPending={true} />
           </div>
         </main>
       </div>
