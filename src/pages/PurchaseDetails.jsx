@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import ContactNavbar from '../components/ContactNavbar';
 import Footer from '../components/Footer';
 import { offerAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const FILTERS = [
   { key: 'all', label: 'All' },
@@ -11,40 +12,65 @@ const FILTERS = [
 ];
 
 const PurchaseDetails = () => {
+  const { user } = useAuth();
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [lastUpdated, setLastUpdated] = useState(null);
 
-  const fetchOffers = async () => {
+  const fetchOffers = useCallback(async () => {
     try {
       setLoading(true);
-      // Try admin/agent view first
-      let res = null;
-      try {
-        res = await offerAPI.getOffersForMyProperties();
-      } catch (err) {
-        // Fallback: user/buyer view
-        res = await offerAPI.getMyOffers();
+      console.log('Fetching user offers for user:', user?.name);
+      
+      // Check if user is authenticated
+      if (!user) {
+        setError('Please log in to view your purchase requests.');
+        return;
       }
+      
+      // Fetch offers made by the current user
+      const res = await offerAPI.getMyOffers();
+      console.log('Offers response:', res);
       const list = res?.offers || res?.data?.offers || [];
       setOffers(Array.isArray(list) ? list : []);
       setError('');
+      setLastUpdated(new Date());
     } catch (e) {
       console.error('Failed to fetch offers', e);
-      setError('Failed to load purchase requests. Please try again later.');
+      // More specific error handling
+      if (e.message?.includes('403')) {
+        setError('Access denied. Please make sure you are logged in correctly.');
+      } else if (e.message?.includes('401')) {
+        setError('Authentication required. Please log in again.');
+      } else {
+        setError('Failed to load purchase requests. Please try again later.');
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    fetchOffers();
-  }, []);
+    if (user) {
+      fetchOffers();
+    }
+  }, [user, fetchOffers]);
 
   useEffect(() => {
-    const id = setInterval(fetchOffers, 15000);
-    return () => clearInterval(id);
+    if (user) {
+      // Reduced polling frequency to 30 seconds to prevent excessive API calls
+      const id = setInterval(fetchOffers, 30000);
+      return () => clearInterval(id);
+    }
+  }, [user, fetchOffers]);
+
+  // Cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Any cleanup logic if needed
+    };
   }, []);
 
   const formatCurrency = useMemo(() => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }), []);
@@ -72,7 +98,7 @@ const PurchaseDetails = () => {
   };
 
   const Sidebar = () => (
-    <aside className="hidden md:block fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white border-r border-gray-200 shadow-sm z-10">
+    <aside className="hidden md:block fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white border-r border-gray-200 shadow-sm z-10 overflow-y-auto">
       <div className="p-4">
         <h2 className="text-sm font-semibold text-gray-700 mb-3">Purchase Filters</h2>
         <div className="space-y-2">
@@ -135,17 +161,31 @@ const PurchaseDetails = () => {
   );
 
   const Content = () => (
-    <section className="md:ml-64">
+    <section className="md:ml-64 h-[calc(100vh-4rem)] overflow-y-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Purchase Details</h1>
               <p className="text-sm text-gray-600 mt-1">Track and filter your purchase requests</p>
+              {user && (
+                <p className="text-xs text-gray-500 mt-1">Logged in as: {user.name} ({user.email})</p>
+              )}
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-blue-600">{offers.length}</div>
-              <div className="text-xs text-gray-500">Total Requests</div>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={fetchOffers}
+                  disabled={loading}
+                  className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? 'Refreshing...' : 'Refresh'}
+                </button>
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{offers.length}</div>
+                  <div className="text-xs text-gray-500">Total Requests</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -167,7 +207,7 @@ const PurchaseDetails = () => {
                 )}
               </div>
               <div className="text-xs text-blue-600">
-                Last updated: {new Date().toLocaleTimeString()}
+                Last updated: {lastUpdated ? lastUpdated.toLocaleTimeString() : 'Never'}
               </div>
             </div>
           </div>
