@@ -44,7 +44,7 @@ const ValidationSummary = () => {
       rules: [
         "Must be greater than zero",
         "Valid number format required",
-        "Cannot exceed $999,999,999"
+        "Cannot exceed ₹999,999,999"
       ]
     }
   ];

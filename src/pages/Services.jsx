@@ -145,7 +145,7 @@ const Services = () => {
     },
     {
       name: 'Professional',
-      price: '$29/month',
+      price: '₹29/month',
       description: 'Ideal for serious investors and real estate professionals',
       features: [
         'Advanced AI predictions',

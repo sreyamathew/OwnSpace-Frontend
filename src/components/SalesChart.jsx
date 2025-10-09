@@ -90,7 +90,7 @@ const SalesChart = ({ onDownload }) => {
           </div>
         </div>
         <div className="text-right">
-          <p className="font-medium text-gray-900">Total: $2.4M</p>
+          <p className="font-medium text-gray-900">Total: ₹2.4M</p>
           <p className="text-xs">+12.5% from last year</p>
         </div>
       </div>

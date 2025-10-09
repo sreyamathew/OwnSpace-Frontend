@@ -657,19 +657,6 @@ export const offerAPI = {
   }
 };
 
-// Purchase API
-export const purchaseAPI = {
-  advancePayment: async ({ propertyId }) => {
-    try {
-      const response = await apiRequest('/purchase/advance-payment', {
-        method: 'POST',
-        includeAuth: true,
-        body: JSON.stringify({ propertyId, amount: 50000 })
-      });
-      return response;
-    } catch (e) { throw e; }
-  }
-};
 
 // Payments API
 export const paymentAPI = {

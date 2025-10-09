@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ContactNavbar from '../components/ContactNavbar';
 import Footer from '../components/Footer';
-import { offerAPI, purchaseAPI } from '../services/api';
+import { offerAPI, paymentAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const PayAdvance = () => {
@@ -37,17 +37,77 @@ const PayAdvance = () => {
     init();
   }, [user, propertyId]);
 
-  const handleProceed = async () => {
+  const loadRazorpay = () => new Promise((resolve) => {
+    if (window.Razorpay) return resolve(true);
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+
+  const handlePay = async () => {
     try {
       setSubmitting(true);
       setError('');
-      const resp = await purchaseAPI.advancePayment({ propertyId });
-      if (resp?.success) {
-        alert('Advance payment of ₹50,000 completed successfully.');
-        navigate('/purchase-details');
-      } else {
-        setError(resp?.message || 'Payment failed');
+      
+      // Load Razorpay SDK
+      const ok = await loadRazorpay();
+      if (!ok) { 
+        setError('Failed to load payment SDK'); 
+        setSubmitting(false); 
+        return; 
       }
+
+      // Create compact, unique receipt under 40 chars
+      const pidPart = String(propertyId || '').replace(/[^a-zA-Z0-9]/g, '').slice(-6) || 'prop';
+      const ts = Date.now().toString(36);
+      const receipt = `adv_${pidPart}_${ts}`.slice(0, 40);
+
+      // Create Razorpay order (amount in INR; backend converts to paise)
+      const orderRes = await paymentAPI.createOrder({ 
+        amount: amount, 
+        currency: 'INR', 
+        receipt
+      });
+      const order = orderRes?.order;
+      if (!order?.id) { 
+        setError('Failed to create payment order'); 
+        setSubmitting(false); 
+        return; 
+      }
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RQvwxfrTu00hqp',
+        amount: order.amount,
+        currency: order.currency,
+        name: 'OwnSpace',
+        description: 'Advance Payment',
+        order_id: order.id,
+        handler: async function (response) {
+          try {
+            // Mark advance as paid using the offer ID
+            await offerAPI.markAdvancePaid({
+              offerId: offer._id,
+              amount: Math.round(order.amount / 100),
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+              method: 'razorpay'
+            });
+            alert('Advance payment of ₹50,000 completed successfully.');
+            navigate('/purchase-details');
+          } catch (e) {
+            console.error('Failed to record advance payment', e);
+            alert('Payment captured, but recording failed. We will reconcile shortly.');
+            navigate('/purchase-details');
+          }
+        },
+        prefill: {},
+        theme: { color: '#2563eb' },
+      };
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (e) {
       setError(e?.message || 'Payment failed');
     } finally {
@@ -82,7 +142,7 @@ const PayAdvance = () => {
 
               <div className="flex items-center justify-center">
                 <button
-                  onClick={handleProceed}
+                  onClick={handlePay}
                   disabled={submitting}
                   className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-md disabled:opacity-50"
                 >
