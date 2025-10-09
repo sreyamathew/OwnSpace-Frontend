@@ -13,39 +13,33 @@ const AgentAppointments = () => {
   
   useEffect(() => {
     loadVisits();
+    loadPast();
   }, []);
 
   const loadVisits = async () => {
     try {
       setLoading(true);
-      // Fetch all assigned visits (not just approved) to show complete history
-      const res = await visitAPI.assignedToMe();
+      // Fetch only approved future visits for upcoming tab
+      const res = await visitAPI.assignedToMe('approved', { futureOnly: true });
       if (res.success) {
-        const now = new Date();
-        const upcoming = [];
-        const past = [];
-        
-        // Separate visits into upcoming and past
-        res.data.forEach(visit => {
-          const visitDate = new Date(visit.scheduledAt);
-          if (visitDate > now) {
-            // Only show approved visits in upcoming
-            if (visit.status === 'approved') {
-              upcoming.push(visit);
-            }
-          } else {
-            // Show all past visits regardless of status
-            past.push(visit);
-          }
-        });
-        
-        setVisits(upcoming);
-        setPastVisits(past);
+        // Backend already filtered: approved + future
+        setVisits(res.data || []);
+        setPastVisits([]);
       }
     } catch (e) { 
       setError('Failed to load appointments'); 
     } finally { 
       setLoading(false); 
+    }
+  };
+
+  const loadPast = async () => {
+    try {
+      // Fetch approved + visited + not visited in the past
+      const res = await visitAPI.assignedToMe(undefined, { pastOnly: true });
+      if (res.success) setPastVisits(res.data || []);
+    } catch (_) {
+      // ignore; primary error handled by loadVisits
     }
   };
 

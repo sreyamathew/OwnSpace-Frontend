@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { visitAPI } from '../services/api';
 import MinimalSidebar from '../components/MinimalSidebar';
 import { useAuth } from '../contexts/AuthContext';
+import { formatAddress } from '../utils/propertyHelpers';
 
 const AdminAppointments = () => {
   const { user } = useAuth();
@@ -12,40 +13,35 @@ const AdminAppointments = () => {
   const [activeTab, setActiveTab] = useState('upcoming');
 
   useEffect(() => {
-    loadVisits();
+    loadAllAssigned();
   }, []);
 
-  const loadVisits = async () => {
+  const loadAllAssigned = async () => {
     try {
       setLoading(true);
-      // Fetch all assigned visits (not just approved) to show complete history
+      setError('');
       const res = await visitAPI.assignedToMe();
-      if (res.success) {
-        const now = new Date();
-        const upcoming = [];
-        const past = [];
-        
-        // Separate visits into upcoming and past
-        res.data.forEach(visit => {
-          const visitDate = new Date(visit.scheduledAt);
-          if (visitDate > now) {
-            // Only show approved visits in upcoming
-            if (visit.status === 'approved') {
-              upcoming.push(visit);
-            }
-          } else {
-            // Show all past visits regardless of status
-            past.push(visit);
-          }
-        });
-        
+      if (res?.success) {
+        const all = Array.isArray(res.data) ? res.data : [];
+        const now = Date.now();
+        const isApproved = (v) => (v?.status || '').toLowerCase() === 'approved';
+        const visitTime = (v) => new Date(v?.scheduledAt).getTime();
+
+        const upcoming = all.filter(v => isApproved(v) && visitTime(v) > now);
+        const past = all.filter(v => isApproved(v) && visitTime(v) <= now);
+
         setVisits(upcoming);
         setPastVisits(past);
+      } else {
+        setVisits([]);
+        setPastVisits([]);
       }
-    } catch (e) { 
-      setError('Failed to load appointments'); 
-    } finally { 
-      setLoading(false); 
+    } catch (e) {
+      setError('Failed to load appointments');
+      setVisits([]);
+      setPastVisits([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -166,7 +162,7 @@ const AdminAppointments = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
                               <div><strong>Date & Time:</strong> {new Date(v.scheduledAt).toLocaleString()}</div>
                               <div><strong>Requester:</strong> {v.requester?.name || 'Unknown User'}</div>
-                              <div><strong>Property Address:</strong> {v.property?.address || 'Address not available'}</div>
+                              <div><strong>Property Address:</strong> {formatAddress(v.property?.address) || 'Address not available'}</div>
                               <div><strong>Contact:</strong> {v.requester?.email || 'Email not available'}</div>
                               {v.note && <div className="md:col-span-2"><strong>Note:</strong> {v.note}</div>}
                             </div>

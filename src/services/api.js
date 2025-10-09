@@ -590,9 +590,14 @@ export const visitAPI = {
     } catch (error) { throw error; }
   },
   // List requests assigned to me
-  assignedToMe: async (status) => {
+  assignedToMe: async (status, options = {}) => {
     try {
-      const endpoint = status ? `/visits/assigned?status=${encodeURIComponent(status)}` : '/visits/assigned';
+      const params = new URLSearchParams();
+      if (status) params.set('status', status);
+      if (options.futureOnly === true) params.set('futureOnly', 'true');
+      if (options.pastOnly === true) params.set('pastOnly', 'true');
+      const query = params.toString();
+      const endpoint = query ? `/visits/assigned?${query}` : '/visits/assigned';
       const response = await apiRequest(endpoint, { method: 'GET', includeAuth: true });
       return response;
     } catch (error) { throw error; }

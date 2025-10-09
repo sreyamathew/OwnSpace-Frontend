@@ -4,6 +4,20 @@ import { toast } from 'react-hot-toast';
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api`;
 
 /**
+ * Format a property address object or string into a single readable line.
+ */
+export const formatAddress = (address) => {
+  if (!address) return '';
+  if (typeof address === 'string') return address;
+  try {
+    const { street, city, state, zipCode, country } = address || {};
+    return [street, city, state, zipCode, country].filter(Boolean).join(', ');
+  } catch (_) {
+    return '';
+  }
+};
+
+/**
  * Handle investor interest in a property
  * @param {Object} property - The property object
  * @param {Object} user - The current logged-in user
