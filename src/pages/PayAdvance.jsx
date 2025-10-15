@@ -13,6 +13,7 @@ const PayAdvance = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [offer, setOffer] = useState(null);
+  const [buyerDetails, setBuyerDetails] = useState(null);
 
   const amount = 1000;
   const formatINR = useMemo(() => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }), []);
@@ -21,6 +22,16 @@ const PayAdvance = () => {
     const init = async () => {
       try {
         if (!user) { setError('Please log in.'); return; }
+        // Load buyer details if present (non-blocking)
+        try {
+          const raw = sessionStorage.getItem('buyerDetails');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (!parsed.propertyId || String(parsed.propertyId) === String(propertyId)) {
+              setBuyerDetails(parsed);
+            }
+          }
+        } catch (_) {}
         // Load user's offers and find the accepted one for this property
         const res = await offerAPI.getMyOffers();
         const list = res?.offers || res?.data?.offers || [];
@@ -139,6 +150,15 @@ const PayAdvance = () => {
                 <div className="text-gray-700">Advance Payment Amount:</div>
                 <div className="text-2xl font-bold text-blue-700">₹1,000 (Fixed for all properties)</div>
               </div>
+
+              {buyerDetails && (
+                <div className="bg-white border border-gray-200 rounded-md p-4 mb-6">
+                  <div className="text-sm font-medium text-gray-700 mb-2">Buyer</div>
+                  <div className="text-sm text-gray-800">{buyerDetails.name} · {buyerDetails.email}</div>
+                  <div className="text-sm text-gray-600">{buyerDetails.phone}</div>
+                  <div className="text-xs text-gray-500 mt-1">{buyerDetails.address}</div>
+                </div>
+              )}
 
               <div className="flex items-center justify-center">
                 <button

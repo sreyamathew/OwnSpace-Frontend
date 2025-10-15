@@ -41,6 +41,7 @@ import PurchaseDetails from './pages/PurchaseDetails';
 import PurchaseRequestManagement from './pages/PurchaseRequestManagement';
 import Payment from './pages/Payment';
 import PayAdvance from './pages/PayAdvance';
+import BuyerDetails from './pages/BuyerDetails';
 import PurchaseHistory from './pages/PurchaseHistory';
 
 const AppContent = () => {
@@ -294,6 +295,11 @@ const AppContent = () => {
       <Route path="/payment/:offerId" element={
         <ProtectedRoute>
           <Payment />
+        </ProtectedRoute>
+      } />
+      <Route path="/buyer-details/:propertyId" element={
+        <ProtectedRoute>
+          <BuyerDetails />
         </ProtectedRoute>
       } />
       <Route path="/pay-advance/:propertyId" element={

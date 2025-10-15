@@ -353,7 +353,7 @@ const PurchaseDetails = () => {
                           <div className="flex items-center justify-between">
                             <span className="text-gray-600 text-sm">Ready to proceed?</span>
                             <button
-                              onClick={() => navigate(`/pay-advance/${o?.propertyId?._id || o?.propertyId}`)}
+                              onClick={() => navigate(`/buyer-details/${o?.propertyId?._id || o?.propertyId}`)}
                               className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
