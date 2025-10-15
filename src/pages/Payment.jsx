@@ -9,6 +9,7 @@ const Payment = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const amountParam = Number(new URLSearchParams(location.search).get('amount') || 0);
+  const [amountInRupees, setAmountInRupees] = useState(amountParam || 1000);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -28,17 +29,30 @@ const Payment = () => {
       const ok = await loadRazorpay();
       if (!ok) { setError('Failed to load payment SDK'); setLoading(false); return; }
 
-      const orderRes = await paymentAPI.createOrder({ amount: amountParam || 100, currency: 'INR', receipt: `offer_${offerId}` });
+      const [keyRes, orderRes] = await Promise.all([
+        paymentAPI.getPublicKey(),
+        paymentAPI.createOrder({
+          amount: amountInRupees || 100,
+          currency: 'INR',
+          receipt: `offer_${offerId}`
+        })
+      ]);
+      const keyId = keyRes?.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RQvwxfrTu00hqp';
       const order = orderRes?.order;
       if (!order?.id) { setError('Failed to create order'); setLoading(false); return; }
 
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RQvwxfrTu00hqp',
+        key: keyId,
         amount: order.amount,
         currency: order.currency,
         name: 'OwnSpace',
         description: 'Advance Payment',
         order_id: order.id,
+        modal: {
+          ondismiss: function () {
+            console.log('Razorpay modal dismissed by user');
+          }
+        },
         handler: async function (response) {
           try {
             await offerAPI.markAdvancePaid({
@@ -60,12 +74,21 @@ const Payment = () => {
         prefill: {},
         theme: { color: '#2563eb' },
       };
+      console.log('Opening Razorpay with:', { key: options.key, orderId: options.order_id, amount: options.amount, currency: options.currency });
       const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response) {
+        try { console.error('Razorpay payment.failed:', response); } catch (_) {}
+        const err = response?.error || {};
+        const description = err?.description || err?.reason || 'Payment failed';
+        const code = err?.code ? ` [${err.code}]` : '';
+        const field = err?.field ? ` (${err.field})` : '';
+        setError(`${description}${code}${field}`);
+      });
       rzp.open();
     } catch (e) {
       setError(e?.message || 'Payment failed');
     } finally { setLoading(false); }
-  }, [amountParam, offerId, navigate]);
+  }, [amountInRupees, offerId, navigate]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -81,11 +104,11 @@ const Payment = () => {
               <input
                 type="number"
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                defaultValue={50000}
+                value={amountInRupees}
                 min={100}
-                onChange={() => {}}
+                onChange={(e) => setAmountInRupees(Number(e.target.value) || 0)}
               />
-              <p className="text-xs text-gray-500">A fixed advance of ₹50,000 is suggested. You may adjust if needed.</p>
+              <p className="text-xs text-gray-500">A fixed advance of ₹1,000 is suggested. You may adjust if needed.</p>
             </div>
 
             <div className="flex items-center gap-3">

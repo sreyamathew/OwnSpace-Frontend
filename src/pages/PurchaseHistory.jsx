@@ -91,7 +91,7 @@ const PurchaseHistory = () => {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-gray-500">Advance</span>
-                          <span>{o?.advancePaid ? '₹50,000' : (o?.paymentRef ? 'Captured' : '—')}</span>
+                          <span>{o?.advancePaid ? '₹1,000' : (o?.paymentRef ? 'Captured' : '—')}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-gray-500">Paid On</span>

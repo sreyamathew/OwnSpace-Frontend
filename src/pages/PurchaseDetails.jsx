@@ -359,7 +359,7 @@ const PurchaseDetails = () => {
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                                 <path fillRule="evenodd" d="M4.5 6.75A2.25 2.25 0 016.75 4.5h10.5a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25H6.75a2.25 2.25 0 01-2.25-2.25V6.75zm3 1.5A.75.75 0 018 7.5h8a.75.75 0 010 1.5H8a.75.75 0 01-.75-.75zm0 3A.75.75 0 018 10.5h8a.75.75 0 010 1.5H8a.75.75 0 01-.75-.75zm0 3a.75.75 0 01.75-.75h5a.75.75 0 010 1.5H8a.75.75 0 01-.75-.75z" clipRule="evenodd" />
                               </svg>
-                              Pay Advance ₹50,000
+                              Pay Advance ₹1,000
                             </button>
                           </div>
                         </div>

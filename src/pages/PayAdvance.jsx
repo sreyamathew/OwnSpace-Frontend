@@ -14,7 +14,7 @@ const PayAdvance = () => {
   const [error, setError] = useState('');
   const [offer, setOffer] = useState(null);
 
-  const amount = 50000;
+  const amount = 1000;
   const formatINR = useMemo(() => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }), []);
 
   useEffect(() => {
@@ -95,7 +95,7 @@ const PayAdvance = () => {
               signature: response.razorpay_signature,
               method: 'razorpay'
             });
-            alert('Advance payment of ₹50,000 completed successfully.');
+            alert('Advance payment of ₹1,000 completed successfully.');
             navigate('/purchase-details');
           } catch (e) {
             console.error('Failed to record advance payment', e);
@@ -137,7 +137,7 @@ const PayAdvance = () => {
 
               <div className="bg-gray-50 border border-gray-200 rounded-md p-4 mb-6">
                 <div className="text-gray-700">Advance Payment Amount:</div>
-                <div className="text-2xl font-bold text-blue-700">₹50,000 (Fixed for all properties)</div>
+                <div className="text-2xl font-bold text-blue-700">₹1,000 (Fixed for all properties)</div>
               </div>
 
               <div className="flex items-center justify-center">
