@@ -8,13 +8,26 @@ const AdminAppointments = () => {
   const { user } = useAuth();
   const [visits, setVisits] = useState([]);
   const [pastVisits, setPastVisits] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('upcoming');
+  const [activeTab, setActiveTab] = useState('pending');
 
   useEffect(() => {
+    loadPendingRequests();
     loadAllAssigned();
   }, []);
+
+  const loadPendingRequests = async () => {
+    try {
+      const res = await visitAPI.getPendingRequests();
+      if (res.success) {
+        setPendingRequests(res.data || []);
+      }
+    } catch (e) {
+      console.error('Failed to load pending requests:', e);
+    }
+  };
 
   const loadAllAssigned = async () => {
     try {
@@ -42,6 +55,32 @@ const AdminAppointments = () => {
       setPastVisits([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const approveRequest = async (id) => {
+    try {
+      const res = await visitAPI.updateVisitStatus(id, 'approved');
+      if (res.success) {
+        setPendingRequests(prev => prev.filter(v => v._id !== id));
+        alert('Visit request approved! The customer has been notified by email.');
+        // Reload upcoming visits to show the newly approved visit
+        loadAllAssigned();
+      }
+    } catch (e) { 
+      alert('Failed to approve request'); 
+    }
+  };
+
+  const rejectRequest = async (id) => {
+    try {
+      const res = await visitAPI.updateVisitStatus(id, 'rejected');
+      if (res.success) {
+        setPendingRequests(prev => prev.filter(v => v._id !== id));
+        alert('Visit request rejected. The customer has been notified by email.');
+      }
+    } catch (e) { 
+      alert('Failed to reject request'); 
     }
   };
 
@@ -100,6 +139,21 @@ const AdminAppointments = () => {
             <div className="mb-6 border-b border-gray-200">
               <div className="flex space-x-8">
                 <button
+                  onClick={() => setActiveTab('pending')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm relative ${
+                    activeTab === 'pending'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Pending Requests
+                  {pendingRequests.length > 0 && (
+                    <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                      {pendingRequests.length}
+                    </span>
+                  )}
+                </button>
+                <button
                   onClick={() => setActiveTab('upcoming')}
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === 'upcoming'
@@ -126,6 +180,90 @@ const AdminAppointments = () => {
               <div>Loading...</div>
             ) : error ? (
               <div className="text-red-600">{error}</div>
+            ) : activeTab === 'pending' ? (
+              <>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Visit Requests</h2>
+                {pendingRequests.length === 0 ? (
+                  <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+                    <div className="text-gray-500">No pending visit requests at the moment.</div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {pendingRequests.map(v => (
+                      <div key={v._id} className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-start gap-4">
+                              {/* Property Image */}
+                              {v.property?.images && v.property.images.length > 0 && (
+                                <img 
+                                  src={v.property.images[0].url} 
+                                  alt={v.property.title}
+                                  className="w-24 h-24 object-cover rounded-lg"
+                                />
+                              )}
+                              
+                              {/* Request Details */}
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-gray-900 text-lg mb-2">
+                                  {v.property?.title || 'Property'}
+                                </h3>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
+                                  <div>
+                                    <span className="font-medium text-gray-700">Customer:</span> {v.requester?.name || 'Unknown'}
+                                  </div>
+                                  <div>
+                                    <span className="font-medium text-gray-700">Contact:</span> {v.requester?.email || 'N/A'}
+                                  </div>
+                                  {v.requester?.phone && (
+                                    <div>
+                                      <span className="font-medium text-gray-700">Phone:</span> {v.requester.phone}
+                                    </div>
+                                  )}
+                                  <div>
+                                    <span className="font-medium text-gray-700">Requested Date:</span> {new Date(v.scheduledAt).toLocaleString()}
+                                  </div>
+                                  {v.property?.address && (
+                                    <div className="md:col-span-2">
+                                      <span className="font-medium text-gray-700">Property Address:</span> {formatAddress(v.property.address)}
+                                    </div>
+                                  )}
+                                  {v.note && (
+                                    <div className="md:col-span-2">
+                                      <span className="font-medium text-gray-700">Note:</span> {v.note}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="text-xs text-gray-500">
+                                  Requested on: {new Date(v.createdAt).toLocaleString()}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Action Buttons */}
+                          <div className="ml-4 flex flex-col space-y-2">
+                            <button 
+                              onClick={() => approveRequest(v._id)} 
+                              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm"
+                            >
+                              ✓ Approve
+                            </button>
+                            <button 
+                              onClick={() => rejectRequest(v._id)} 
+                              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm"
+                            >
+                              ✗ Reject
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             ) : activeTab === 'upcoming' ? (
               <>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Appointments</h2>

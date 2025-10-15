@@ -602,6 +602,13 @@ export const visitAPI = {
       return response;
     } catch (error) { throw error; }
   },
+  // Get pending visit requests (for agent/admin approval)
+  getPendingRequests: async () => {
+    try {
+      const response = await apiRequest('/visits/pending', { method: 'GET', includeAuth: true });
+      return response;
+    } catch (error) { throw error; }
+  },
 };
 
 // Offer API functions
