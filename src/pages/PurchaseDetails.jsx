@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ContactNavbar from '../components/ContactNavbar';
 import Footer from '../components/Footer';
+import DownloadReceiptButton from '../components/DownloadReceiptButton';
 import { offerAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -365,10 +366,11 @@ const PurchaseDetails = () => {
                         </div>
                       )}
                       {o?.advancePaid && (
-                        <div className="mt-4 pt-4 border-t border-gray-200">
+                        <div className="mt-4 pt-4 border-t border-gray-200 flex flex-col gap-3">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             🟢 Advance Paid
                           </span>
+                          <DownloadReceiptButton offer={o} />
                         </div>
                       )}
 

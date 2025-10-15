@@ -602,13 +602,6 @@ export const visitAPI = {
       return response;
     } catch (error) { throw error; }
   },
-  // Get pending visit requests (for agent/admin approval)
-  getPendingRequests: async () => {
-    try {
-      const response = await apiRequest('/visits/pending', { method: 'GET', includeAuth: true });
-      return response;
-    } catch (error) { throw error; }
-  },
 };
 
 // Offer API functions
@@ -672,18 +665,11 @@ export const offerAPI = {
 
 // Payments API
 export const paymentAPI = {
-  getPublicKey: async () => {
-    try {
-      const response = await apiRequest('/payments/key', {
-        method: 'GET',
-      });
-      return response;
-    } catch (e) { throw e; }
-  },
   createOrder: async ({ amount, currency = 'INR', receipt }) => {
     try {
       const response = await apiRequest('/payments/order', {
         method: 'POST',
+        includeAuth: true,
         body: JSON.stringify({ amount, currency, receipt })
       });
       return response;
