@@ -533,25 +533,16 @@ const PropertyDetail = () => {
                       <User className="h-6 w-6 text-blue-600" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">{property.agent.name}</h4>
-                      <p className="text-sm text-gray-600">Real Estate Agent</p>
+                      <h4 className="font-semibold text-gray-900">{property.agent?.name || 'OwnSpace Agent'}</h4>
+                      <p className="text-sm text-gray-600">Role: {property.agent?.role === 'admin' ? 'Admin' : 'Agent'}</p>
+                      {property.agent?.phone && (
+                        <p className="text-sm text-gray-600">Phone: {property.agent.phone}</p>
+                      )}
+                      {property.agent?.email && (
+                        <p className="text-sm text-gray-600">Email: {property.agent.email}</p>
+                      )}
                     </div>
                   </div>
-                  
-                  {/* <div className="space-y-3">
-                    {property.agent.email && (
-                      <div className="flex items-center space-x-3">
-                        <Mail className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm text-gray-700">{property.agent.email}</span>
-                      </div>
-                    )}
-                    {property.agent.phone && (
-                      <div className="flex items-center space-x-3">
-                        <Phone className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm text-gray-700">{property.agent.phone}</span>
-                      </div>
-                    )}
-                  </div> */}
                 </div>
               )}
               
