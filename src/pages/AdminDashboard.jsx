@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
@@ -75,15 +75,18 @@ const AdminDashboard = () => {
     fetchPropertiesCount();
   }, []);
 
-  useEffect(() => {
-    const fetchAssignedVisits = async () => {
-      try {
-        const res = await visitAPI.assignedToMe();
-        if (res.success) setVisitRequests(res.data || []);
-      } catch (e) { console.warn('Failed to load assigned visits'); }
-    };
-    fetchAssignedVisits();
+  const loadPendingAssignedVisits = useCallback(async () => {
+    try {
+      const res = await visitAPI.assignedToMe('pending');
+      if (res.success) setVisitRequests(res.data || []);
+    } catch (e) {
+      console.warn('Failed to load assigned visits', e);
+    }
   }, []);
+
+  useEffect(() => {
+    loadPendingAssignedVisits();
+  }, [loadPendingAssignedVisits]);
 
   const approveVisit = async (id) => {
     try {
@@ -92,7 +95,11 @@ const AdminDashboard = () => {
         setVisitRequests(prev => prev.filter(v => v._id !== id));
         alert('Visit approved. Share contact details with the requester.');
       }
-    } catch (e) { alert('Failed to approve'); }
+    } catch (e) {
+      alert('Failed to approve');
+    } finally {
+      loadPendingAssignedVisits();
+    }
   };
   const rejectVisit = async (id) => {
     try {
@@ -101,7 +108,11 @@ const AdminDashboard = () => {
         setVisitRequests(prev => prev.filter(v => v._id !== id));
         alert('Visit rejected.');
       }
-    } catch (e) { alert('Failed to reject'); }
+    } catch (e) {
+      alert('Failed to reject');
+    } finally {
+      loadPendingAssignedVisits();
+    }
   };
 
   const handleLogout = () => {

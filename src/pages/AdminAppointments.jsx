@@ -20,12 +20,15 @@ const AdminAppointments = () => {
 
   const loadPendingRequests = async () => {
     try {
-      const res = await visitAPI.getPendingRequests();
+      const res = await visitAPI.assignedToMe('pending');
       if (res.success) {
         setPendingRequests(res.data || []);
+      } else {
+        setPendingRequests([]);
       }
-    } catch (e) {
-      console.error('Failed to load pending requests:', e);
+    } catch (error) {
+      console.error('Failed to load pending requests:', error);
+      setPendingRequests([]);
     }
   };
 
