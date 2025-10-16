@@ -148,7 +148,7 @@ const PayAdvance = () => {
 
               <div className="bg-gray-50 border border-gray-200 rounded-md p-4 mb-6">
                 <div className="text-gray-700">Advance Payment Amount:</div>
-                <div className="text-2xl font-bold text-blue-700">₹1,000 (Fixed for all properties)</div>
+                <div className="text-2xl font-bold text-blue-700">₹1,000</div>
               </div>
 
               {buyerDetails && (
