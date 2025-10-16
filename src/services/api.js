@@ -602,6 +602,13 @@ export const visitAPI = {
       return response;
     } catch (error) { throw error; }
   },
+  // Get pending requests assigned to me (for approval/rejection)
+  getPendingRequests: async () => {
+    try {
+      const response = await apiRequest('/visits/pending', { method: 'GET', includeAuth: true });
+      return response;
+    } catch (error) { throw error; }
+  },
 };
 
 // Offer API functions
