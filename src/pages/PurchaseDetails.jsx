@@ -328,7 +328,7 @@ const PurchaseDetails = () => {
                             <span className="font-medium">{buyerName}</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-gray-500">Preferred Date</span>
+                            <span className="text-gray-500">Preferred Date for Advance Payment</span>
                             <span>{preferred ? preferred.toLocaleDateString() : 'Not specified'}</span>
                           </div>
                         </div>

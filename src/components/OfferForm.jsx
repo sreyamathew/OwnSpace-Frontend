@@ -36,14 +36,14 @@ const OfferForm = ({ propertyId, investorId, agentId, onClose, onSuccess }) => {
     }
     
     if (!formData.preferredDate) {
-      newErrors.preferredDate = 'Please select a preferred date';
+      newErrors.preferredDate = 'Please select a preferred date for advance payment';
     } else {
       const selectedDate = new Date(formData.preferredDate);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
       if (selectedDate < today) {
-        newErrors.preferredDate = 'Date cannot be in the past';
+        newErrors.preferredDate = 'Preferred date for advance payment cannot be in the past';
       }
     }
     
@@ -134,7 +134,7 @@ const OfferForm = ({ propertyId, investorId, agentId, onClose, onSuccess }) => {
         
         <div>
           <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700 mb-1">
-            Preferred Date
+            Preferred Date for Advance Payment
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
