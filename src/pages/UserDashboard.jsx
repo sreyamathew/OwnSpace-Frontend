@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { propertyAPI, visitAPI } from '../services/api';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -211,6 +212,7 @@ const UserDashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
+              <NotificationDropdown />
               <div className="relative">
                 <button
                   onClick={toggleVisitedOpen}

@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import AgentSidebar from '../components/AgentSidebar';
 import { propertyAPI, visitAPI } from '../services/api';
 import OfferRequestsSection from '../components/OfferRequestsSection';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 const ActionCard = ({ icon: Icon, title, description, onClick }) => {
   return (
@@ -140,13 +141,16 @@ const AgentDashboard = () => {
               <h1 className="text-2xl font-bold text-gray-900">Agent Dashboard</h1>
               <p className="text-gray-600 mt-1">Welcome back, {user?.name || 'Agent'}.</p>
             </div>
-            <button
-              onClick={() => { logout(); navigate('/login'); }}
-              className="inline-flex items-center justify-center space-x-2 h-9 px-4 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Logout</span>
-            </button>
+            <div className="flex items-center space-x-4">
+              <NotificationDropdown />
+              <button
+                onClick={() => { logout(); navigate('/login'); }}
+                className="inline-flex items-center justify-center space-x-2 h-9 px-4 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </button>
+            </div>
           </div>
         </header>
 

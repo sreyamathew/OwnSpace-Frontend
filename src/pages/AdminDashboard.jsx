@@ -15,13 +15,10 @@ import {
   FileText,
   LogOut,
   User,
-  Bell,
   Search,
   Menu,
   X,
   CheckCircle,
-  AlertTriangle,
-  Info,
   Building,
   TrendingDown,
   Eye,
@@ -34,23 +31,25 @@ import {
   Settings,
   Shield,
   Newspaper,
-  AlertCircle,
   Clock,
   Check,
   XCircle,
-  LayoutDashboard
+  LayoutDashboard,
+  AlertTriangle,
+  AlertCircle,
+  Info
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import MinimalSidebar from '../components/MinimalSidebar';
 import { dashboardStats, salesData, alerts, purchaseRequests, marketNews } from '../data/mockData';
 import { propertyAPI, visitAPI } from '../services/api';
 import OfferRequestsSection from '../components/OfferRequestsSection';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [selectedRequests, setSelectedRequests] = useState([]);
   const [newsFilter, setNewsFilter] = useState('all');
@@ -201,55 +200,7 @@ const AdminDashboard = () => {
                 />
               </div>
 
-              {/* Notifications */}
-              <div className="relative">
-                <button
-                  onClick={() => setNotificationsOpen(!notificationsOpen)}
-                  className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 relative"
-                >
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    3
-                  </span>
-                </button>
-
-                {/* Notifications Dropdown */}
-                {notificationsOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                    <div className="p-4 border-b border-gray-200">
-                      <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto">
-                      {alerts.slice(0, 3).map((alert) => (
-                        <div key={alert.id} className="p-3 border-b border-gray-100 hover:bg-gray-50">
-                          <div className="flex items-start space-x-3">
-                            <div className={`p-1 rounded-full ${
-                              alert.type === 'high' ? 'bg-red-100' : 
-                              alert.type === 'medium' ? 'bg-yellow-100' : 'bg-blue-100'
-                            }`}>
-                              {alert.type === 'high' ? (
-                                <AlertTriangle className="h-3 w-3 text-red-600" />
-                              ) : alert.type === 'medium' ? (
-                                <AlertCircle className="h-3 w-3 text-yellow-600" />
-                              ) : (
-                                <Info className="h-3 w-3 text-blue-600" />
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-gray-900">{alert.title}</p>
-                              <p className="text-xs text-gray-600">{alert.message}</p>
-                              <p className="text-xs text-gray-400 mt-1">{alert.time}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="p-3 border-t border-gray-200">
-                      <button className="text-sm text-blue-600 hover:text-blue-700">View all notifications</button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <NotificationDropdown />
 
               {/* Profile Dropdown */}
               <div className="relative">

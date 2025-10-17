@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Home, Building, Users, Phone, LogIn, UserPlus, Info, Settings, LogOut, LayoutDashboard, User, Heart, History, ChevronDown, Calendar, Eye, Receipt } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import NotificationDropdown from './NotificationDropdown';
 
 const ContactNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -92,6 +93,7 @@ const ContactNavbar = () => {
             <div className="flex items-center space-x-4">
               {!isLoading && isAuthenticated && user ? (
                 <>
+                  <NotificationDropdown />
                   {isAdmin() && (
                     <Link
                       to="/admin/dashboard"

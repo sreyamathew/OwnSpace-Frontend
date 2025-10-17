@@ -684,6 +684,54 @@ export const paymentAPI = {
   }
 };
 
+export const notificationAPI = {
+  list: async ({ limit, before } = {}) => {
+    try {
+      const params = new URLSearchParams();
+      if (limit) params.set('limit', limit);
+      if (before) params.set('before', before);
+      const query = params.toString();
+      const endpoint = query ? `/notifications?${query}` : '/notifications';
+      const response = await apiRequest(endpoint, { method: 'GET', includeAuth: true });
+      return response;
+    } catch (e) { throw e; }
+  },
+  unreadCount: async () => {
+    try {
+      const response = await apiRequest('/notifications/unread-count', { method: 'GET', includeAuth: true });
+      return response;
+    } catch (e) { throw e; }
+  },
+  markRead: async (ids = []) => {
+    try {
+      const response = await apiRequest('/notifications/mark-read', {
+        method: 'POST',
+        includeAuth: true,
+        body: JSON.stringify({ ids: Array.isArray(ids) ? ids : [] })
+      });
+      return response;
+    } catch (e) { throw e; }
+  },
+  markAllRead: async () => {
+    try {
+      const response = await apiRequest('/notifications/mark-all-read', {
+        method: 'POST',
+        includeAuth: true
+      });
+      return response;
+    } catch (e) { throw e; }
+  },
+  refreshUnread: async () => {
+    try {
+      const response = await apiRequest('/notifications/refresh-unread', {
+        method: 'POST',
+        includeAuth: true
+      });
+      return response;
+    } catch (e) { throw e; }
+  }
+};
+
 // Export default API object
 const api = {
   auth: authAPI,
@@ -691,6 +739,7 @@ const api = {
   property: propertyAPI,
   offer: offerAPI,
   payment: paymentAPI,
+  notifications: notificationAPI,
   healthCheck,
 };
 
