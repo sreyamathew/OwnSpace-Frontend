@@ -41,8 +41,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import MinimalSidebar from '../components/MinimalSidebar';
-import { dashboardStats, salesData, alerts, purchaseRequests, marketNews } from '../data/mockData';
-import { propertyAPI, visitAPI } from '../services/api';
+import { dashboardStats, salesData, alerts, marketNews } from '../data/mockData';
+import { propertyAPI, visitAPI, offerAPI } from '../services/api';
 import OfferRequestsSection from '../components/OfferRequestsSection';
 import NotificationDropdown from '../components/NotificationDropdown';
 
@@ -57,22 +57,26 @@ const AdminDashboard = () => {
   const [propertiesLoading, setPropertiesLoading] = useState(true);
   const [visitRequests, setVisitRequests] = useState([]);
 
-  useEffect(() => {
-    const fetchPropertiesCount = async () => {
-      try {
-        const response = await propertyAPI.getAllProperties();
-        if (response.success) {
-          setPropertiesCount(response.data.properties.length);
-        }
-      } catch (error) {
-        console.error('Error fetching properties count:', error);
-      } finally {
-        setPropertiesLoading(false);
-      }
-    };
 
-    fetchPropertiesCount();
+  const fetchPropertiesCount = useCallback(async () => {
+    setPropertiesLoading(true);
+    try {
+      const response = await propertyAPI.getAllProperties();
+      if (response.success) {
+        setPropertiesCount(response.data.properties.length);
+      }
+    } catch (error) {
+      console.error('Error fetching properties count:', error);
+    } finally {
+      setPropertiesLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchPropertiesCount();
+  }, [fetchPropertiesCount]);
+
+
 
   const loadPendingAssignedVisits = useCallback(async () => {
     try {
@@ -142,10 +146,7 @@ const AdminDashboard = () => {
     // Mock rejection functionality
   };
 
-  const handleMarkAsSold = (propertyId) => {
-    console.log(`Marking property ${propertyId} as sold`);
-    // Mock sold functionality
-  };
+
 
   const handleApproveNews = (newsId) => {
     console.log(`Approving news ${newsId}`);
@@ -424,22 +425,7 @@ const AdminDashboard = () => {
             <OfferRequestsSection showOnlyPending={true} />
           </div>
 
-          {/* Sale Finalization Tool */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Sale Finalization</h2>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-6">
-                <p className="text-gray-600 mb-4">Mark properties as "Sold" and remove from active listings</p>
-                <button
-                  onClick={() => handleMarkAsSold('sample-property')}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Mark as Sold</span>
-                </button>
-              </div>
-            </div>
-          </div>
+
 
           {/* Market News Feed Management */}
           <div className="mb-8">

@@ -192,44 +192,65 @@ const AgentProperties = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 justify-items-center max-w-7xl mx-auto">
-              {filteredProperties.map((property) => (
+              {filteredProperties.map((property) => {
+                const isSold = property.status === 'sold';
+                return (
                 <div
                   key={property._id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow w-full max-w-sm"
+                  className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-shadow w-full max-w-sm ${isSold ? 'opacity-90' : 'hover:shadow-md'}`}
                 >
                   <div className="relative h-32 bg-gray-200">
                     {property.images && property.images.length > 0 ? (
                       <img
                         src={property.images[0].url}
                         alt={property.images[0].alt || property.title || 'Property image'}
-                        className="w-full h-full object-cover"
+                        className={`w-full h-full object-cover ${isSold ? 'grayscale' : ''}`}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
+                      <div className={`w-full h-full flex items-center justify-center ${isSold ? 'grayscale' : ''}`}>
                         <Home className="h-12 w-12 text-gray-400" />
                       </div>
                     )}
-                    <div className="absolute top-3 right-3 flex space-x-2">
+                    
+                    {/* Sold Overlay */}
+                    {isSold && (
+                      <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                        <div className="bg-red-600 text-white px-3 py-1 rounded font-bold text-xs transform rotate-12 shadow-lg">
+                          SOLD OUT
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Status Badge */}
+                    <div className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium ${
+                      isSold 
+                        ? 'bg-red-100 text-red-700 border border-red-200' 
+                        : 'bg-green-100 text-green-700 border border-green-200'
+                    }`}>
+                      {isSold ? 'SOLD' : 'ACTIVE'}
+                    </div>
+                    
+                    <div className="absolute top-2 right-2 flex space-x-1">
                       <button
                         onClick={() => navigate(`/property/${property._id}`)}
-                        className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
+                        className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50"
                         title="View Property"
                       >
-                        <Eye className="h-4 w-4 text-gray-600" />
+                        <Eye className="h-3 w-3 text-gray-600" />
                       </button>
                       <button
                         onClick={() => navigate(`/agent/properties/edit/${property._id}`)}
-                        className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
+                        className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50"
                         title="Edit Property"
                       >
-                        <Edit className="h-4 w-4 text-blue-600" />
+                        <Edit className="h-3 w-3 text-blue-600" />
                       </button>
                       <button
                         onClick={() => handleDeleteProperty(property._id)}
-                        className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
+                        className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50"
                         title="Delete Property"
                       >
-                        <Trash2 className="h-4 w-4 text-red-600" />
+                        <Trash2 className="h-3 w-3 text-red-600" />
                       </button>
                     </div>
                   </div>
@@ -247,9 +268,14 @@ const AgentProperties = () => {
                     </div>
                     
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xl font-bold text-green-600">
-                        {typeof property?.price === 'number' ? formatPrice(property.price) : 'Price on request'}
-                      </span>
+                      <div>
+                        <span className={`text-xl font-bold ${isSold ? 'text-gray-500 line-through' : 'text-green-600'}`}>
+                          {typeof property?.price === 'number' ? formatPrice(property.price) : 'Price on request'}
+                        </span>
+                        {isSold && (
+                          <div className="text-xs text-red-600 font-medium">Property Sold</div>
+                        )}
+                      </div>
                       <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                         {property?.propertyType || 'Type N/A'}
                       </span>
@@ -278,26 +304,43 @@ const AgentProperties = () => {
                     
                     <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                       <div className="flex items-center space-x-2">
-                        <span className={`text-xs px-2 py-1 rounded-full ${
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                           property.status === 'active' ? 'bg-green-100 text-green-800' :
                           property.status === 'sold' ? 'bg-red-100 text-red-800' :
                           property.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {property.status}
+                          {property.status?.toUpperCase() || 'UNKNOWN'}
                         </span>
+                        {isSold && (
+                          <span className="text-xs text-red-600">• No longer available</span>
+                        )}
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-gray-500">
                         <Eye className="h-3 w-3" />
                         <span>{property.views || 0}</span>
                       </div>
                     </div>
-                    <div className="mt-3">
-                      <VisitSlotManager propertyId={property._id} />
-                    </div>
+                    {/* Visit Slot Management - Only show for active properties */}
+                    {!isSold && (
+                      <div className="mt-3">
+                        <VisitSlotManager propertyId={property._id} />
+                      </div>
+                    )}
+                    
+                    {/* Sold Property Info */}
+                    {isSold && (
+                      <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded">
+                        <div className="flex items-center space-x-1">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          <span className="text-xs font-medium text-red-700">Property sold</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </main>

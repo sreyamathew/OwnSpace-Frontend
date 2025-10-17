@@ -12,7 +12,7 @@ const TYPE_ICON = {
 
 const TYPE_BG = {
   visit: 'bg-blue-100 text-blue-600',
-  purchase: 'bg-emerald-100 text-emerald-600',
+  purchase: 'bg-green-100 text-green-600',
   payment: 'bg-emerald-100 text-emerald-600',
   status: 'bg-amber-100 text-amber-600',
   general: 'bg-gray-100 text-gray-600'

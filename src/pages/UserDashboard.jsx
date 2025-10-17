@@ -531,10 +531,12 @@ const UserDashboard = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visibleProperties.map((property) => (
+            {visibleProperties.map((property) => {
+              const isSold = property.status === 'sold';
+              return (
               <div
                 key={property._id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-shadow cursor-pointer ${isSold ? 'opacity-75' : 'hover:shadow-md'}`}
               >
                 <div onClick={() => handlePropertyView(property._id)}>
                 <div className="relative h-48 bg-gray-200">
@@ -543,7 +545,7 @@ const UserDashboard = () => {
                       <img
                         src={property.images[0].url}
                         alt={property.images[0].alt || property.title}
-                        className="w-full h-full object-cover"
+                        className={`w-full h-full object-cover ${isSold ? 'grayscale' : ''}`}
                         onError={(e) => {
                           console.log('Image failed to load:', property.images[0].url?.substring(0, 50) + '...');
                           e.target.style.display = 'none';
@@ -556,14 +558,26 @@ const UserDashboard = () => {
                       </div>
                     </>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
+                    <div className={`w-full h-full flex items-center justify-center ${isSold ? 'grayscale' : ''}`}>
                       <Home className="h-12 w-12 text-gray-400" />
                       <span className="ml-2 text-gray-500 text-sm">No image uploaded</span>
                     </div>
                   )}
-                  <button className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
-                    <Heart className="h-4 w-4 text-gray-600" />
-                  </button>
+                  
+                  {/* Sold Overlay */}
+                  {isSold && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                      <div className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm transform rotate-12 shadow-lg">
+                        SOLD OUT
+                      </div>
+                    </div>
+                  )}
+                  
+                  {!isSold && (
+                    <button className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
+                      <Heart className="h-4 w-4 text-gray-600" />
+                    </button>
+                  )}
                 </div>
                 </div>
                 <div className="p-4">
@@ -579,12 +593,23 @@ const UserDashboard = () => {
                   </div>
                   
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-2xl font-bold text-green-600">
-                      {formatPrice(property.price)}
-                    </span>
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      {property.propertyType}
-                    </span>
+                    <div>
+                      <span className={`text-2xl font-bold ${isSold ? 'text-gray-500 line-through' : 'text-green-600'}`}>
+                        {formatPrice(property.price)}
+                      </span>
+                      {isSold && (
+                        <div className="text-sm text-red-600 font-medium">Property Sold</div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <span className={`text-xs px-2 py-1 rounded font-medium ${
+                        isSold 
+                          ? 'bg-red-100 text-red-700' 
+                          : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {isSold ? 'SOLD' : property.propertyType}
+                      </span>
+                    </div>
                   </div>
                   
                   <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
@@ -621,12 +646,21 @@ const UserDashboard = () => {
                     </div>
                   </div>
                   <div className="mt-3 flex space-x-2">
-                    <button
-                      onClick={() => openScheduleModal(property)}
-                      className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-50"
-                    >
-                      Schedule Visit
-                    </button>
+                    {isSold ? (
+                      <button
+                        disabled
+                        className="flex-1 border border-gray-300 text-gray-400 py-2 rounded-md cursor-not-allowed bg-gray-100"
+                      >
+                        Sold Out
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => openScheduleModal(property)}
+                        className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-50"
+                      >
+                        Schedule Visit
+                      </button>
+                    )}
                     <button
                       onClick={() => handlePropertyView(property._id)}
                       className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
@@ -636,7 +670,8 @@ const UserDashboard = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

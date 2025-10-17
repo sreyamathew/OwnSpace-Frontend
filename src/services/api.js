@@ -631,6 +631,13 @@ export const offerAPI = {
       return response;
     } catch (error) { throw error; }
   },
+  // Admin: get advance-paid offers
+  getAdvancePaidOffers: async () => {
+    try {
+      const response = await apiRequest('/offers/advance-paid', { method: 'GET', includeAuth: true });
+      return response;
+    } catch (error) { throw error; }
+  },
   // For admin/agent: get offers received for my properties
   getOffersForMyProperties: async () => {
     try {
@@ -663,6 +670,16 @@ export const offerAPI = {
         method: 'POST',
         includeAuth: true,
         body: JSON.stringify({ amount, orderId, paymentId, signature, method })
+      });
+      return response;
+    } catch (e) { throw e; }
+  },
+  // Finalize sale for advance-paid offer
+  markOfferAsSold: async (offerId) => {
+    try {
+      const response = await apiRequest(`/offers/${offerId}/sell`, {
+        method: 'POST',
+        includeAuth: true
       });
       return response;
     } catch (e) { throw e; }

@@ -32,6 +32,7 @@ const AdminProperties = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
 
   useEffect(() => {
     fetchProperties();
@@ -84,7 +85,8 @@ const AdminProperties = () => {
     const matchesSearch = property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          property.address.city.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = !filterType || property.propertyType === filterType;
-    return matchesSearch && matchesType;
+    const matchesStatus = !filterStatus || property.status === filterStatus;
+    return matchesSearch && matchesType && matchesStatus;
   });
 
   return (
@@ -135,6 +137,52 @@ const AdminProperties = () => {
 
         {/* Main content */}
         <main className="p-6">
+          {/* Property Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Properties</p>
+                  <p className="text-2xl font-bold text-gray-900">{properties.length}</p>
+                </div>
+                <Home className="h-8 w-8 text-blue-600" />
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Active</p>
+                  <p className="text-2xl font-bold text-green-600">{properties.filter(p => p.status === 'active').length}</p>
+                </div>
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Sold</p>
+                  <p className="text-2xl font-bold text-red-600">{properties.filter(p => p.status === 'sold').length}</p>
+                </div>
+                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                  <div className="w-3 h-3 bg-red-600 rounded-full"></div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Other</p>
+                  <p className="text-2xl font-bold text-gray-600">{properties.filter(p => p.status !== 'active' && p.status !== 'sold').length}</p>
+                </div>
+                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                  <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Search and Filter */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
             <div className="flex flex-col sm:flex-row gap-4">
@@ -165,6 +213,19 @@ const AdminProperties = () => {
                   <option value="Bungalow">Bungalow</option>
                 </select>
               </div>
+              <div className="sm:w-48">
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="sold">Sold</option>
+                  <option value="pending">Pending</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -191,23 +252,44 @@ const AdminProperties = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProperties.map((property) => (
+              {filteredProperties.map((property) => {
+                const isSold = property.status === 'sold';
+                return (
                 <div
                   key={property._id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                  className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-shadow ${isSold ? 'opacity-90' : 'hover:shadow-md'}`}
                 >
                   <div className="relative h-48 bg-gray-200">
                     {property.images && property.images.length > 0 ? (
                       <img
                         src={property.images[0].url}
                         alt={property.title}
-                        className="w-full h-full object-cover"
+                        className={`w-full h-full object-cover ${isSold ? 'grayscale' : ''}`}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
+                      <div className={`w-full h-full flex items-center justify-center ${isSold ? 'grayscale' : ''}`}>
                         <Home className="h-12 w-12 text-gray-400" />
                       </div>
                     )}
+                    
+                    {/* Sold Overlay */}
+                    {isSold && (
+                      <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                        <div className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm transform rotate-12 shadow-lg">
+                          SOLD OUT
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Status Badge */}
+                    <div className={`absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-medium ${
+                      isSold 
+                        ? 'bg-red-100 text-red-700 border border-red-200' 
+                        : 'bg-green-100 text-green-700 border border-green-200'
+                    }`}>
+                      {isSold ? 'SOLD' : 'ACTIVE'}
+                    </div>
+                    
                     <div className="absolute top-3 right-3 flex space-x-2">
                       <button
                         onClick={() => navigate(`/property/${property._id}`)}
@@ -246,12 +328,26 @@ const AdminProperties = () => {
                     </div>
                     
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-xl font-bold text-green-600">
-                        {formatPrice(property.price)}
-                      </span>
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {property.propertyType}
-                      </span>
+                      <div>
+                        <span className={`text-xl font-bold ${isSold ? 'text-gray-500 line-through' : 'text-green-600'}`}>
+                          {formatPrice(property.price)}
+                        </span>
+                        {isSold && (
+                          <div className="text-sm text-red-600 font-medium">Property Sold</div>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded mb-1 block">
+                          {property.propertyType}
+                        </span>
+                        <span className={`text-xs px-2 py-1 rounded font-medium ${
+                          isSold 
+                            ? 'bg-red-100 text-red-700' 
+                            : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {property.status?.toUpperCase() || 'ACTIVE'}
+                        </span>
+                      </div>
                     </div>
                     
                     <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
@@ -288,13 +384,27 @@ const AdminProperties = () => {
                       </div>
                     </div>
 
-                    {/* Visit Slot Management */}
-                    <div className="mt-4">
-                      <VisitSlotManager propertyId={property._id} />
-                    </div>
+                    {/* Visit Slot Management - Only show for active properties */}
+                    {!isSold && (
+                      <div className="mt-4">
+                        <VisitSlotManager propertyId={property._id} />
+                      </div>
+                    )}
+                    
+                    {/* Sold Property Info */}
+                    {isSold && (
+                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                          <span className="text-sm font-medium text-red-700">Property has been sold</span>
+                        </div>
+                        <p className="text-xs text-red-600 mt-1">No longer available for visits or purchases</p>
+                      </div>
+                    )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </main>

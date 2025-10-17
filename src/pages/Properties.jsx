@@ -717,29 +717,46 @@ const Properties = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredProperties.map((property) => (
-              <div key={property._id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200 transform hover:-translate-y-2">
+              {filteredProperties.map((property) => {
+                const isSold = property.status === 'sold';
+                return (
+              <div key={property._id} className={`bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-200 ${isSold ? 'opacity-75' : 'hover:shadow-xl transform hover:-translate-y-2'}`}>
                 <div className="relative">
                   {property.images && property.images.length > 0 ? (
                     <img
                       src={property.images[0].url}
                       alt={property.images[0].alt || property.title}
-                      className="w-full h-48 object-cover"
+                      className={`w-full h-48 object-cover ${isSold ? 'grayscale' : ''}`}
                     />
                   ) : (
-                    <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                    <div className={`w-full h-48 bg-gray-200 flex items-center justify-center ${isSold ? 'grayscale' : ''}`}>
                       <span className="text-gray-500">No Image</span>
                     </div>
                   )}
-                  <button 
-                    onClick={() => toggleSaveProperty(property._id)}
-                    className={`absolute top-4 right-4 p-2 rounded-full shadow-md transition-colors duration-200 ${
-                      isPropertySaved(property._id) ? 'bg-red-100 hover:bg-red-200' : 'bg-white hover:bg-gray-50'
-                    }`}
-                  >
-                    <Heart className={`h-5 w-5 ${isPropertySaved(property._id) ? 'text-red-600 fill-current' : 'text-gray-600'}`} />
-                  </button>
-                  <div className="absolute top-4 left-4 px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-600">
+                  
+                  {/* Sold Overlay */}
+                  {isSold && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                      <div className="bg-red-600 text-white px-6 py-3 rounded-lg font-bold text-lg transform rotate-12 shadow-lg">
+                        SOLD OUT
+                      </div>
+                    </div>
+                  )}
+                  
+                  {!isSold && (
+                    <button 
+                      onClick={() => toggleSaveProperty(property._id)}
+                      className={`absolute top-4 right-4 p-2 rounded-full shadow-md transition-colors duration-200 ${
+                        isPropertySaved(property._id) ? 'bg-red-100 hover:bg-red-200' : 'bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <Heart className={`h-5 w-5 ${isPropertySaved(property._id) ? 'text-red-600 fill-current' : 'text-gray-600'}`} />
+                    </button>
+                  )}
+                  
+                  <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-sm font-medium ${
+                    isSold ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                  }`}>
                     {property.propertyType}
                   </div>
                 </div>
@@ -753,11 +770,20 @@ const Properties = () => {
                   
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <div className="text-2xl font-bold text-green-600">{formatPrice(property.price)}</div>
+                      <div className={`text-2xl font-bold ${isSold ? 'text-gray-500 line-through' : 'text-green-600'}`}>
+                        {formatPrice(property.price)}
+                      </div>
+                      {isSold && (
+                        <div className="text-sm text-red-600 font-medium">Property Sold</div>
+                      )}
                     </div>
                     <div className="text-right">
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {property.status}
+                      <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                        isSold 
+                          ? 'bg-red-100 text-red-700 border border-red-200' 
+                          : 'bg-green-100 text-green-700 border border-green-200'
+                      }`}>
+                        {isSold ? 'SOLD' : 'AVAILABLE'}
                       </span>
                     </div>
                   </div>
@@ -830,13 +856,26 @@ const Properties = () => {
                     >
                       View Details
                     </button>
-                    <button onClick={() => openScheduleModal(property)} className="flex-1 border border-gray-900 text-gray-900 py-2 px-4 rounded-lg font-medium hover:bg-gray-100 transition-colors duration-200">
-                      Schedule Visit
-                    </button>
+                    {isSold ? (
+                      <button 
+                        disabled
+                        className="flex-1 border border-gray-300 text-gray-400 py-2 px-4 rounded-lg font-medium cursor-not-allowed bg-gray-100"
+                      >
+                        Sold Out
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => openScheduleModal(property)} 
+                        className="flex-1 border border-gray-900 text-gray-900 py-2 px-4 rounded-lg font-medium hover:bg-gray-100 transition-colors duration-200"
+                      >
+                        Schedule Visit
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
-            ))}
+                );
+              })}
             </div>
           )}
 

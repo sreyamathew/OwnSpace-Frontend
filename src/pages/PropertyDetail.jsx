@@ -435,12 +435,26 @@ const PropertyDetail = () => {
                   <span>{property.address.street}, {property.address.city}, {property.address.state} {property.address.zipCode}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-3xl font-bold text-green-600">
-                    {formatPrice(property.price)}
-                  </span>
-                  <div className="flex items-center space-x-2">
-                    <Eye className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-500">{property.views || 0} views</span>
+                  <div>
+                    <span className={`text-3xl font-bold ${property.status === 'sold' ? 'text-gray-500 line-through' : 'text-green-600'}`}>
+                      {formatPrice(property.price)}
+                    </span>
+                    {property.status === 'sold' && (
+                      <div className="text-lg text-red-600 font-semibold mt-1">Property Sold</div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Eye className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-500">{property.views || 0} views</span>
+                    </div>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      property.status === 'sold' 
+                        ? 'bg-red-100 text-red-700 border border-red-200' 
+                        : 'bg-green-100 text-green-700 border border-green-200'
+                    }`}>
+                      {property.status === 'sold' ? '🔴 SOLD OUT' : '🟢 AVAILABLE'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -548,21 +562,34 @@ const PropertyDetail = () => {
               
               {!isStaffView && (
                 <div className="space-y-3">
-                  <button
-                    onClick={() => {
-                      if (!user) { alert('Please login first'); return; }
-                      setOfferOpen(true);
-                    }}
-                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    Interest in Buying
-                  </button>
-                  <button
-                    onClick={openScheduleModal}
-                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-                  >
-                    Schedule Tour
-                  </button>
+                  {property.status === 'sold' ? (
+                    <>
+                      <div className="w-full px-4 py-3 bg-red-100 border border-red-200 text-red-700 rounded-md text-center font-medium">
+                        🔴 Property Sold Out
+                      </div>
+                      <div className="text-sm text-gray-600 text-center">
+                        This property is no longer available for purchase
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          if (!user) { alert('Please login first'); return; }
+                          setOfferOpen(true);
+                        }}
+                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      >
+                        Interest in Buying
+                      </button>
+                      <button
+                        onClick={openScheduleModal}
+                        className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                      >
+                        Schedule Tour
+                      </button>
+                    </>
+                  )}
                   <button 
                     onClick={toggleSaveProperty}
                     className={`w-full px-4 py-2 rounded-md transition-colors ${

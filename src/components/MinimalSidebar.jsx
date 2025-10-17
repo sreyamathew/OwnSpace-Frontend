@@ -11,7 +11,8 @@ import {
   Settings,
   Building,
   X,
-  Calendar
+  Calendar,
+  ShoppingCart
 } from 'lucide-react';
 
 const MinimalSidebar = ({ onClose }) => {
@@ -28,7 +29,7 @@ const MinimalSidebar = ({ onClose }) => {
     { label: 'Add Agent', icon: UserPlus, path: '/admin/agents/add' },
     { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
     { label: 'Reports', icon: FileText, path: '/admin/reports' },
-    { label: 'Purchase Management', icon: FileText, path: '/admin/purchase-requests' },
+    { label: 'Purchase Management', icon: ShoppingCart, path: '/admin/purchase-requests' },
     { label: 'Settings', icon: Settings, path: '/admin/settings' }
   ];
 
