@@ -683,6 +683,13 @@ export const offerAPI = {
       });
       return response;
     } catch (e) { throw e; }
+  },
+  // Get all offers (Admin only)
+  getAllOffers: async () => {
+    try {
+      const response = await apiRequest('/offers', { method: 'GET', includeAuth: true });
+      return response;
+    } catch (error) { throw error; }
   }
 };
 
