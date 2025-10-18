@@ -452,12 +452,19 @@ export const propertyAPI = {
 // Visit API functions
 export const visitAPI = {
   // Create a visit request
-  createVisitRequest: async ({ propertyId, scheduledAt, note }) => {
+  createVisitRequest: async ({ propertyId, slotId, scheduledAt, note }) => {
     try {
+      const payload = { propertyId, note };
+      if (slotId) {
+        payload.slotId = slotId;
+      }
+      if (scheduledAt) {
+        payload.scheduledAt = scheduledAt;
+      }
       const response = await apiRequest('/visits', {
         method: 'POST',
         includeAuth: true,
-        body: JSON.stringify({ propertyId, scheduledAt, note }),
+        body: JSON.stringify(payload),
       });
       return response;
     } catch (error) {

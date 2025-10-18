@@ -34,7 +34,7 @@ const Properties = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [availableLocations, setAvailableLocations] = useState([]);
-  const [scheduling, setScheduling] = useState({ open: false, property: null, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
+  const [scheduling, setScheduling] = useState({ open: false, property: null, date: '', time: '', slotId: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
   // Compute local today string (YYYY-MM-DD) to restrict past dates
   const todayLocal = new Date();
   const minDate = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
@@ -92,7 +92,7 @@ const Properties = () => {
       navigate('/login');
       return;
     }
-    setScheduling({ open: true, property, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: true });
+    setScheduling({ open: true, property, date: '', time: '', slotId: '', note: '', availableDates: [], slotsByDate: {}, loading: true });
     try {
       const res = await visitAPI.getAvailability(property._id);
       if (res.success) {
@@ -107,7 +107,7 @@ const Properties = () => {
   };
 
   const closeScheduleModal = () => {
-    setScheduling({ open: false, property: null, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
+    setScheduling({ open: false, property: null, date: '', time: '', slotId: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
   };
 
   const isPastSlot = (dateStr, startTime) => {
@@ -897,7 +897,7 @@ const Properties = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
                 <select
                   value={scheduling.date}
-                  onChange={(e) => setScheduling(prev => ({ ...prev, date: e.target.value, time: '' }))}
+                  onChange={(e) => setScheduling(prev => ({ ...prev, date: e.target.value, time: '', slotId: '' }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
                 >
                   <option value="" disabled>{scheduling.loading ? 'Loading...' : 'Select a date'}</option>
@@ -917,7 +917,7 @@ const Properties = () => {
                       return (
                         <button
                           key={slot.slotId}
-                          onClick={() => !disabled && setScheduling(prev => ({ ...prev, time: slot.startTime }))}
+                          onClick={() => !disabled && setScheduling(prev => ({ ...prev, time: slot.startTime, slotId: slot.slotId }))}
                           disabled={disabled}
                           className={`px-3 py-2 border rounded-md text-sm ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 text-gray-400' : (scheduling.time === slot.startTime ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 hover:bg-gray-50')}`}
                         >

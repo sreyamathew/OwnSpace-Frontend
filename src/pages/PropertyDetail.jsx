@@ -32,7 +32,7 @@ const PropertyDetail = () => {
   const [error, setError] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [savedProperties, setSavedProperties] = useState([]);
-  const [scheduling, setScheduling] = useState({ open: false, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
+  const [scheduling, setScheduling] = useState({ open: false, date: '', time: '', slotId: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
   const [offerOpen, setOfferOpen] = useState(false);
   const isStaffView = user?.userType === 'admin' || user?.userType === 'agent';
   // Compute local today string (YYYY-MM-DD) to restrict past dates
@@ -169,7 +169,7 @@ const PropertyDetail = () => {
       return;
     }
     if (!property) return;
-    setScheduling({ open: true, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: true });
+    setScheduling({ open: true, date: '', time: '', slotId: '', note: '', availableDates: [], slotsByDate: {}, loading: true });
     try {
       const res = await visitAPI.getAvailability(property._id);
       if (res.success) {
@@ -207,7 +207,7 @@ const PropertyDetail = () => {
   };
 
   const closeScheduleModal = () => {
-    setScheduling({ open: false, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
+    setScheduling({ open: false, date: '', time: '', slotId: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
   };
   
   // Function to check if a time slot is in the past
