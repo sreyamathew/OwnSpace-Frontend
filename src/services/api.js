@@ -32,7 +32,7 @@ const handleUnauthorizedAndRedirect = () => {
   try {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-  } catch (_) {}
+  } catch (_) { }
   if (typeof window !== 'undefined' && !__OWNSPACE_REDIRECTING__) {
     __OWNSPACE_REDIRECTING__ = true;
     const fromPath = (window.location && (window.location.pathname + (window.location.search || ''))) || '/';
@@ -40,7 +40,7 @@ const handleUnauthorizedAndRedirect = () => {
     setTimeout(() => {
       try {
         window.location.href = `/login?expired=1&from=${encodeURIComponent(fromPath)}`;
-      } catch (_) {}
+      } catch (_) { }
     }, 50);
   }
 };
@@ -373,7 +373,7 @@ export const propertyAPI = {
     try {
       const queryString = new URLSearchParams(filterParams).toString();
       const endpoint = queryString ? `/properties?${queryString}` : '/properties';
-      
+
       const response = await apiRequest(endpoint, {
         method: 'GET',
       });
@@ -441,6 +441,19 @@ export const propertyAPI = {
     try {
       const response = await apiRequest(`/properties/agent/${agentId}`, {
         method: 'GET',
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Get price prediction from ML service
+  predictPrice: async (propertyData) => {
+    try {
+      const response = await apiRequest('/properties/predict-price', {
+        method: 'POST',
+        body: JSON.stringify(propertyData),
       });
       return response;
     } catch (error) {

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
+import {
   ArrowLeft,
-  Home, 
-  MapPin, 
-  DollarSign, 
-  Bed, 
-  Bath, 
-  Square, 
+  Home,
+  MapPin,
+  DollarSign,
+  Bed,
+  Bath,
+  Square,
   Heart,
   Eye,
   User,
@@ -22,6 +22,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { propertyAPI, visitAPI, authAPI } from '../services/api';
 import OfferForm from '../components/OfferForm';
+import PricePredictor from '../components/PricePredictor';
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -52,7 +53,7 @@ const PropertyDetail = () => {
     try {
       setLoading(true);
       const response = await propertyAPI.getProperty(id);
-      
+
       if (response.success) {
         setProperty(response.data);
         // Record recently viewed property for the current user (limit to 10)
@@ -177,10 +178,10 @@ const PropertyDetail = () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const todayStr = today.toISOString().split('T')[0];
-        
+
         // Filter available dates to only include today and future dates
         const filteredDates = (res.data.availableDates || []).filter(date => date >= todayStr);
-        
+
         // Filter slots for today to only include future times
         const filteredSlotsByDate = { ...res.data.slotsByDate };
         if (filteredSlotsByDate[todayStr]) {
@@ -190,12 +191,12 @@ const PropertyDetail = () => {
             return slotTime > now;
           });
         }
-        
-        setScheduling(prev => ({ 
-          ...prev, 
-          availableDates: filteredDates, 
-          slotsByDate: filteredSlotsByDate, 
-          loading: false 
+
+        setScheduling(prev => ({
+          ...prev,
+          availableDates: filteredDates,
+          slotsByDate: filteredSlotsByDate,
+          loading: false
         }));
       } else {
         setScheduling(prev => ({ ...prev, loading: false }));
@@ -209,7 +210,7 @@ const PropertyDetail = () => {
   const closeScheduleModal = () => {
     setScheduling({ open: false, date: '', time: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
   };
-  
+
   // Function to check if a time slot is in the past
   const isPastSlot = (dateStr, startTime) => {
     try {
@@ -288,7 +289,7 @@ const PropertyDetail = () => {
           };
           const updated = [historyItem, ...list];
           localStorage.setItem(key, JSON.stringify(updated));
-        } catch (_) {}
+        } catch (_) { }
         closeScheduleModal();
       }
     } catch (e) {
@@ -366,15 +367,13 @@ const PropertyDetail = () => {
                 <Share2 className="h-5 w-5 text-gray-600" />
               </button>
               {!isStaffView && (
-                <button 
+                <button
                   onClick={toggleSaveProperty}
-                  className={`p-2 rounded-full transition-colors ${
-                    isPropertySaved() ? 'bg-red-100 hover:bg-red-200' : 'bg-gray-100 hover:bg-gray-200'
-                  }`}
+                  className={`p-2 rounded-full transition-colors ${isPropertySaved() ? 'bg-red-100 hover:bg-red-200' : 'bg-gray-100 hover:bg-gray-200'
+                    }`}
                 >
-                  <Heart className={`h-5 w-5 ${
-                    isPropertySaved() ? 'text-red-600 fill-current' : 'text-gray-600'
-                  }`} />
+                  <Heart className={`h-5 w-5 ${isPropertySaved() ? 'text-red-600 fill-current' : 'text-gray-600'
+                    }`} />
                 </button>
               )}
             </div>
@@ -401,7 +400,7 @@ const PropertyDetail = () => {
                     <Home className="h-16 w-16 text-gray-400" />
                   </div>
                 )}
-                
+
                 {property.images && property.images.length > 1 && (
                   <div className="absolute bottom-4 left-4 right-4">
                     <div className="flex space-x-2 overflow-x-auto">
@@ -409,9 +408,8 @@ const PropertyDetail = () => {
                         <button
                           key={index}
                           onClick={() => setCurrentImageIndex(index)}
-                          className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 ${
-                            index === currentImageIndex ? 'border-white' : 'border-transparent'
-                          }`}
+                          className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 ${index === currentImageIndex ? 'border-white' : 'border-transparent'
+                            }`}
                         >
                           <img
                             src={image.url}
@@ -448,11 +446,10 @@ const PropertyDetail = () => {
                       <Eye className="h-4 w-4 text-gray-500" />
                       <span className="text-sm text-gray-500">{property.views || 0} views</span>
                     </div>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                      property.status === 'sold' 
-                        ? 'bg-red-100 text-red-700 border border-red-200' 
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${property.status === 'sold'
+                        ? 'bg-red-100 text-red-700 border border-red-200'
                         : 'bg-green-100 text-green-700 border border-green-200'
-                    }`}>
+                      }`}>
                       {property.status === 'sold' ? '🔴 SOLD OUT' : '🟢 AVAILABLE'}
                     </span>
                   </div>
@@ -519,7 +516,7 @@ const PropertyDetail = () => {
                     <span className="font-medium">Property ID:</span> {property._id}
                   </div>
                   <div>
-                    <span className="font-medium">Status:</span> 
+                    <span className="font-medium">Status:</span>
                     <span className="ml-1 capitalize">{property.status}</span>
                   </div>
                   <div>
@@ -539,7 +536,17 @@ const PropertyDetail = () => {
               {isStaffView && (
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Agent</h3>
               )}
-              
+
+              {/* Price Predictor Component */}
+              {!isStaffView && property && (
+                <PricePredictor
+                  location={property.address?.city}
+                  size={property.area}
+                  bhk={property.bedrooms}
+                  bath={property.bathrooms}
+                />
+              )}
+
               {property.agent && (
                 <div className="mb-6">
                   <div className="flex items-center space-x-3 mb-4">
@@ -559,7 +566,7 @@ const PropertyDetail = () => {
                   </div>
                 </div>
               )}
-              
+
               {!isStaffView && (
                 <div className="space-y-3">
                   {property.status === 'sold' ? (
@@ -590,13 +597,12 @@ const PropertyDetail = () => {
                       </button>
                     </>
                   )}
-                  <button 
+                  <button
                     onClick={toggleSaveProperty}
-                    className={`w-full px-4 py-2 rounded-md transition-colors ${
-                      isPropertySaved() 
-                        ? 'bg-red-600 text-white hover:bg-red-700 border border-red-600' 
+                    className={`w-full px-4 py-2 rounded-md transition-colors ${isPropertySaved()
+                        ? 'bg-red-600 text-white hover:bg-red-700 border border-red-600'
                         : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     {isPropertySaved() ? 'Saved ✓' : 'Save Property'}
                   </button>
@@ -678,7 +684,7 @@ const PropertyDetail = () => {
               investorId={user?.userId || user?._id}
               agentId={property?.agent?._id}
               onClose={() => setOfferOpen(false)}
-              onSuccess={() => { try { recordHistoryAction('offer_submitted'); } catch (_) {} }}
+              onSuccess={() => { try { recordHistoryAction('offer_submitted'); } catch (_) { } }}
             />
           </div>
         </div>
