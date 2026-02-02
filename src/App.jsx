@@ -39,6 +39,7 @@ import PropertyDetail from './pages/PropertyDetail';
 import VisitedProperties from './pages/VisitedProperties';
 import PurchaseDetails from './pages/PurchaseDetails';
 import PurchaseRequestManagement from './pages/PurchaseRequestManagement';
+import PropertyRequestManagement from './pages/PropertyRequestManagement';
 import PurchaseManagement from './pages/PurchaseManagement';
 import Payment from './pages/Payment';
 import PayAdvance from './pages/PayAdvance';
@@ -212,6 +213,11 @@ const AppContent = () => {
       <Route path="/admin/purchase-requests" element={
         <ProtectedRoute requireAdmin={true}>
           <PurchaseManagement />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/property-requests" element={
+        <ProtectedRoute requireAdmin={true}>
+          <PropertyRequestManagement />
         </ProtectedRoute>
       } />
 

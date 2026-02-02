@@ -12,7 +12,9 @@ import {
   Building,
   X,
   Calendar,
-  ShoppingCart
+  ShoppingCart,
+  ClipboardList,
+  FileCheck
 } from 'lucide-react';
 
 const MinimalSidebar = ({ onClose }) => {
@@ -29,6 +31,7 @@ const MinimalSidebar = ({ onClose }) => {
     { label: 'Add Agent', icon: UserPlus, path: '/admin/agents/add' },
     { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
     { label: 'Reports', icon: FileText, path: '/admin/reports' },
+    { label: 'Property Requests', icon: FileCheck, path: '/admin/property-requests' },
     { label: 'Purchase Management', icon: ShoppingCart, path: '/admin/purchase-requests' },
     { label: 'Settings', icon: Settings, path: '/admin/settings' }
   ];
