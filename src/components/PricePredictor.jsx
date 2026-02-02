@@ -24,10 +24,11 @@ const PricePredictor = ({ location, size, bhk, bath }) => {
             if (res.success) {
                 setPrediction(res.data);
             } else {
-                setError('Failed to get prediction');
+                setError(res.message || 'Failed to get prediction');
             }
         } catch (err) {
-            setError('ML Service is offline. Please start the Flask API.');
+            const errorMsg = err.response?.data?.message || err.message || 'ML Service connection failed';
+            setError(`ML Service Error: ${errorMsg}`);
             console.error(err);
         } finally {
             setLoading(false);
