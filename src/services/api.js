@@ -805,6 +805,36 @@ export const analyticsAPI = {
   }
 };
 
+// Report API
+export const reportAPI = {
+  getSoldStats: async () => {
+    try {
+      return await apiRequest('/reports/sold-stats', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  getSalesByLocation: async () => {
+    try {
+      return await apiRequest('/reports/sales-by-location', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  getSalesTrend: async () => {
+    try {
+      return await apiRequest('/reports/sales-trend', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  getRiskDistribution: async () => {
+    try {
+      return await apiRequest('/reports/risk-distribution', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  getSoldList: async () => {
+    try {
+      return await apiRequest('/reports/sold-list', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+};
+
+
 // Export default API object
 const api = {
   auth: authAPI,
@@ -814,6 +844,7 @@ const api = {
   payment: paymentAPI,
   notifications: notificationAPI,
   analytics: analyticsAPI,
+  reports: reportAPI,
   healthCheck,
 };
 

@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import Analytics from './pages/Analytics';
+import SoldReports from './pages/SoldReports';
 import AgentRegistration from './pages/AgentRegistration';
 import AgentManagement from './pages/AgentManagement';
 import UserProfiles from './pages/UserProfiles';
@@ -169,10 +170,7 @@ const AppContent = () => {
       } />
       <Route path="/admin/reports" element={
         <ProtectedRoute requireAdmin={true}>
-          <div className="p-8 text-center">
-            <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-            <p className="text-gray-600 mt-2">Reports page coming soon...</p>
-          </div>
+          <SoldReports />
         </ProtectedRoute>
       } />
       <Route path="/admin/settings" element={

@@ -17,7 +17,8 @@ import {
   Building,
   UserPlus,
   Settings,
-  LogOut
+  LogOut,
+  TrendingUp
 } from 'lucide-react';
 
 const AdminSidebar = () => {
@@ -66,6 +67,13 @@ const AdminSidebar = () => {
       label: 'Analytics',
       icon: BarChart3,
       path: '/admin/analytics',
+      expandable: false
+    },
+    {
+      key: 'reports',
+      label: 'Reports',
+      icon: TrendingUp,
+      path: '/admin/reports',
       expandable: false
     },
     {
