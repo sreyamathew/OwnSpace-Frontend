@@ -460,6 +460,19 @@ export const propertyAPI = {
       throw error;
     }
   },
+
+  // Get risk classification from ML service
+  classifyRisk: async (riskData) => {
+    try {
+      const response = await apiRequest('/properties/classify-risk', {
+        method: 'POST',
+        body: JSON.stringify(riskData),
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 // Visit API functions

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Home, 
-  MapPin, 
-  DollarSign, 
-  Bed, 
-  Bath, 
-  Square, 
+import {
+  Home,
+  MapPin,
+  DollarSign,
+  Bed,
+  Bath,
+  Square,
   Eye,
   Edit,
   Trash2,
@@ -22,6 +22,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { propertyAPI } from '../services/api';
 import MinimalSidebar from '../components/MinimalSidebar';
 import VisitSlotManager from '../components/VisitSlotManager';
+import RiskBadge from '../components/RiskBadge';
 
 const AdminProperties = () => {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ const AdminProperties = () => {
     try {
       setLoading(true);
       const response = await propertyAPI.getAllProperties();
-      
+
       if (response.success) {
         setProperties(response.data.properties);
       } else {
@@ -83,7 +84,7 @@ const AdminProperties = () => {
 
   const filteredProperties = properties.filter(property => {
     const matchesSearch = property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         property.address.city.toLowerCase().includes(searchTerm.toLowerCase());
+      property.address.city.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = !filterType || property.propertyType === filterType;
     const matchesStatus = !filterStatus || property.status === filterStatus;
     return matchesSearch && matchesType && matchesStatus;
@@ -255,154 +256,163 @@ const AdminProperties = () => {
               {filteredProperties.map((property) => {
                 const isSold = property.status === 'sold';
                 return (
-                <div
-                  key={property._id}
-                  className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-shadow ${isSold ? 'opacity-90' : 'hover:shadow-md'}`}
-                >
-                  <div className="relative h-48 bg-gray-200">
-                    {property.images && property.images.length > 0 ? (
-                      <img
-                        src={property.images[0].url}
-                        alt={property.title}
-                        className={`w-full h-full object-cover ${isSold ? 'grayscale' : ''}`}
-                      />
-                    ) : (
-                      <div className={`w-full h-full flex items-center justify-center ${isSold ? 'grayscale' : ''}`}>
-                        <Home className="h-12 w-12 text-gray-400" />
-                      </div>
-                    )}
-                    
-                    {/* Sold Overlay */}
-                    {isSold && (
-                      <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                        <div className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm transform rotate-12 shadow-lg">
-                          SOLD OUT
+                  <div
+                    key={property._id}
+                    className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-shadow ${isSold ? 'opacity-90' : 'hover:shadow-md'}`}
+                  >
+                    <div className="relative h-48 bg-gray-200">
+                      {property.images && property.images.length > 0 ? (
+                        <img
+                          src={property.images[0].url}
+                          alt={property.title}
+                          className={`w-full h-full object-cover ${isSold ? 'grayscale' : ''}`}
+                        />
+                      ) : (
+                        <div className={`w-full h-full flex items-center justify-center ${isSold ? 'grayscale' : ''}`}>
+                          <Home className="h-12 w-12 text-gray-400" />
                         </div>
-                      </div>
-                    )}
-                    
-                    {/* Status Badge */}
-                    <div className={`absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-medium ${
-                      isSold 
-                        ? 'bg-red-100 text-red-700 border border-red-200' 
+                      )}
+
+                      {/* Sold Overlay */}
+                      {isSold && (
+                        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                          <div className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm transform rotate-12 shadow-lg">
+                            SOLD OUT
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Status Badge */}
+                      <div className={`absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-medium ${isSold
+                        ? 'bg-red-100 text-red-700 border border-red-200'
                         : 'bg-green-100 text-green-700 border border-green-200'
-                    }`}>
-                      {isSold ? 'SOLD' : 'ACTIVE'}
-                    </div>
-                    
-                    <div className="absolute top-3 right-3 flex space-x-2">
-                      <button
-                        onClick={() => navigate(`/property/${property._id}`)}
-                        className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
-                        title="View Property"
-                      >
-                        <Eye className="h-4 w-4 text-gray-600" />
-                      </button>
-                      <button
-                        onClick={() => navigate(`/admin/properties/edit/${property._id}`)}
-                        className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
-                        title="Edit Property"
-                      >
-                        <Edit className="h-4 w-4 text-blue-600" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProperty(property._id)}
-                        className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
-                        title="Delete Property"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
-                      {property.title}
-                    </h3>
-                    
-                    <div className="flex items-center text-gray-600 mb-2">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      <span className="text-sm line-clamp-1">
-                        {property.address.city}, {property.address.state}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <span className={`text-xl font-bold ${isSold ? 'text-gray-500 line-through' : 'text-green-600'}`}>
-                          {formatPrice(property.price)}
-                        </span>
-                        {isSold && (
-                          <div className="text-sm text-red-600 font-medium">Property Sold</div>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded mb-1 block">
-                          {property.propertyType}
-                        </span>
-                        <span className={`text-xs px-2 py-1 rounded font-medium ${
-                          isSold 
-                            ? 'bg-red-100 text-red-700' 
-                            : 'bg-blue-100 text-blue-700'
                         }`}>
-                          {property.status?.toUpperCase() || 'ACTIVE'}
-                        </span>
+                        {isSold ? 'SOLD' : 'ACTIVE'}
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                      {property.bedrooms && (
-                        <div className="flex items-center">
-                          <Bed className="h-4 w-4 mr-1" />
-                          <span>{property.bedrooms}</span>
-                        </div>
-                      )}
-                      {property.bathrooms && (
-                        <div className="flex items-center">
-                          <Bath className="h-4 w-4 mr-1" />
-                          <span>{property.bathrooms}</span>
-                        </div>
-                      )}
-                      {property.area && (
-                        <div className="flex items-center">
-                          <Square className="h-4 w-4 mr-1" />
-                          <span>{property.area} sqft</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                          <User className="h-3 w-3 text-blue-600" />
-                        </div>
-                        <span className="text-xs text-gray-600">{property.agent?.name}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-xs text-gray-500">
-                        <Eye className="h-3 w-3" />
-                        <span>{property.views || 0}</span>
+
+                      <div className="absolute top-3 right-3 flex space-x-2">
+                        <button
+                          onClick={() => navigate(`/property/${property._id}`)}
+                          className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
+                          title="View Property"
+                        >
+                          <Eye className="h-4 w-4 text-gray-600" />
+                        </button>
+                        <button
+                          onClick={() => navigate(`/admin/properties/edit/${property._id}`)}
+                          className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
+                          title="Edit Property"
+                        >
+                          <Edit className="h-4 w-4 text-blue-600" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProperty(property._id)}
+                          className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
+                          title="Delete Property"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </button>
                       </div>
                     </div>
 
-                    {/* Visit Slot Management - Only show for active properties */}
-                    {!isSold && (
-                      <div className="mt-4">
-                        <VisitSlotManager propertyId={property._id} />
+                    <div className="p-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
+                        {property.title}
+                      </h3>
+
+                      <div className="flex items-center text-gray-600 mb-2">
+                        <MapPin className="h-4 w-4 mr-1" />
+                        <span className="text-sm line-clamp-1">
+                          {property.address.city}, {property.address.state}
+                        </span>
                       </div>
-                    )}
-                    
-                    {/* Sold Property Info */}
-                    {isSold && (
-                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                          <span className="text-sm font-medium text-red-700">Property has been sold</span>
+
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <span className={`text-xl font-bold ${isSold ? 'text-gray-500 line-through' : 'text-green-600'}`}>
+                            {formatPrice(property.price)}
+                          </span>
+                          {isSold && (
+                            <div className="text-sm text-red-600 font-medium">Property Sold</div>
+                          )}
                         </div>
-                        <p className="text-xs text-red-600 mt-1">No longer available for visits or purchases</p>
+                        <div className="text-right">
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded mb-1 block">
+                            {property.propertyType}
+                          </span>
+                          <span className={`text-xs px-2 py-1 rounded font-medium ${isSold
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-blue-100 text-blue-700'
+                            }`}>
+                            {property.status?.toUpperCase() || 'ACTIVE'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
+                        {property.bedrooms && (
+                          <div className="flex items-center">
+                            <Bed className="h-4 w-4 mr-1" />
+                            <span>{property.bedrooms}</span>
+                          </div>
+                        )}
+                        {property.bathrooms && (
+                          <div className="flex items-center">
+                            <Bath className="h-4 w-4 mr-1" />
+                            <span>{property.bathrooms}</span>
+                          </div>
+                        )}
+                        {property.area && (
+                          <div className="flex items-center">
+                            <Square className="h-4 w-4 mr-1" />
+                            <span>{property.area} sqft</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                            <User className="h-3 w-3 text-blue-600" />
+                          </div>
+                          <span className="text-xs text-gray-600">{property.agent?.name}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-xs text-gray-500">
+                          <Eye className="h-3 w-3" />
+                          <span>{property.views || 0}</span>
+                        </div>
+                      </div>
+
+                      {/* Visit Slot Management - Only show for active properties */}
+                      {!isSold && (
+                        <div className="mt-4">
+                          <VisitSlotManager propertyId={property._id} />
+                        </div>
+                      )}
+
+                      {/* Sold Property Info */}
+                      {isSold && (
+                        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                            <span className="text-sm font-medium text-red-700">Property has been sold</span>
+                          </div>
+                          <p className="text-xs text-red-600 mt-1">No longer available for visits or purchases</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {property.riskCategory && (
+                      <div className="mb-3 p-2 bg-gray-50 rounded-lg">
+                        <RiskBadge
+                          category={property.riskCategory}
+                          score={property.riskScore}
+                          explanation={property.riskExplanation}
+                          showExplanation={false}
+                        />
                       </div>
                     )}
                   </div>
-                </div>
                 );
               })}
             </div>

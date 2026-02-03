@@ -447,8 +447,8 @@ const PropertyDetail = () => {
                       <span className="text-sm text-gray-500">{property.views || 0} views</span>
                     </div>
                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${property.status === 'sold'
-                        ? 'bg-red-100 text-red-700 border border-red-200'
-                        : 'bg-green-100 text-green-700 border border-green-200'
+                      ? 'bg-red-100 text-red-700 border border-red-200'
+                      : 'bg-green-100 text-green-700 border border-green-200'
                       }`}>
                       {property.status === 'sold' ? '🔴 SOLD OUT' : '🟢 AVAILABLE'}
                     </span>
@@ -538,13 +538,26 @@ const PropertyDetail = () => {
               )}
 
               {/* Price Predictor Component */}
-              {!isStaffView && property && (
-                <PricePredictor
-                  location={property.address?.city}
-                  size={property.area}
-                  bhk={property.bedrooms}
-                  bath={property.bathrooms}
-                />
+              {property && (
+                <div className="mb-6">
+                  {property.riskCategory && (
+                    <p className="text-xs text-gray-400 uppercase font-bold mb-2 ml-1">AI Verified Property</p>
+                  )}
+                  <PricePredictor
+                    location={property.address?.city}
+                    size={property.area}
+                    bhk={property.bedrooms}
+                    bath={property.bathrooms}
+                    listedPrice={property.price}
+                    propertyId={property._id}
+                    initialData={{
+                      riskCategory: property.riskCategory,
+                      riskScore: property.riskScore,
+                      riskExplanation: property.riskExplanation,
+                      predictedPrice: property.predictedPrice
+                    }}
+                  />
+                </div>
               )}
 
               {property.agent && (
@@ -600,8 +613,8 @@ const PropertyDetail = () => {
                   <button
                     onClick={toggleSaveProperty}
                     className={`w-full px-4 py-2 rounded-md transition-colors ${isPropertySaved()
-                        ? 'bg-red-600 text-white hover:bg-red-700 border border-red-600'
-                        : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                      ? 'bg-red-600 text-white hover:bg-red-700 border border-red-600'
+                      : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
                       }`}
                   >
                     {isPropertySaved() ? 'Saved ✓' : 'Save Property'}

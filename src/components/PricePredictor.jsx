@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { TrendingUp, Activity, Clock, Cpu } from 'lucide-react';
 import { propertyAPI } from '../services/api';
+import RiskBadge from './RiskBadge';
 
-const PricePredictor = ({ location, size, bhk, bath }) => {
-    const [prediction, setPrediction] = useState(null);
+const PricePredictor = ({ location, size, bhk, bath, listedPrice, propertyId, initialData }) => {
+    const [prediction, setPrediction] = useState(initialData?.predictedPrice ? { predicted_price: initialData.predictedPrice, augmented_features: { amenitiesScore: 5, propertyAge: 5 } } : null);
+    const [risk, setRisk] = useState(initialData?.riskCategory ? { risk_category: initialData.riskCategory, risk_score: initialData.riskScore, explanation: initialData.riskExplanation } : null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [riskError, setRiskError] = useState(null);
 
     const handlePredict = async () => {
         setLoading(true);
         setError(null);
+        setRiskError(null);
         try {
             // Use just the city name for location if it's an object
             const locString = typeof location === 'object' ? location.city : location;
@@ -23,6 +27,27 @@ const PricePredictor = ({ location, size, bhk, bath }) => {
 
             if (res.success) {
                 setPrediction(res.data);
+
+                // If we have a listed price, get risk classification
+                if (listedPrice) {
+                    try {
+                        console.log('Fetching risk classification...');
+                        const riskRes = await propertyAPI.classifyRisk({
+                            listed_price: listedPrice,
+                            predicted_price: res.data.predicted_price,
+                            propertyId: propertyId
+                        });
+
+                        if (riskRes.success) {
+                            setRisk(riskRes.data);
+                        } else {
+                            setRiskError('Could not calculate risk details');
+                        }
+                    } catch (riskErr) {
+                        console.error('Risk classification failed:', riskErr);
+                        setRiskError(`Risk analysis failed: ${riskErr.message}`);
+                    }
+                }
             } else {
                 setError(res.message || 'Failed to get prediction');
             }
@@ -33,6 +58,13 @@ const PricePredictor = ({ location, size, bhk, bath }) => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleReset = () => {
+        setPrediction(null);
+        setRisk(null);
+        setRiskError(null);
+        setError(null);
     };
 
     return (
@@ -100,8 +132,27 @@ const PricePredictor = ({ location, size, bhk, bath }) => {
                         </div>
                     </div>
 
+                    {risk && (
+                        <div className="bg-white p-4 rounded-lg shadow-inner border border-blue-50 mt-2">
+                            <p className="text-xs text-gray-500 uppercase font-bold mb-2 text-center">Investment Risk Analysis</p>
+                            <div className="flex justify-center">
+                                <RiskBadge
+                                    category={risk.risk_category}
+                                    score={risk.risk_score}
+                                    explanation={risk.explanation}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {riskError && (
+                        <div className="bg-orange-50 border border-orange-100 text-orange-700 p-3 rounded-lg text-xs font-medium mt-2">
+                            ⚠️ {riskError}
+                        </div>
+                    )}
+
                     <button
-                        onClick={() => setPrediction(null)}
+                        onClick={handleReset}
                         className="text-xs text-blue-600 font-bold hover:underline"
                     >
                         Reset Analysis
