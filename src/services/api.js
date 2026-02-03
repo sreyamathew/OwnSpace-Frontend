@@ -776,6 +776,35 @@ export const notificationAPI = {
   }
 };
 
+// Analytics API
+export const analyticsAPI = {
+  getStats: async () => {
+    try {
+      return await apiRequest('/analytics/stats', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  getLocationDistribution: async () => {
+    try {
+      return await apiRequest('/analytics/location-distribution', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  getMonthlyTrends: async () => {
+    try {
+      return await apiRequest('/analytics/monthly-trends', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  getRiskDistribution: async () => {
+    try {
+      return await apiRequest('/analytics/risk-distribution', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  getAIInsights: async () => {
+    try {
+      return await apiRequest('/analytics/ai-insights', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  }
+};
+
 // Export default API object
 const api = {
   auth: authAPI,
@@ -784,6 +813,7 @@ const api = {
   offer: offerAPI,
   payment: paymentAPI,
   notifications: notificationAPI,
+  analytics: analyticsAPI,
   healthCheck,
 };
 

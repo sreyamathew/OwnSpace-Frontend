@@ -12,6 +12,7 @@ import Contact from './pages/Contact';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
+import Analytics from './pages/Analytics';
 import AgentRegistration from './pages/AgentRegistration';
 import AgentManagement from './pages/AgentManagement';
 import UserProfiles from './pages/UserProfiles';
@@ -117,7 +118,7 @@ const AppContent = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
-      
+
       {/* Debug Route */}
       <Route path="/debug" element={
         <div className="p-8 text-center bg-green-50">
@@ -125,8 +126,8 @@ const AppContent = () => {
           <p className="text-lg text-gray-700 mb-4">If you can see this page, navigation is working correctly.</p>
           <p className="text-sm text-gray-500">This means the issue is likely with route protection or user authentication.</p>
           <div className="mt-6">
-            <button 
-              onClick={() => window.history.back()} 
+            <button
+              onClick={() => window.history.back()}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
             >
               Go Back
@@ -163,10 +164,7 @@ const AppContent = () => {
       } />
       <Route path="/admin/analytics" element={
         <ProtectedRoute requireAdmin={true}>
-          <div className="p-8 text-center">
-            <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-            <p className="text-gray-600 mt-2">Analytics page coming soon...</p>
-          </div>
+          <Analytics />
         </ProtectedRoute>
       } />
       <Route path="/admin/reports" element={
@@ -349,4 +347,4 @@ function App() {
   );
 }
 
-export default App;
+export default App;

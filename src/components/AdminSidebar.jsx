@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
+import {
   LayoutDashboard,
   ShoppingCart,
   BarChart3,
@@ -65,13 +65,8 @@ const AdminSidebar = () => {
       key: 'analytics',
       label: 'Analytics',
       icon: BarChart3,
-      badge: 'PRO',
-      expandable: true,
-      subItems: [
-        { label: 'Sales Report', path: '/admin/analytics/sales' },
-        { label: 'Revenue Report', path: '/admin/analytics/revenue' },
-        { label: 'Monthly Report', path: '/admin/analytics/monthly' }
-      ]
+      path: '/admin/analytics',
+      expandable: false
     },
     {
       key: 'marketing',
@@ -211,28 +206,26 @@ const AdminSidebar = () => {
           <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
             MENU
           </p>
-          
+
           {menuItems.map((item) => (
             <div key={item.key} className="mb-1">
               {item.expandable ? (
                 <div>
                   <button
                     onClick={() => toggleMenu(item.key)}
-                    className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      isParentActive(item.subItems)
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
+                    className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors ${isParentActive(item.subItems)
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                      }`}
                   >
                     <div className="flex items-center">
                       <item.icon className="h-5 w-5 mr-3" />
                       <span>{item.label}</span>
                       {item.badge && (
-                        <span className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full ${
-                          item.badgeColor === 'green' 
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}>
+                        <span className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full ${item.badgeColor === 'green'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-blue-100 text-blue-800'
+                          }`}>
                           {item.badge}
                         </span>
                       )}
@@ -243,18 +236,17 @@ const AdminSidebar = () => {
                       <ChevronRight className="h-4 w-4" />
                     )}
                   </button>
-                  
+
                   {expandedMenus[item.key] && item.subItems && (
                     <div className="ml-6 mt-1 space-y-1">
                       {item.subItems.map((subItem, index) => (
                         <Link
                           key={index}
                           to={subItem.path}
-                          className={`block px-3 py-2 text-sm rounded-lg transition-colors ${
-                            isActive(subItem.path)
-                              ? 'bg-blue-50 text-blue-700 font-medium'
-                              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                          }`}
+                          className={`block px-3 py-2 text-sm rounded-lg transition-colors ${isActive(subItem.path)
+                            ? 'bg-blue-50 text-blue-700 font-medium'
+                            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                            }`}
                         >
                           {subItem.label}
                         </Link>
@@ -265,20 +257,18 @@ const AdminSidebar = () => {
               ) : (
                 <Link
                   to={item.path}
-                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive(item.path)
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${isActive(item.path)
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-700 hover:bg-gray-100'
+                    }`}
                 >
                   <item.icon className="h-5 w-5 mr-3" />
                   <span>{item.label}</span>
                   {item.badge && (
-                    <span className={`ml-auto px-2 py-0.5 text-xs font-medium rounded-full ${
-                      item.badgeColor === 'green' 
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-blue-100 text-blue-800'
-                    }`}>
+                    <span className={`ml-auto px-2 py-0.5 text-xs font-medium rounded-full ${item.badgeColor === 'green'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-blue-100 text-blue-800'
+                      }`}>
                       {item.badge}
                     </span>
                   )}
