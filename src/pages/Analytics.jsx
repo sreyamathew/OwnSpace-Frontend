@@ -32,6 +32,7 @@ const Analytics = () => {
     const [trendData, setTrendData] = useState([]);
     const [riskData, setRiskData] = useState([]);
     const [insights, setInsights] = useState([]);
+    const [modelPerformance, setModelPerformance] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -68,7 +69,8 @@ const Analytics = () => {
                             { name: 'High Risk', value: data.HIGH, color: '#EF4444' }
                         ])
                     },
-                    { key: 'insights', fn: analyticsAPI.getAIInsights, setter: setInsights }
+                    { key: 'insights', fn: analyticsAPI.getAIInsights, setter: setInsights },
+                    { key: 'modelPerformance', fn: analyticsAPI.getModelPerformance, setter: setModelPerformance }
                 ];
 
                 await Promise.all(secondaryFetches.map(async ({ key, fn, setter }) => {
@@ -247,6 +249,95 @@ const Analytics = () => {
                                 />
                             </div>
 
+                            {/* Model Performance Section */}
+                            {modelPerformance && (
+                                <div className="mb-8">
+                                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-xl shadow-lg text-white mb-4">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <h2 className="text-2xl font-bold mb-2">ML Model Performance</h2>
+                                                <p className="text-indigo-100">Scientific evaluation metrics for price prediction model</p>
+                                            </div>
+                                            <Activity className="h-12 w-12 text-indigo-200" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                                        <MetricCard
+                                            title="MAE"
+                                            subtitle="Mean Absolute Error"
+                                            value={`₹${(modelPerformance.mae / 100000).toFixed(2)}L`}
+                                            description="Average prediction error"
+                                            icon={<TrendingUp className="text-blue-500" />}
+                                            bgColor="bg-blue-50"
+                                            tooltip="Lower is better. Measures average magnitude of errors."
+                                        />
+                                        <MetricCard
+                                            title="RMSE"
+                                            subtitle="Root Mean Squared Error"
+                                            value={`₹${(modelPerformance.rmse / 100000).toFixed(2)}L`}
+                                            description="Prediction error variance"
+                                            icon={<Activity className="text-purple-500" />}
+                                            bgColor="bg-purple-50"
+                                            tooltip="Lower is better. Penalizes larger errors more heavily."
+                                        />
+                                        <MetricCard
+                                            title="R² Score"
+                                            subtitle="Coefficient of Determination"
+                                            value={modelPerformance.r2_score.toFixed(4)}
+                                            description={`Explains ${(modelPerformance.r2_score * 100).toFixed(1)}% of variance`}
+                                            icon={<BarChart className="text-green-500" />}
+                                            bgColor="bg-green-50"
+                                            tooltip="Higher is better (0-1). Shows how well model fits the data."
+                                            highlight={modelPerformance.r2_score > 0.8}
+                                        />
+                                        <MetricCard
+                                            title="Accuracy"
+                                            subtitle="Prediction Accuracy"
+                                            value={`${modelPerformance.accuracy_percentage.toFixed(2)}%`}
+                                            description="Average prediction accuracy"
+                                            icon={<AlertTriangle className="text-orange-500" />}
+                                            bgColor="bg-orange-50"
+                                            tooltip="Higher is better. Based on sold properties comparison."
+                                            highlight={modelPerformance.accuracy_percentage > 85}
+                                        />
+                                    </div>
+
+                                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                        <h3 className="text-lg font-semibold mb-4 text-gray-700">Model Training Information</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div className="p-4 bg-gray-50 rounded-lg">
+                                                <p className="text-sm text-gray-600 mb-1">Training Samples</p>
+                                                <p className="text-2xl font-bold text-gray-800">{modelPerformance.train_samples}</p>
+                                            </div>
+                                            <div className="p-4 bg-gray-50 rounded-lg">
+                                                <p className="text-sm text-gray-600 mb-1">Testing Samples</p>
+                                                <p className="text-2xl font-bold text-gray-800">{modelPerformance.test_samples}</p>
+                                            </div>
+                                            <div className="p-4 bg-gray-50 rounded-lg">
+                                                <p className="text-sm text-gray-600 mb-1">Last Trained</p>
+                                                <p className="text-sm font-semibold text-gray-800">
+                                                    {new Date(modelPerformance.last_trained).toLocaleString()}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="mt-4 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+                                            <h4 className="font-semibold text-indigo-900 mb-2 flex items-center gap-2">
+                                                <Info className="h-4 w-4" />
+                                                Model Interpretation
+                                            </h4>
+                                            <ul className="text-sm text-indigo-800 space-y-1">
+                                                <li>• The model explains <strong>{(modelPerformance.r2_score * 100).toFixed(1)}%</strong> of price variance in the test data</li>
+                                                <li>• Average prediction error is <strong>₹{(modelPerformance.mae / 100000).toFixed(2)} Lakhs</strong></li>
+                                                <li>• Predictions are <strong>{modelPerformance.accuracy_percentage.toFixed(1)}%</strong> accurate on average</li>
+                                                <li>• Model trained on <strong>{modelPerformance.train_samples + modelPerformance.test_samples}</strong> total samples using 80-20 split</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
                                 <div className="lg:col-span-2 space-y-8">
                                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -343,6 +434,32 @@ const StatCard = ({ title, value, icon, bgColor, highlight }) => (
         <div className={`p-3 rounded-xl ${bgColor}`}>
             {React.cloneElement(icon, { size: 28 })}
         </div>
+    </div>
+);
+
+const MetricCard = ({ title, subtitle, value, description, icon, bgColor, tooltip, highlight }) => (
+    <div className={`p-6 rounded-2xl shadow-sm border border-gray-100 bg-white ${highlight ? 'ring-2 ring-green-300' : ''}`}>
+        <div className="flex items-start justify-between mb-3">
+            <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                    <p className="text-gray-700 text-sm font-bold">{title}</p>
+                    {tooltip && (
+                        <div className="group relative">
+                            <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10">
+                                {tooltip}
+                            </div>
+                        </div>
+                    )}
+                </div>
+                <p className="text-gray-500 text-xs mb-2">{subtitle}</p>
+            </div>
+            <div className={`p-2 rounded-lg ${bgColor}`}>
+                {React.cloneElement(icon, { size: 20 })}
+            </div>
+        </div>
+        <h3 className="text-2xl font-bold text-gray-800 mb-1">{value}</h3>
+        <p className="text-xs text-gray-600">{description}</p>
     </div>
 );
 

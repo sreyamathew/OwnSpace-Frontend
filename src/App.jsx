@@ -19,6 +19,7 @@ import AgentManagement from './pages/AgentManagement';
 import UserProfiles from './pages/UserProfiles';
 import AgentDashboard from './pages/AgentDashboard';
 import AgentAppointments from './pages/AgentAppointments';
+import AgentClients from './pages/AgentClients';
 import UserDashboard from './pages/UserDashboard';
 import AddProperty from './pages/AddProperty';
 import AdminProperties from './pages/AdminProperties';
@@ -228,6 +229,11 @@ const AppContent = () => {
           <AgentAppointments />
         </ProtectedRoute>
       } />
+      <Route path="/agent/clients" element={
+        <ProtectedRoute requireAgent={true}>
+          <AgentClients />
+        </ProtectedRoute>
+      } />
       <Route path="/agent/properties" element={
         <ProtectedRoute requireAgent={true}>
           <AgentProperties />
@@ -337,7 +343,7 @@ const AppContent = () => {
 
 function App() {
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <AppContent />
       </AuthProvider>

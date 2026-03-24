@@ -7,13 +7,7 @@ import {
   Calendar, 
   FileText, 
   Settings,
-  Plus,
-  Eye,
-  TrendingUp,
-  Building,
-  MapPin,
-  Star,
-  MessageSquare
+  Building
 } from 'lucide-react';
 
 const AgentSidebar = () => {
@@ -39,11 +33,6 @@ const AgentSidebar = () => {
           name: 'Add Property',
           href: '/agent/properties/add',
           current: location.pathname === '/agent/properties/add'
-        },
-        {
-          name: 'Property Visits',
-          href: '/agent/properties/visits',
-          current: location.pathname === '/agent/properties/visits'
         }
       ]
     },
@@ -60,12 +49,6 @@ const AgentSidebar = () => {
       current: location.pathname === '/agent/appointments'
     },
     {
-      name: 'Leads',
-      href: '/agent/leads',
-      icon: TrendingUp,
-      current: location.pathname === '/agent/leads'
-    },
-    {
       name: 'Reports',
       href: '/agent/reports',
       icon: FileText,
@@ -76,12 +59,6 @@ const AgentSidebar = () => {
       href: '/agent/purchase-requests',
       icon: FileText,
       current: location.pathname === '/agent/purchase-requests'
-    },
-    {
-      name: 'Messages',
-      href: '/agent/messages',
-      icon: MessageSquare,
-      current: location.pathname === '/agent/messages'
     },
     {
       name: 'Profile',

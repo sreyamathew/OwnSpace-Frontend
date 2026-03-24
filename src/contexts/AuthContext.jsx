@@ -59,7 +59,6 @@ export const AuthProvider = ({ children }) => {
     if (!id) return;
     disconnectSocket();
     const socket = io(SOCKET_URL, {
-      transports: ['websocket'],
       withCredentials: true,
       auth: { userId: id }
     });

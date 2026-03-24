@@ -815,6 +815,16 @@ export const analyticsAPI = {
     try {
       return await apiRequest('/analytics/ai-insights', { method: 'GET', includeAuth: true });
     } catch (e) { throw e; }
+  },
+  getModelPerformance: async () => {
+    try {
+      return await apiRequest('/analytics/model-performance', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  getPredictionAccuracy: async () => {
+    try {
+      return await apiRequest('/analytics/prediction-accuracy', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
   }
 };
 
