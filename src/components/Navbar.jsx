@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Home, Building, Users, Phone, LogIn, UserPlus, Info, Settings } from 'lucide-react';
+import { Menu, X, Home, Building, Users, Phone, LogIn, UserPlus, Info, Settings, Cpu } from 'lucide-react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,6 +11,7 @@ const Navbar = () => {
     { name: 'About', href: '/about', icon: Info },
     { name: 'Services', href: '/services', icon: Settings },
     { name: 'Properties', href: '/properties', icon: Building },
+    { name: 'Valuation AI', href: '/smart-valuation', icon: Cpu },
     { name: 'Contact', href: '/contact', icon: Phone },
   ];
 

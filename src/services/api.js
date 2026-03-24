@@ -461,6 +461,19 @@ export const propertyAPI = {
     }
   },
 
+  // Get price prediction from text description via ML service
+  predictTextPrice: async (data) => {
+    try {
+      const response = await apiRequest('/properties/predict-text', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Get risk classification from ML service
   classifyRisk: async (riskData) => {
     try {

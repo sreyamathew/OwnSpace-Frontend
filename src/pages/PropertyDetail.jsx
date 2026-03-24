@@ -550,6 +550,7 @@ const PropertyDetail = () => {
                     bath={property.bathrooms}
                     listedPrice={property.price}
                     propertyId={property._id}
+                    description={property.description}
                     initialData={{
                       riskCategory: property.riskCategory,
                       riskScore: property.riskScore,

@@ -3,7 +3,7 @@ import { TrendingUp, Activity, Clock, Cpu } from 'lucide-react';
 import { propertyAPI } from '../services/api';
 import RiskBadge from './RiskBadge';
 
-const PricePredictor = ({ location, size, bhk, bath, listedPrice, propertyId, initialData }) => {
+const PricePredictor = ({ location, size, bhk, bath, listedPrice, propertyId, description, initialData }) => {
     const [prediction, setPrediction] = useState(initialData?.predictedPrice ? { predicted_price: initialData.predictedPrice, augmented_features: { amenitiesScore: 5, propertyAge: 5 } } : null);
     const [risk, setRisk] = useState(initialData?.riskCategory ? { risk_category: initialData.riskCategory, risk_score: initialData.riskScore, explanation: initialData.riskExplanation } : null);
     const [loading, setLoading] = useState(false);
@@ -22,7 +22,8 @@ const PricePredictor = ({ location, size, bhk, bath, listedPrice, propertyId, in
                 location: locString || 'Kochi',
                 size: parseInt(size) || 1000,
                 bhk: parseInt(bhk) || 2,
-                bath: parseInt(bath) || 2
+                bath: parseInt(bath) || 2,
+                description: description || ''
             });
 
             if (res.success) {

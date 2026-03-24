@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Home, Building, Users, Phone, LogIn, UserPlus, Info, Settings, LogOut, LayoutDashboard, User, Heart, History, ChevronDown, Calendar, Eye, Receipt } from 'lucide-react';
+import { Menu, X, Home, Building, Users, Phone, LogIn, UserPlus, Info, Settings, LogOut, LayoutDashboard, User, Heart, History, ChevronDown, Calendar, Eye, Receipt, Cpu } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationDropdown from './NotificationDropdown';
 
@@ -31,6 +31,7 @@ const ContactNavbar = () => {
     { name: 'About', href: '/about', icon: Info },
     { name: 'Services', href: '/services', icon: Settings },
     { name: 'Properties', href: '/properties', icon: Building },
+    { name: 'Valuation AI', href: '/smart-valuation', icon: Cpu },
     { name: 'Contact', href: '/contact', icon: Phone },
   ];
 

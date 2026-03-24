@@ -48,6 +48,7 @@ import Payment from './pages/Payment';
 import PayAdvance from './pages/PayAdvance';
 import BuyerDetails from './pages/BuyerDetails';
 import PurchaseHistory from './pages/PurchaseHistory';
+import SmartValuation from './pages/SmartValuation';
 
 const AppContent = () => {
   return (
@@ -78,6 +79,13 @@ const AppContent = () => {
         <div className="App min-h-screen bg-gray-50">
           <ContactNavbar />
           <main><Properties /></main>
+          <Footer />
+        </div>
+      } />
+      <Route path="/smart-valuation" element={
+        <div className="App min-h-screen bg-gray-50">
+          <ContactNavbar />
+          <main><SmartValuation /></main>
           <Footer />
         </div>
       } />
