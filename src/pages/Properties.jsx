@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { propertyAPI, visitAPI, authAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import Pagination from '../components/Pagination';
 
 const Properties = () => {
   const navigate = useNavigate();
@@ -34,6 +35,8 @@ const Properties = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [availableLocations, setAvailableLocations] = useState([]);
+  const [pagination, setPagination] = useState({ current: 1, pages: 1, total: 0 });
+  const [showRecommendations, setShowRecommendations] = useState(false);
   const [scheduling, setScheduling] = useState({ open: false, property: null, date: '', time: '', slotId: '', note: '', availableDates: [], slotsByDate: {}, loading: false });
   // Compute local today string (YYYY-MM-DD) to restrict past dates
   const todayLocal = new Date();
@@ -163,14 +166,15 @@ const Properties = () => {
   const fetchProperties = async (filterParams = {}) => {
     try {
       setLoading(true);
+      setShowRecommendations(false);
       const response = await propertyAPI.getAllProperties(filterParams);
 
       if (response.success) {
         const fetchedProperties = response.data.properties || [];
         setProperties(fetchedProperties);
-        setFilteredProperties(fetchedProperties); // Initialize filtered properties with all properties
+        setFilteredProperties(fetchedProperties);
+        setPagination(response.data.pagination || { current: 1, pages: 1, total: fetchedProperties.length });
         
-        // Extract unique locations from fetched properties
         const locations = [...new Set(fetchedProperties.map(p => p.address?.city).filter(Boolean))];
         setAvailableLocations(locations);
       } else {
@@ -182,6 +186,52 @@ const Properties = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchRecommendationsOnly = async () => {
+    if (!user) {
+      alert('Please login to see personalized recommendations');
+      return;
+    }
+    try {
+      setLoading(true);
+      setShowRecommendations(true);
+      const res = await propertyAPI.getRecommendations();
+      if (res.success) {
+        const recs = res.recommendations || [];
+        setProperties(recs);
+        setFilteredProperties(recs);
+        setPagination({ current: 1, pages: 1, total: recs.length });
+        
+        if (recs.length === 0) {
+          setError('No recommendations found. Try updating your preferences in Profile!');
+        } else {
+          setError('');
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching recommendations:', err);
+      setError('Failed to fetch recommendations');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    // If filters or search is active, we should pass those to handleSearchWithFilters
+    const filterParams = {};
+    if (filters.propertyType) filterParams.propertyType = filters.propertyType;
+    if (filters.priceRange) {
+      const [min, max] = filters.priceRange.split('-').map(val => val === '999999999' ? '' : val);
+      if (min) filterParams.minPrice = min;
+      if (max) filterParams.maxPrice = max;
+    }
+    if (filters.bedrooms) filterParams.bedrooms = filters.bedrooms;
+    if (filters.location) filterParams.city = filters.location;
+    if (sortBy !== 'relevance') filterParams.sortBy = sortBy;
+    
+    handleSearchWithFilters(filters, newPage);
+    window.scrollTo({ top: 300, behavior: 'smooth' }); // Scroll to filters/results area
   };
 
   const handleFilterChange = (filterName, value) => {
@@ -205,9 +255,9 @@ const Properties = () => {
     }
   };
 
-  const handleSearchWithFilters = async (currentFilters) => {
+  const handleSearchWithFilters = async (currentFilters, page = 1) => {
     // Build filter parameters for API call
-    const filterParams = {};
+    const filterParams = { page, limit: 12 };
     
     if (currentFilters.propertyType) {
       filterParams.propertyType = currentFilters.propertyType;
@@ -245,6 +295,7 @@ const Properties = () => {
         const fetchedProperties = response.data.properties || [];
         setProperties(fetchedProperties);
         setFilteredProperties(fetchedProperties);
+        setPagination(response.data.pagination || { current: page, pages: 1, total: fetchedProperties.length });
         
         // Extract unique locations from fetched properties
         const locations = [...new Set(fetchedProperties.map(p => p.address?.city).filter(Boolean))];
@@ -623,59 +674,85 @@ const Properties = () => {
                   <Filter className="h-5 w-5 text-gray-500" />
                   <span className="font-medium text-gray-700">Filters:</span>
                 </div>
-                <select 
-                  value={filters.propertyType}
-                  onChange={(e) => handleFilterChange('propertyType', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
+                
+                {/* Recommendations Toggle Button */}
+                <button
+                  onClick={showRecommendations ? resetAllFilters : fetchRecommendationsOnly}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md border transition-all ${
+                    showRecommendations 
+                      ? 'bg-yellow-50 border-yellow-200 text-yellow-700 shadow-sm' 
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
                 >
-                  <option value="">All Property Types</option>
-                  <option value="Apartment">Apartment</option>
-                  <option value="House">House</option>
-                  <option value="Villa">Villa</option>
-                  <option value="Condo">Condo</option>
-                  <option value="Townhouse">Townhouse</option>
-                  <option value="Commercial">Commercial</option>
-                  <option value="Land">Land</option>
-                  <option value="Other">Other</option>
-                </select>
-                <select 
-                  value={filters.priceRange}
-                  onChange={(e) => handleFilterChange('priceRange', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="">All Price Ranges</option>
-                  <option value="0-500000">₹0 - ₹5L</option>
-                  <option value="500000-1000000">₹5L - ₹10L</option>
-                  <option value="1000000-2500000">₹10L - ₹25L</option>
-                  <option value="2500000-5000000">₹25L - ₹50L</option>
-                  <option value="5000000-10000000">₹50L - ₹1Cr</option>
-                  <option value="10000000-25000000">₹1Cr - ₹2.5Cr</option>
-                  <option value="25000000-50000000">₹2.5Cr - ₹5Cr</option>
-                  <option value="50000000-999999999">₹5Cr+</option>
-                </select>
-                <select 
-                  value={filters.bedrooms}
-                  onChange={(e) => handleFilterChange('bedrooms', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="">All Bedrooms</option>
-                  <option value="1">1+ Bedroom</option>
-                  <option value="2">2+ Bedrooms</option>
-                  <option value="3">3+ Bedrooms</option>
-                  <option value="4">4+ Bedrooms</option>
-                  <option value="5">5+ Bedrooms</option>
-                  <option value="6">6+ Bedrooms</option>
-                </select>
-                <select 
-                  value={filters.location}
-                  onChange={(e) => handleFilterChange('location', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="">All Locations</option>
-                  {availableLocations.map((location, index) => (
-                    <option key={index} value={location}>{location}</option>
-                  ))}
-                </select>
+                  <Star className={`h-4 w-4 ${showRecommendations ? 'fill-current text-yellow-500' : 'text-gray-400'}`} />
+                  <span className="text-sm font-medium">
+                    {showRecommendations ? 'Showing Recommendations' : 'Recommended for You'}
+                  </span>
+                  {!showRecommendations && (
+                    <span className="flex h-2 w-2 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    </span>
+                  )}
+                </button>
+
+                {!showRecommendations && (
+                  <>
+                    <select 
+                      value={filters.propertyType}
+                      onChange={(e) => handleFilterChange('propertyType', e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="">All Property Types</option>
+                      <option value="Apartment">Apartment</option>
+                      <option value="House">House</option>
+                      <option value="Villa">Villa</option>
+                      <option value="Condo">Condo</option>
+                      <option value="Townhouse">Townhouse</option>
+                      <option value="Commercial">Commercial</option>
+                      <option value="Land">Land</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <select 
+                      value={filters.priceRange}
+                      onChange={(e) => handleFilterChange('priceRange', e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="">All Price Ranges</option>
+                      <option value="0-500000">₹0 - ₹5L</option>
+                      <option value="500000-1000000">₹5L - ₹10L</option>
+                      <option value="1000000-2500000">₹10L - ₹25L</option>
+                      <option value="2500000-5000000">₹25L - ₹50L</option>
+                      <option value="5000000-10000000">₹50L - ₹1Cr</option>
+                      <option value="10000000-25000000">₹1Cr - ₹2.5Cr</option>
+                      <option value="25000000-50000000">₹2.5Cr - ₹5Cr</option>
+                      <option value="50000000-999999999">₹5Cr+</option>
+                    </select>
+                    <select 
+                      value={filters.bedrooms}
+                      onChange={(e) => handleFilterChange('bedrooms', e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="">All Bedrooms</option>
+                      <option value="1">1+ Bedroom</option>
+                      <option value="2">2+ Bedrooms</option>
+                      <option value="3">3+ Bedrooms</option>
+                      <option value="4">4+ Bedrooms</option>
+                      <option value="5">5+ Bedrooms</option>
+                      <option value="6">6+ Bedrooms</option>
+                    </select>
+                    <select 
+                      value={filters.location}
+                      onChange={(e) => handleFilterChange('location', e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="">All Locations</option>
+                      {availableLocations.map((location, index) => (
+                        <option key={index} value={location}>{location}</option>
+                      ))}
+                    </select>
+                  </>
+                )}
               </div>
               
               {/* Reset Filters Button */}
@@ -688,10 +765,9 @@ const Properties = () => {
             </div>
           </div>
 
-          {/* Results Header */}
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
-              {filteredProperties.length} Properties Found
+              {showRecommendations ? 'Top Recommended Properties' : `${filteredProperties.length} Properties Found`}
             </h2>
             <select value={sortBy} onChange={(e) => handleSortChange(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
               <option value="relevance">Sort by: Relevance</option>
@@ -754,10 +830,18 @@ const Properties = () => {
                     </button>
                   )}
                   
-                  <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-sm font-medium ${
-                    isSold ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
-                  }`}>
-                    {property.propertyType}
+                  <div className={`absolute top-4 left-4 flex flex-col gap-2`}>
+                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      isSold ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                    }`}>
+                      {property.propertyType}
+                    </div>
+                    {showRecommendations && (
+                      <div className="px-3 py-1 bg-yellow-400 text-black text-xs font-bold rounded-full shadow-sm flex items-center">
+                        <Star className="h-3 w-3 mr-1 fill-current" />
+                        Top Match
+                      </div>
+                    )}
                   </div>
                 </div>
                 
@@ -879,12 +963,14 @@ const Properties = () => {
             </div>
           )}
 
-          {/* Load More */}
-          <div className="text-center mt-12">
-            <button className="bg-gray-900 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors duration-200">
-              Load More Properties
-            </button>
-          </div>
+          {/* Pagination */}
+          {!loading && !error && filteredProperties.length > 0 && (
+            <Pagination
+              current={pagination.current}
+              pages={pagination.pages}
+              onPageChange={handlePageChange}
+            />
+          )}
         </div>
       </section>
       {/* Schedule Modal */}

@@ -23,6 +23,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { propertyAPI, visitAPI, authAPI } from '../services/api';
 import OfferForm from '../components/OfferForm';
 import PricePredictor from '../components/PricePredictor';
+import SimilarHomes from '../components/SimilarHomes';
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -703,6 +704,19 @@ const PropertyDetail = () => {
           </div>
         </div>
       )}
+
+      {/* Similar Homes Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <SimilarHomes 
+          bedrooms={property.bedrooms}
+          area={property.area}
+          bathrooms={property.bathrooms}
+          city={property.address?.city}
+          price={property.price}
+          propertyType={property.propertyType}
+          currentPropertyId={property._id}
+        />
+      </div>
     </div>
   );
 };

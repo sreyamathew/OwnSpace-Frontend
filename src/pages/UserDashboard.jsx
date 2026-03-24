@@ -22,6 +22,8 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { propertyAPI, visitAPI } from '../services/api';
 import NotificationDropdown from '../components/NotificationDropdown';
+import Pagination from '../components/Pagination';
+import Recommendations from '../components/Recommendations';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -39,7 +41,7 @@ const UserDashboard = () => {
     bathrooms: ''
   });
   const [searchTerm, setSearchTerm] = useState('');
-  const [visibleCount, setVisibleCount] = useState(9);
+  const [pagination, setPagination] = useState({ current: 1, pages: 1, total: 0 });
   const [scheduling, setScheduling] = useState({ open: false, property: null, date: '', time: '', note: '' });
   const [profileOpen, setProfileOpen] = useState(false);
   const [visitedOpen, setVisitedOpen] = useState(false);
@@ -61,9 +63,8 @@ const UserDashboard = () => {
       if (response.success) {
         const list = response.data.properties || [];
         setProperties(list);
-        // Initialize filtered list and reset pagination
         setFilteredProperties(list);
-        setVisibleCount(9);
+        setPagination(response.data.pagination || { current: 1, pages: 1, total: list.length });
       } else {
         setError('Failed to fetch properties');
       }
@@ -105,6 +106,12 @@ const UserDashboard = () => {
     });
     setSearchTerm('');
     fetchProperties();
+  };
+
+  const handlePageChange = (newPage) => {
+    const filterParams = { ...filters, page: newPage, limit: 9 };
+    fetchProperties(filterParams);
+    window.scrollTo({ top: 400, behavior: 'smooth' });
   };
 
   const fetchVisited = async () => {
@@ -163,12 +170,10 @@ const UserDashboard = () => {
     }
   };
 
-  // Derive filtered list from properties and search term
   useEffect(() => {
     const q = (searchTerm || '').trim().toLowerCase();
     if (!q) {
       setFilteredProperties(properties);
-      setVisibleCount(9);
       return;
     }
     const next = properties.filter(p => {
@@ -181,10 +186,7 @@ const UserDashboard = () => {
       return haystack.includes(q);
     });
     setFilteredProperties(next);
-    setVisibleCount(9);
   }, [searchTerm, properties]);
-
-  const visibleProperties = filteredProperties.slice(0, visibleCount);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', {
@@ -515,6 +517,9 @@ const UserDashboard = () => {
           </div>
         </div>
 
+        {/* Recommendations Section */}
+        <Recommendations />
+
         {/* Properties Grid */}
         {loading ? (
           <div className="flex justify-center items-center py-12">
@@ -530,161 +535,160 @@ const UserDashboard = () => {
             <p className="text-gray-600">No properties found matching your criteria.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visibleProperties.map((property) => {
-              const isSold = property.status === 'sold';
-              return (
-              <div
-                key={property._id}
-                className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-shadow cursor-pointer ${isSold ? 'opacity-75' : 'hover:shadow-md'}`}
-              >
-                <div onClick={() => handlePropertyView(property._id)}>
-                <div className="relative h-48 bg-gray-200">
-                  {property.images && property.images.length > 0 ? (
-                    <>
-                      <img
-                        src={property.images[0].url}
-                        alt={property.images[0].alt || property.title}
-                        className={`w-full h-full object-cover ${isSold ? 'grayscale' : ''}`}
-                        onError={(e) => {
-                          console.log('Image failed to load:', property.images[0].url?.substring(0, 50) + '...');
-                          e.target.style.display = 'none';
-                          e.target.parentNode.querySelector('.fallback-placeholder').style.display = 'flex';
-                        }}
-                      />
-                      <div className="fallback-placeholder w-full h-full flex items-center justify-center absolute inset-0" style={{ display: 'none' }}>
+          <section>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredProperties.map((property) => {
+                const isSold = property.status === 'sold';
+                return (
+                <div
+                  key={property._id}
+                  className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-shadow cursor-pointer ${isSold ? 'opacity-75' : 'hover:shadow-md'}`}
+                >
+                  <div onClick={() => handlePropertyView(property._id)}>
+                  <div className="relative h-48 bg-gray-200">
+                    {property.images && property.images.length > 0 ? (
+                      <>
+                        <img
+                          src={property.images[0].url}
+                          alt={property.images[0].alt || property.title}
+                          className={`w-full h-full object-cover ${isSold ? 'grayscale' : ''}`}
+                          onError={(e) => {
+                            console.log('Image failed to load:', property.images[0].url?.substring(0, 50) + '...');
+                            e.target.style.display = 'none';
+                            e.target.parentNode.querySelector('.fallback-placeholder').style.display = 'flex';
+                          }}
+                        />
+                        <div className="fallback-placeholder w-full h-full flex items-center justify-center absolute inset-0" style={{ display: 'none' }}>
+                          <Home className="h-12 w-12 text-gray-400" />
+                          <span className="ml-2 text-gray-500 text-sm">Your uploaded image failed to load</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className={`w-full h-full flex items-center justify-center ${isSold ? 'grayscale' : ''}`}>
                         <Home className="h-12 w-12 text-gray-400" />
-                        <span className="ml-2 text-gray-500 text-sm">Your uploaded image failed to load</span>
+                        <span className="ml-2 text-gray-500 text-sm">No image uploaded</span>
                       </div>
-                    </>
-                  ) : (
-                    <div className={`w-full h-full flex items-center justify-center ${isSold ? 'grayscale' : ''}`}>
-                      <Home className="h-12 w-12 text-gray-400" />
-                      <span className="ml-2 text-gray-500 text-sm">No image uploaded</span>
-                    </div>
-                  )}
-                  
-                  {/* Sold Overlay */}
-                  {isSold && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                      <div className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm transform rotate-12 shadow-lg">
-                        SOLD OUT
+                    )}
+                    
+                    {/* Sold Overlay */}
+                    {isSold && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                        <div className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm transform rotate-12 shadow-lg">
+                          SOLD OUT
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  
-                  {!isSold && (
-                    <button className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
-                      <Heart className="h-4 w-4 text-gray-600" />
-                    </button>
-                  )}
-                </div>
-                </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
-                    {property.title}
-                  </h3>
-                  
-                  <div className="flex items-center text-gray-600 mb-2">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    <span className="text-sm line-clamp-1">
-                      {property.address.city}, {property.address.state}
-                    </span>
+                    )}
+                    
+                    {!isSold && (
+                      <button className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
+                        <Heart className="h-4 w-4 text-gray-600" />
+                      </button>
+                    )}
                   </div>
-                  
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <span className={`text-2xl font-bold ${isSold ? 'text-gray-500 line-through' : 'text-green-600'}`}>
-                        {formatPrice(property.price)}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
+                      {property.title}
+                    </h3>
+                    
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      <span className="text-sm line-clamp-1">
+                        {property.address.city}, {property.address.state}
                       </span>
-                      {isSold && (
-                        <div className="text-sm text-red-600 font-medium">Property Sold</div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <span className={`text-2xl font-bold ${isSold ? 'text-gray-500 line-through' : 'text-green-600'}`}>
+                          {formatPrice(property.price)}
+                        </span>
+                        {isSold && (
+                          <div className="text-sm text-red-600 font-medium">Property Sold</div>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-xs px-2 py-1 rounded font-medium ${
+                          isSold 
+                            ? 'bg-red-100 text-red-700' 
+                            : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {isSold ? 'SOLD' : property.propertyType}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
+                      {property.bedrooms && (
+                        <div className="flex items-center">
+                          <Bed className="h-4 w-4 mr-1" />
+                          <span>{property.bedrooms} bed</span>
+                        </div>
+                      )}
+                      {property.bathrooms && (
+                        <div className="flex items-center">
+                          <Bath className="h-4 w-4 mr-1" />
+                          <span>{property.bathrooms} bath</span>
+                        </div>
+                      )}
+                      {property.area && (
+                        <div className="flex items-center">
+                          <Square className="h-4 w-4 mr-1" />
+                          <span>{property.area} sqft</span>
+                        </div>
                       )}
                     </div>
-                    <div className="text-right">
-                      <span className={`text-xs px-2 py-1 rounded font-medium ${
-                        isSold 
-                          ? 'bg-red-100 text-red-700' 
-                          : 'bg-gray-100 text-gray-500'
-                      }`}>
-                        {isSold ? 'SOLD' : property.propertyType}
-                      </span>
+                    
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                          <User className="h-3 w-3 text-blue-600" />
+                        </div>
+                        <span className="text-xs text-gray-600">{property.agent?.name}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-gray-500">
+                        <Eye className="h-3 w-3" />
+                        <span>{property.views || 0}</span>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                    {property.bedrooms && (
-                      <div className="flex items-center">
-                        <Bed className="h-4 w-4 mr-1" />
-                        <span>{property.bedrooms} bed</span>
-                      </div>
-                    )}
-                    {property.bathrooms && (
-                      <div className="flex items-center">
-                        <Bath className="h-4 w-4 mr-1" />
-                        <span>{property.bathrooms} bath</span>
-                      </div>
-                    )}
-                    {property.area && (
-                      <div className="flex items-center">
-                        <Square className="h-4 w-4 mr-1" />
-                        <span>{property.area} sqft</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User className="h-3 w-3 text-blue-600" />
-                      </div>
-                      <span className="text-xs text-gray-600">{property.agent?.name}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-xs text-gray-500">
-                      <Eye className="h-3 w-3" />
-                      <span>{property.views || 0}</span>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex space-x-2">
-                    {isSold ? (
+                    <div className="mt-3 flex space-x-2">
+                      {isSold ? (
+                        <button
+                          disabled
+                          className="flex-1 border border-gray-300 text-gray-400 py-2 rounded-md cursor-not-allowed bg-gray-100"
+                        >
+                          Sold Out
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => openScheduleModal(property)}
+                          className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-50"
+                        >
+                          Schedule Visit
+                        </button>
+                      )}
                       <button
-                        disabled
-                        className="flex-1 border border-gray-300 text-gray-400 py-2 rounded-md cursor-not-allowed bg-gray-100"
+                        onClick={() => handlePropertyView(property._id)}
+                        className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
                       >
-                        Sold Out
+                        View Details
                       </button>
-                    ) : (
-                      <button
-                        onClick={() => openScheduleModal(property)}
-                        className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-50"
-                      >
-                        Schedule Visit
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handlePropertyView(property._id)}
-                      className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
-                    >
-                      View Details
-                    </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
 
-        {/* Load More */}
-        {!loading && !error && visibleProperties.length < filteredProperties.length && (
-          <div className="flex justify-center mt-8">
-            <button
-              onClick={() => setVisibleCount(c => c + 9)}
-              className="px-6 py-2 bg-gray-100 text-gray-800 rounded-md border border-gray-300 hover:bg-gray-200"
-            >
-              Load more
-            </button>
-          </div>
+            {/* Pagination */}
+            {!loading && !error && filteredProperties.length > 0 && (
+              <Pagination
+                current={pagination.current}
+                pages={pagination.pages}
+                onPageChange={handlePageChange}
+              />
+            )}
+          </section>
         )}
       </div>
 

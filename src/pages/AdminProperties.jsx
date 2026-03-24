@@ -23,6 +23,7 @@ import { propertyAPI } from '../services/api';
 import MinimalSidebar from '../components/MinimalSidebar';
 import VisitSlotManager from '../components/VisitSlotManager';
 import RiskBadge from '../components/RiskBadge';
+import Pagination from '../components/Pagination';
 
 const AdminProperties = () => {
   const navigate = useNavigate();
@@ -34,18 +35,20 @@ const AdminProperties = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [pagination, setPagination] = useState({ current: 1, pages: 1, total: 0 });
 
   useEffect(() => {
     fetchProperties();
   }, []);
 
-  const fetchProperties = async () => {
+  const fetchProperties = async (page = 1) => {
     try {
       setLoading(true);
-      const response = await propertyAPI.getAllProperties();
+      const response = await propertyAPI.getAllProperties({ page, limit: 10 });
 
       if (response.success) {
         setProperties(response.data.properties);
+        setPagination(response.data.pagination || { current: page, pages: 1, total: response.data.properties.length });
       } else {
         setError('Failed to fetch properties');
       }
@@ -71,6 +74,11 @@ const AdminProperties = () => {
         alert('Failed to delete property');
       }
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    fetchProperties(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const formatPrice = (price) => {
@@ -416,6 +424,15 @@ const AdminProperties = () => {
                 );
               })}
             </div>
+          )}
+
+          {/* Pagination */}
+          {!loading && !error && properties.length > 0 && (
+            <Pagination
+              current={pagination.current}
+              pages={pagination.pages}
+              onPageChange={handlePageChange}
+            />
           )}
         </main>
       </div>

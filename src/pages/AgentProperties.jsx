@@ -21,6 +21,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { propertyAPI } from '../services/api';
 import AgentSidebar from '../components/AgentSidebar';
 import VisitSlotManager from '../components/VisitSlotManager';
+import Pagination from '../components/Pagination';
 
 const AgentProperties = () => {
   const navigate = useNavigate();
@@ -31,19 +32,21 @@ const AgentProperties = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
+  const [pagination, setPagination] = useState({ current: 1, pages: 1, total: 0 });
 
   useEffect(() => {
     fetchProperties();
   }, []);
 
-  const fetchProperties = async () => {
+  const fetchProperties = async (page = 1) => {
     try {
       setLoading(true);
-      // Fetch properties for the current agent
-      const response = await propertyAPI.getPropertiesByAgent(user._id);
+      // Fetch properties for the current agent with pagination
+      const response = await propertyAPI.getPropertiesByAgent(user._id, { page, limit: 10 });
       
       if (response.success) {
-        setProperties(response.data);
+        setProperties(response.data.properties || []);
+        setPagination(response.data.pagination || { current: page, pages: 1, total: response.data.properties.length });
       } else {
         setError('Failed to fetch properties');
       }
@@ -69,6 +72,11 @@ const AgentProperties = () => {
         alert('Failed to delete property');
       }
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    fetchProperties(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const formatPrice = (price) => {
@@ -342,6 +350,15 @@ const AgentProperties = () => {
                 );
               })}
             </div>
+          )}
+
+          {/* Pagination */}
+          {!loading && !error && properties.length > 0 && (
+            <Pagination
+              current={pagination.current}
+              pages={pagination.pages}
+              onPageChange={handlePageChange}
+            />
           )}
         </main>
       </div>

@@ -437,9 +437,12 @@ export const propertyAPI = {
   },
 
   // Get properties by agent
-  getPropertiesByAgent: async (agentId) => {
+  getPropertiesByAgent: async (agentId, filterParams = {}) => {
     try {
-      const response = await apiRequest(`/properties/agent/${agentId}`, {
+      const queryString = new URLSearchParams(filterParams).toString();
+      const endpoint = queryString ? `/properties/agent/${agentId}?${queryString}` : `/properties/agent/${agentId}`;
+      
+      const response = await apiRequest(endpoint, {
         method: 'GET',
       });
       return response;
@@ -480,6 +483,32 @@ export const propertyAPI = {
       const response = await apiRequest('/properties/classify-risk', {
         method: 'POST',
         body: JSON.stringify(riskData),
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Get similar properties
+  getSimilarHomes: async (data) => {
+    try {
+      const response = await apiRequest('/properties/similar', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Get recommendations based on user preferences
+  getRecommendations: async () => {
+    try {
+      const response = await apiRequest('/properties/recommendations', {
+        method: 'GET',
+        includeAuth: true,
       });
       return response;
     } catch (error) {
@@ -870,6 +899,27 @@ export const reportAPI = {
   },
 };
 
+// Preference API
+export const preferenceAPI = {
+  savePreferences: async (data) => {
+    try {
+      return await apiRequest('/preferences/save', {
+        method: 'POST',
+        includeAuth: true,
+        body: JSON.stringify(data),
+      });
+    } catch (e) { throw e; }
+  },
+  getPreferences: async () => {
+    try {
+      return await apiRequest('/preferences/me', {
+        method: 'GET',
+        includeAuth: true,
+      });
+    } catch (e) { throw e; }
+  },
+};
+
 
 // Export default API object
 const api = {
@@ -881,6 +931,7 @@ const api = {
   notifications: notificationAPI,
   analytics: analyticsAPI,
   reports: reportAPI,
+  preferences: preferenceAPI,
   healthCheck,
 };
 

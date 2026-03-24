@@ -15,10 +15,13 @@ import {
   Heart,
   Bed,
   Bath,
-  Square
+  Square,
+  Settings,
+  Filter
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ContactNavbar from '../components/ContactNavbar';
+import { preferenceAPI } from '../services/api';
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -29,6 +32,18 @@ const UserProfile = () => {
   const [errors, setErrors] = useState({});
   const [savedProperties, setSavedProperties] = useState([]);
   
+  // Preferences State
+  const [preferences, setPreferences] = useState({
+    locations: '',
+    minPrice: '',
+    maxPrice: '',
+    bhk: '1',
+    minSize: '',
+    furnishing: 'any'
+  });
+  const [isEditingPreferences, setIsEditingPreferences] = useState(false);
+  const [isPreferencesLoading, setIsPreferencesLoading] = useState(false);
+
   // Validation function for individual fields
   const validateField = (name, value) => {
     let error = '';
@@ -70,8 +85,58 @@ const UserProfile = () => {
   useEffect(() => {
     if (user) {
       fetchSavedProperties();
+      fetchPreferences();
     }
   }, [user]);
+
+  const fetchPreferences = async () => {
+    try {
+      const res = await preferenceAPI.getPreferences();
+      if (res.success && res.data) {
+        setPreferences({
+          locations: (res.data.preferences.locations || []).join(', '),
+          minPrice: res.data.preferences.minPrice || '',
+          maxPrice: res.data.preferences.maxPrice || '',
+          bhk: String(res.data.preferences.bhk || '1'),
+          minSize: res.data.preferences.minSize || '',
+          furnishing: res.data.preferences.furnishing || 'any'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching preferences:', error);
+    }
+  };
+
+  const handlePreferenceChange = (e) => {
+    const { name, value } = e.target;
+    setPreferences(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSavePreferences = async () => {
+    setIsPreferencesLoading(true);
+    try {
+      const data = {
+        locations: preferences.locations.split(',').map(l => l.trim()).filter(Boolean),
+        minPrice: Number(preferences.minPrice) || 0,
+        maxPrice: Number(preferences.maxPrice) || 0,
+        bhk: Number(preferences.bhk),
+        minSize: Number(preferences.minSize) || 0,
+        furnishing: preferences.furnishing
+      };
+
+      const res = await preferenceAPI.savePreferences(data);
+      if (res.success) {
+        setSuccessMessage('Preferences updated successfully!');
+        setIsEditingPreferences(false);
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+      setErrors({ general: 'Failed to update preferences.' });
+    } finally {
+      setIsPreferencesLoading(false);
+    }
+  };
 
   const fetchSavedProperties = () => {
     try {
@@ -446,6 +511,191 @@ const UserProfile = () => {
                   <span className="text-gray-900">{formData.bio || 'No bio provided'}</span>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+
+        {/* Property Preferences */}
+        <div className="mt-8 bg-white shadow-sm rounded-lg overflow-hidden">
+          <div className="px-6 py-8">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center space-x-2">
+                <Settings className="h-5 w-5 text-blue-600" />
+                <h3 className="text-lg font-medium text-gray-900">My Property Preferences</h3>
+              </div>
+              {!isEditingPreferences ? (
+                <button
+                  onClick={() => setIsEditingPreferences(true)}
+                  className="flex items-center space-x-2 px-4 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+                >
+                  <Edit className="h-4 w-4" />
+                  <span>Update Preferences</span>
+                </button>
+              ) : (
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setIsEditingPreferences(false)}
+                    className="flex items-center space-x-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                    <span>Cancel</span>
+                  </button>
+                  <button
+                    onClick={handleSavePreferences}
+                    disabled={isPreferencesLoading}
+                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  >
+                    {isPreferencesLoading ? (
+                      <>
+                        <Loader className="animate-spin h-4 w-4" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" />
+                        <span>Save Preferences</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Locations */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Preferred Locations (Comma separated)
+                </label>
+                {isEditingPreferences ? (
+                  <input
+                    type="text"
+                    name="locations"
+                    value={preferences.locations}
+                    onChange={handlePreferenceChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g. Mumbai, Pune, Bangalore"
+                  />
+                ) : (
+                  <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-md">
+                    <MapPin className="h-4 w-4 text-gray-400" />
+                    <span className="text-gray-900">{preferences.locations || 'Any location'}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Min Price */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Minimum Price (₹)
+                </label>
+                {isEditingPreferences ? (
+                  <input
+                    type="number"
+                    name="minPrice"
+                    value={preferences.minPrice}
+                    onChange={handlePreferenceChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g. 500000"
+                  />
+                ) : (
+                  <div className="p-3 bg-gray-50 rounded-md">
+                    <span className="text-gray-900">{preferences.minPrice ? `₹${Number(preferences.minPrice).toLocaleString()}` : 'No minimum'}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Max Price */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Maximum Price (₹)
+                </label>
+                {isEditingPreferences ? (
+                  <input
+                    type="number"
+                    name="maxPrice"
+                    value={preferences.maxPrice}
+                    onChange={handlePreferenceChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g. 20000000"
+                  />
+                ) : (
+                  <div className="p-3 bg-gray-50 rounded-md">
+                    <span className="text-gray-900">{preferences.maxPrice ? `₹${Number(preferences.maxPrice).toLocaleString()}` : 'No maximum'}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* BHK */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Preferred BHK
+                </label>
+                {isEditingPreferences ? (
+                  <select
+                    name="bhk"
+                    value={preferences.bhk}
+                    onChange={handlePreferenceChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="1">1 BHK</option>
+                    <option value="2">2 BHK</option>
+                    <option value="3">3 BHK</option>
+                    <option value="4">4+ BHK</option>
+                  </select>
+                ) : (
+                  <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-md">
+                    <Bed className="h-4 w-4 text-gray-400" />
+                    <span className="text-gray-900">{preferences.bhk === '4' ? '4+ BHK' : `${preferences.bhk} BHK`}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Min Size */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Minimum Size (sqft)
+                </label>
+                {isEditingPreferences ? (
+                  <input
+                    type="number"
+                    name="minSize"
+                    value={preferences.minSize}
+                    onChange={handlePreferenceChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g. 1000"
+                  />
+                ) : (
+                  <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-md">
+                    <Square className="h-4 w-4 text-gray-400" />
+                    <span className="text-gray-900">{preferences.minSize ? `${preferences.minSize} sqft` : 'No minimum'}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Furnishing */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Furnishing Type
+                </label>
+                {isEditingPreferences ? (
+                  <select
+                    name="furnishing"
+                    value={preferences.furnishing}
+                    onChange={handlePreferenceChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="any">Any</option>
+                    <option value="furnished">Furnished</option>
+                    <option value="semi">Semi-Furnished</option>
+                    <option value="unfurnished">Unfurnished</option>
+                  </select>
+                ) : (
+                  <div className="p-3 bg-gray-50 rounded-md">
+                    <span className="text-gray-900 capitalize">{preferences.furnishing}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
