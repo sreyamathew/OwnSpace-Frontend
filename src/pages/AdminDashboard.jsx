@@ -41,9 +41,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import MinimalSidebar from '../components/MinimalSidebar';
-import Swal from 'sweetalert2';
 import { propertyAPI, visitAPI, offerAPI, adminAPI, reportAPI } from '../services/api';
 import OfferRequestsSection from '../components/OfferRequestsSection';
+import DocumentVerificationSection from '../components/DocumentVerificationSection';
 import NotificationDropdown from '../components/NotificationDropdown';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -461,22 +461,6 @@ const AdminDashboard = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Sales Reports</h2>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handleDownloadPDF('Sales Reports')}
-                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>PDF</span>
-                </button>
-                <button
-                  onClick={() => handleDownloadExcel('Sales Reports')}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>Excel</span>
-                </button>
-              </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -574,7 +558,8 @@ const AdminDashboard = () => {
             <OfferRequestsSection showOnlyPending={true} />
           </div>
 
-
+          {/* Document Verification */}
+          <DocumentVerificationSection />
 
           {/* Market News Feed Management */}
           <div className="mb-8">

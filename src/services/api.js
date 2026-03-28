@@ -739,12 +739,12 @@ export const offerAPI = {
     } catch (error) { throw error; }
   },
   // Mark advance paid
-  markAdvancePaid: async ({ offerId, amount, orderId, paymentId, signature, method }) => {
+  markAdvancePaid: async ({ offerId, amount, orderId, paymentId, signature, method, buyerDetails }) => {
     try {
       const response = await apiRequest(`/offers/${offerId}/advance`, {
         method: 'POST',
         includeAuth: true,
-        body: JSON.stringify({ amount, orderId, paymentId, signature, method })
+        body: JSON.stringify({ amount, orderId, paymentId, signature, method, buyerDetails })
       });
       return response;
     } catch (e) { throw e; }
@@ -780,6 +780,45 @@ export const paymentAPI = {
       });
       return response;
     } catch (e) { throw e; }
+  }
+};
+
+// Documents API
+export const documentAPI = {
+  uploadDocuments: async (offerId, formData) => {
+    try {
+      const url = `${API_BASE_URL}/documents/upload/${offerId}`;
+      const token = getAuthToken();
+      // We don't use apiRequest here because fetch needs to let browser set boundary for multipart/form-data
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formData
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Error uploading documents');
+      }
+      return data;
+    } catch (error) { throw error; }
+  },
+  getDocuments: async (offerId) => {
+    try {
+      const response = await apiRequest(`/documents/${offerId}`, { method: 'GET', includeAuth: true });
+      return response;
+    } catch (error) { throw error; }
+  },
+  verifyDocuments: async (offerId, status, remarks) => {
+    try {
+      const response = await apiRequest(`/documents/verify/${offerId}`, {
+        method: 'PUT',
+        includeAuth: true,
+        body: JSON.stringify({ status, remarks })
+      });
+      return response;
+    } catch (error) { throw error; }
   }
 };
 

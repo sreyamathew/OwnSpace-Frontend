@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import ContactNavbar from '../components/ContactNavbar';
 import Footer from '../components/Footer';
 import DownloadReceiptButton from '../components/DownloadReceiptButton';
-import { offerAPI } from '../services/api';
+import { offerAPI, documentAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import Swal from 'sweetalert2';
 
 const FILTERS = [
   { key: 'all', label: 'All' },
@@ -22,6 +23,8 @@ const PurchaseDetails = () => {
   const [error, setError] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [uploadingOfferId, setUploadingOfferId] = useState(null);
+  const [uploadFiles, setUploadFiles] = useState(null);
 
   const fetchOffers = useCallback(async () => {
     try {
@@ -88,6 +91,44 @@ const PurchaseDetails = () => {
       // Any cleanup logic if needed
     };
   }, []);
+
+  const handleUploadDocuments = async (offerId) => {
+    if (!uploadFiles || uploadFiles.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Missing Files',
+        text: 'Please select at least one file to upload.'
+      });
+      return;
+    }
+    
+    try {
+      setUploadingOfferId(offerId);
+      const formData = new FormData();
+      for (let i = 0; i < uploadFiles.length; i++) {
+        formData.append('documents', uploadFiles[i]);
+      }
+      
+      await documentAPI.uploadDocuments(offerId, formData);
+      setUploadFiles(null);
+      Swal.fire({
+        icon: 'success',
+        title: 'Uploaded!',
+        text: 'Documents uploaded successfully. They are now pending verification.',
+        confirmButtonColor: '#2563eb'
+      });
+      fetchOffers(); // Refresh the list
+    } catch (err) {
+      console.error('Upload error', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Upload Failed',
+        text: err.message || 'Failed to upload documents. Please try again.'
+      });
+    } finally {
+      setUploadingOfferId(null);
+    }
+  };
 
   const formatCurrency = useMemo(() => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }), []);
 
@@ -351,18 +392,63 @@ const PurchaseDetails = () => {
                       
                       {(o?.status && ['accepted','approved'].includes(o.status.toLowerCase())) && !o?.advancePaid && (
                         <div className="mt-4 pt-4 border-t border-gray-200">
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-600 text-sm">Ready to proceed?</span>
-                            <button
-                              onClick={() => navigate(`/buyer-details/${o?.propertyId?._id || o?.propertyId}`)}
-                              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                                <path fillRule="evenodd" d="M4.5 6.75A2.25 2.25 0 016.75 4.5h10.5a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25H6.75a2.25 2.25 0 01-2.25-2.25V6.75zm3 1.5A.75.75 0 018 7.5h8a.75.75 0 010 1.5H8a.75.75 0 01-.75-.75zm0 3A.75.75 0 018 10.5h8a.75.75 0 010 1.5H8a.75.75 0 01-.75-.75zm0 3a.75.75 0 01.75-.75h5a.75.75 0 010 1.5H8a.75.75 0 01-.75-.75z" clipRule="evenodd" />
-                              </svg>
-                              Pay Advance ₹1,000
-                            </button>
-                          </div>
+                          {o.documentStatus === 'pending' ? (
+                            <div className="flex items-center justify-between bg-yellow-50 p-3 rounded-md border border-yellow-200">
+                              <span className="text-yellow-800 text-sm font-medium">Document Verification in Progress</span>
+                              <span className="text-xs text-yellow-600">Please wait while admin verifies your documents before advance payment.</span>
+                            </div>
+                          ) : o.documentStatus === 'approved' ? (
+                            <div className="flex flex-col gap-3">
+                              <div className="flex items-center justify-between bg-green-50 p-2 rounded-md border border-green-200">
+                                <span className="text-green-800 text-sm font-medium">✓ Documents Approved</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-600 text-sm">Ready to proceed?</span>
+                                <button
+                                  onClick={() => navigate(`/buyer-details/${o?.propertyId?._id || o?.propertyId}`)}
+                                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                                    <path fillRule="evenodd" d="M4.5 6.75A2.25 2.25 0 016.75 4.5h10.5a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25H6.75a2.25 2.25 0 01-2.25-2.25V6.75zm3 1.5A.75.75 0 018 7.5h8a.75.75 0 010 1.5H8a.75.75 0 01-.75-.75zm0 3A.75.75 0 018 10.5h8a.75.75 0 010 1.5H8a.75.75 0 01-.75-.75zm0 3a.75.75 0 01.75-.75h5a.75.75 0 010 1.5H8a.75.75 0 01-.75-.75z" clipRule="evenodd" />
+                                  </svg>
+                                  Pay Advance ₹1,000
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-3">
+                              {o.documentStatus === 'rejected' && (
+                                <div className="bg-red-50 p-3 rounded-md border border-red-200">
+                                  <span className="text-red-800 text-sm font-medium">Documents Rejected</span>
+                                  {o.verificationRemarks && <p className="text-red-600 text-xs mt-1">Reason: {o.verificationRemarks}</p>}
+                                  <p className="text-red-600 text-xs mt-1">Please re-upload valid identity/property documents.</p>
+                                </div>
+                              )}
+                              {(!o.documentStatus || o.documentStatus === 'not_uploaded') && (
+                                <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+                                  <span className="text-blue-800 text-sm font-medium">Document Upload Required</span>
+                                  <p className="text-blue-600 text-xs mt-1">Please upload identity/property documents to proceed with advance payment.</p>
+                                </div>
+                              )}
+                              
+                              <div className="flex items-center gap-3">
+                                <input
+                                  type="file"
+                                  multiple
+                                  accept=".pdf,.jpg,.jpeg,.png"
+                                  onChange={(e) => setUploadFiles(e.target.files)}
+                                  className="text-sm border border-gray-300 rounded-md p-1.5 flex-1"
+                                />
+                                <button
+                                  onClick={() => handleUploadDocuments(o._id)}
+                                  disabled={uploadingOfferId === o._id || !uploadFiles}
+                                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                                >
+                                  {uploadingOfferId === o._id ? 'Uploading...' : 'Upload Docs'}
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                       {o?.advancePaid && (

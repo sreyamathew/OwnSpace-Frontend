@@ -56,13 +56,20 @@ const Payment = () => {
         },
         handler: async function (response) {
           try {
+            let buyerDetails = null;
+            try {
+              const saved = sessionStorage.getItem('buyerDetails');
+              if (saved) buyerDetails = JSON.parse(saved);
+            } catch (_) {}
+
             await offerAPI.markAdvancePaid({
               offerId,
               amount: Math.round(order.amount / 100),
               orderId: response.razorpay_order_id,
               paymentId: response.razorpay_payment_id,
               signature: response.razorpay_signature,
-              method: 'razorpay'
+              method: 'razorpay',
+              buyerDetails
             });
             Swal.fire('Advance payment successful.');
             navigate(-1);
