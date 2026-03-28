@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { visitAPI } from '../services/api';
 import AgentSidebar from '../components/AgentSidebar';
 import { useAuth } from '../contexts/AuthContext';
+import Swal from 'sweetalert2';
 
 const AgentAppointments = () => {
   const { user } = useAuth();
@@ -64,12 +65,12 @@ const AgentAppointments = () => {
       const res = await visitAPI.updateVisitStatus(id, 'approved');
       if (res.success) {
         setPendingRequests(prev => prev.filter(v => v._id !== id));
-        alert('Visit request approved! The customer has been notified by email.');
+        Swal.fire('Visit request approved! The customer has been notified by email.');
         // Reload upcoming visits to show the newly approved visit
         loadVisits();
       }
     } catch (e) { 
-      alert('Failed to approve request'); 
+      Swal.fire('Failed to approve request'); 
     }
   };
 
@@ -78,10 +79,10 @@ const AgentAppointments = () => {
       const res = await visitAPI.updateVisitStatus(id, 'rejected');
       if (res.success) {
         setPendingRequests(prev => prev.filter(v => v._id !== id));
-        alert('Visit request rejected. The customer has been notified by email.');
+        Swal.fire('Visit request rejected. The customer has been notified by email.');
       }
     } catch (e) { 
-      alert('Failed to reject request'); 
+      Swal.fire('Failed to reject request'); 
     }
   };
 
@@ -90,9 +91,9 @@ const AgentAppointments = () => {
       const res = await visitAPI.updateVisitStatus(id, 'rejected');
       if (res.success) {
         setVisits(prev => prev.filter(v => v._id !== id));
-        alert('Visit cancelled. The requester has been notified by email.');
+        Swal.fire('Visit cancelled. The requester has been notified by email.');
       }
-    } catch (e) { alert('Failed to cancel'); }
+    } catch (e) { Swal.fire('Failed to cancel'); }
   };
 
   const markVisited = async (id) => {
@@ -102,9 +103,9 @@ const AgentAppointments = () => {
         setPastVisits(prev => 
           prev.map(v => v._id === id ? { ...v, status: 'visited' } : v)
         );
-        alert('Visit marked as visited.');
+        Swal.fire('Visit marked as visited.');
       }
-    } catch (e) { alert('Failed to update visit status'); }
+    } catch (e) { Swal.fire('Failed to update visit status'); }
   };
 
   const markNotVisited = async (id) => {
@@ -114,9 +115,9 @@ const AgentAppointments = () => {
         setPastVisits(prev => 
           prev.map(v => v._id === id ? { ...v, status: 'not visited' } : v)
         );
-        alert('Visit marked as not visited.');
+        Swal.fire('Visit marked as not visited.');
       }
-    } catch (e) { alert('Failed to update visit status'); }
+    } catch (e) { Swal.fire('Failed to update visit status'); }
   };
 
   return (

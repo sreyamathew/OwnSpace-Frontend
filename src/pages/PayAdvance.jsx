@@ -4,6 +4,7 @@ import ContactNavbar from '../components/ContactNavbar';
 import Footer from '../components/Footer';
 import { offerAPI, paymentAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import Swal from 'sweetalert2';
 
 const PayAdvance = () => {
   const { user } = useAuth();
@@ -106,11 +107,11 @@ const PayAdvance = () => {
               signature: response.razorpay_signature,
               method: 'razorpay'
             });
-            alert('Advance payment of ₹1,000 completed successfully.');
+            Swal.fire('Advance payment of ₹1,000 completed successfully.');
             navigate('/purchase-details');
           } catch (e) {
             console.error('Failed to record advance payment', e);
-            alert('Payment captured, but recording failed. We will reconcile shortly.');
+            Swal.fire('Payment captured, but recording failed. We will reconcile shortly.');
             navigate('/purchase-details');
           }
         },

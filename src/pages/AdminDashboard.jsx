@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Users, 
-  ShoppingCart, 
-  TrendingUp, 
+import {
+  Users,
+  ShoppingCart,
+  TrendingUp,
   Download,
   Calendar,
   DollarSign,
@@ -41,10 +41,12 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import MinimalSidebar from '../components/MinimalSidebar';
-import { dashboardStats, salesData, alerts, marketNews } from '../data/mockData';
-import { propertyAPI, visitAPI, offerAPI } from '../services/api';
+import Swal from 'sweetalert2';
+import { propertyAPI, visitAPI, offerAPI, adminAPI, reportAPI } from '../services/api';
 import OfferRequestsSection from '../components/OfferRequestsSection';
 import NotificationDropdown from '../components/NotificationDropdown';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -53,28 +55,40 @@ const AdminDashboard = () => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [selectedRequests, setSelectedRequests] = useState([]);
   const [newsFilter, setNewsFilter] = useState('all');
-  const [propertiesCount, setPropertiesCount] = useState(0);
-  const [propertiesLoading, setPropertiesLoading] = useState(true);
+  const [stats, setStats] = useState({ totalProperties: 0, totalUsers: 0, totalLogs: 0, platformPerformance: 0 });
+  const [sales, setSales] = useState({ propertiesSold: 0, revenue: 0, agentPerformance: 0, monthlySales: [] });
+  const [recentSales, setRecentSales] = useState([]);
+  const [smartAlerts, setSmartAlerts] = useState([]);
+  const [news, setNews] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
   const [visitRequests, setVisitRequests] = useState([]);
 
-
-  const fetchPropertiesCount = useCallback(async () => {
-    setPropertiesLoading(true);
+  const fetchDashboardData = useCallback(async () => {
+    setDataLoading(true);
     try {
-      const response = await propertyAPI.getAllProperties();
-      if (response.success) {
-        setPropertiesCount(response.data.properties.length);
-      }
+      const [statsRes, salesRes, alertsRes, newsRes, recentSalesRes] = await Promise.all([
+        adminAPI.getDashboardStats(),
+        adminAPI.getSalesReports(),
+        adminAPI.getSmartAlerts(),
+        adminAPI.getMarketNews(),
+        reportAPI.getSoldList()
+      ]);
+      
+      if (statsRes.success) setStats(statsRes.data);
+      if (salesRes.success) setSales(salesRes.data);
+      if (alertsRes.success) setSmartAlerts(alertsRes.data);
+      if (newsRes.success) setNews(newsRes.data);
+      if (recentSalesRes.success) setRecentSales(recentSalesRes.data.slice(0, 5)); // Limit to most recent 5
     } catch (error) {
-      console.error('Error fetching properties count:', error);
+      console.error('Error fetching dashboard data:', error);
     } finally {
-      setPropertiesLoading(false);
+      setDataLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchPropertiesCount();
-  }, [fetchPropertiesCount]);
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
 
 
@@ -96,10 +110,10 @@ const AdminDashboard = () => {
       const res = await visitAPI.updateVisitStatus(id, 'approved');
       if (res.success) {
         setVisitRequests(prev => prev.filter(v => v._id !== id));
-        alert('Visit approved. Share contact details with the requester.');
+        Swal.fire('Visit approved.');
       }
     } catch (e) {
-      alert('Failed to approve');
+      Swal.fire('Failed to approve');
     } finally {
       loadPendingAssignedVisits();
     }
@@ -109,10 +123,10 @@ const AdminDashboard = () => {
       const res = await visitAPI.updateVisitStatus(id, 'rejected');
       if (res.success) {
         setVisitRequests(prev => prev.filter(v => v._id !== id));
-        alert('Visit rejected.');
+        Swal.fire('Visit rejected.');
       }
     } catch (e) {
-      alert('Failed to reject');
+      Swal.fire('Failed to reject');
     } finally {
       loadPendingAssignedVisits();
     }
@@ -125,15 +139,142 @@ const AdminDashboard = () => {
 
   // Mock data imported from shared data file
 
-  const handleDownloadReport = (reportType) => {
-    console.log(`Downloading ${reportType} report...`);
-    // Mock download functionality
-    const link = document.createElement('a');
-    link.href = '#';
-    link.download = `${reportType}-report-${new Date().toISOString().split('T')[0]}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownloadPDF = async (reportType) => {
+    try {
+      const doc = new jsPDF();
+      doc.text(`${reportType} Report`, 14, 15);
+      
+      let head = [];
+      let body = [];
+      
+      let startY = 20;
+      
+      if (reportType === 'Detailed Sales') {
+         const res = await reportAPI.getSoldList();
+         const data = res.success ? res.data : [];
+         head = [['Property', 'Location', 'Revenue', 'Sold Date']];
+         body = data.map(m => [
+             m.title, 
+             m.address?.city || 'Unknown', 
+             `₹${(m.soldPrice || m.price || 0).toLocaleString('en-IN')}`, 
+             m.soldDate ? new Date(m.soldDate).toLocaleDateString('en-IN') : 'N/A'
+         ]);
+      } else if (reportType === 'Risk Summaries') {
+         const res = await reportAPI.getRiskDistribution();
+         const data = res.success ? res.data : [];
+         head = [['Risk Category', 'Properties Count']];
+         body = data.map(m => [m._id, m.count]);
+      } else if (reportType === 'Market Trends') {
+         const res = await reportAPI.getSalesTrend();
+         const data = res.success ? res.data : [];
+         
+         // Draw a simple bar chart!
+         if (data.length > 0) {
+           doc.setFontSize(12);
+           doc.text('Monthly Volume Trend', 14, 25);
+           const maxVal = Math.max(...data.map(d => d.totalSales || 0));
+           const chartX = 14;
+           const chartY = 30;
+           const chartHeight = 50;
+           const chartWidth = 180;
+           
+           // Draw axes
+           doc.setDrawColor(200);
+           doc.line(chartX, chartY, chartX, chartY + chartHeight);
+           doc.line(chartX, chartY + chartHeight, chartX + chartWidth, chartY + chartHeight);
+           
+           const barWidth = (chartWidth - 20) / data.length;
+           
+           data.forEach((d, i) => {
+             const valHeight = maxVal > 0 ? ((d.totalSales || 0) / maxVal) * (chartHeight - 10) : 0;
+             const x = chartX + 10 + (i * barWidth);
+             const y = chartY + chartHeight - valHeight;
+             
+             doc.setFillColor(59, 130, 246);
+             doc.rect(x + (barWidth*0.1), y, barWidth*0.8, valHeight, 'F');
+             
+             doc.setFontSize(8);
+             doc.setTextColor(100);
+             doc.text(d._id, x + (barWidth/2), chartY + chartHeight + 5, { align: 'center' });
+           });
+           
+           doc.setFontSize(14);
+           doc.setTextColor(0);
+           startY = chartY + chartHeight + 15;
+         }
+
+         head = [['Month', 'Properties Sold', 'Total Volume']];
+         body = data.map(m => [m._id, m.count, `₹${(m.totalSales || 0).toLocaleString('en-IN')}`]);
+      } else {
+         head = [['Metric', 'Value']];
+         body = [
+            ['Total Properties', stats.totalProperties],
+            ['Total Users', stats.totalUsers],
+            ['Total Properties Sold', sales.propertiesSold],
+            ['Total Revenue', `₹${(sales.revenue/10000000).toFixed(2)}Cr`]
+         ];
+      }
+      
+      doc.autoTable({
+        startY: startY,
+        head: head,
+        body: body,
+      });
+      
+      doc.save(`${reportType.toLowerCase().replace(' ', '-')}-${new Date().toISOString().split('T')[0]}.pdf`);
+      Swal.fire({ icon: 'success', title: 'Success', text: 'PDF downloaded successfully', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
+    } catch(err) {
+      console.error(err);
+      Swal.fire('Error', 'Failed to generate PDF', 'error');
+    }
+  };
+
+  const handleDownloadExcel = async (reportType) => {
+    try {
+      let csvContent = "data:text/csv;charset=utf-8,";
+      if (reportType === 'Detailed Sales') {
+        const res = await reportAPI.getSoldList();
+        const data = res.success ? res.data : [];
+        csvContent += "Property,Location,Revenue,Sold Date\n";
+        data.forEach(m => {
+          const rev = m.soldPrice || m.price || 0;
+          const date = m.soldDate ? new Date(m.soldDate).toLocaleDateString('en-IN') : 'N/A';
+          csvContent += `"${m.title}","${m.address?.city || 'Unknown'}",₹${rev},${date}\n`;
+        });
+      } else if (reportType === 'Risk Summaries') {
+         const res = await reportAPI.getRiskDistribution();
+         const data = res.success ? res.data : [];
+         csvContent += "Risk Category,Properties Count\n";
+         data.forEach(m => {
+            csvContent += `"${m._id}",${m.count}\n`;
+         });
+      } else if (reportType === 'Market Trends') {
+         const res = await reportAPI.getSalesTrend();
+         const data = res.success ? res.data : [];
+         csvContent += "Month,Properties Sold,Total Volume\n";
+         data.forEach(m => {
+            csvContent += `"${m._id}",${m.count},₹${m.totalSales || 0}\n`;
+         });
+      } else {
+        csvContent += "Metric,Value\n";
+        csvContent += `Total Properties,${stats.totalProperties}\n`;
+        csvContent += `Total Users,${stats.totalUsers}\n`;
+        csvContent += `Total Properties Sold,${sales.propertiesSold}\n`;
+        csvContent += `Total Revenue,₹${sales.revenue}\n`;
+      }
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `${reportType.toLowerCase().replace(' ', '-')}-${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      Swal.fire({ icon: 'success', title: 'Success', text: 'Excel (CSV) downloaded successfully', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
+    } catch(err) {
+      console.error(err);
+      Swal.fire('Error', 'Failed to generate Excel', 'error');
+    }
   };
 
   const handleApproveRequest = (requestId) => {
@@ -148,9 +289,25 @@ const AdminDashboard = () => {
 
 
 
-  const handleApproveNews = (newsId) => {
-    console.log(`Approving news ${newsId}`);
-    // Mock news approval functionality
+  const handleApproveNews = async (newsId) => {
+    try {
+      const res = await adminAPI.updateMarketNewsStatus(newsId, 'approved');
+      if (res.success) {
+        setNews(prev => prev.map(n => n.id === newsId ? { ...n, status: 'approved' } : n));
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: 'News approved successfully!'
+        });
+      }
+    } catch (e) {
+      console.error('Failed to approve news', e);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to approve news'
+      });
+    }
   };
 
   return (
@@ -230,13 +387,6 @@ const AdminDashboard = () => {
                         <User className="h-4 w-4" />
                         <span>Profile</span>
                       </button>
-                      <button
-                        onClick={() => navigate('/admin/settings')}
-                        className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <Settings className="h-4 w-4" />
-                        <span>Settings</span>
-                      </button>
                       <hr className="my-1" />
                       <button
                         onClick={handleLogout}
@@ -258,28 +408,22 @@ const AdminDashboard = () => {
           {/* System Stats Overview */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">System Overview</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <StatsCard
                 title="Total Properties"
-                value={propertiesLoading ? "Loading..." : propertiesCount.toLocaleString()}
+                value={dataLoading ? "..." : stats.totalProperties.toLocaleString()}
                 icon={Home}
                 color="blue"
               />
               <StatsCard
                 title="Total Users"
-                value={dashboardStats.totalUsers.toLocaleString()}
+                value={dataLoading ? "..." : stats.totalUsers.toLocaleString()}
                 icon={Users}
                 color="green"
               />
               <StatsCard
-                title="System Logs"
-                value={dashboardStats.totalLogs.toLocaleString()}
-                icon={FileText}
-                color="purple"
-              />
-              <StatsCard
                 title="Platform Performance"
-                value={`${dashboardStats.platformPerformance}%`}
+                value={dataLoading ? "..." : `${stats.platformPerformance}%`}
                 icon={Activity}
                 color="red"
               />
@@ -319,14 +463,14 @@ const AdminDashboard = () => {
               <h2 className="text-xl font-semibold text-gray-900">Sales Reports</h2>
               <div className="flex space-x-2">
                 <button
-                  onClick={() => handleDownloadReport('sales-pdf')}
+                  onClick={() => handleDownloadPDF('Sales Reports')}
                   className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
                   <Download className="h-4 w-4" />
                   <span>PDF</span>
                 </button>
                 <button
-                  onClick={() => handleDownloadReport('sales-excel')}
+                  onClick={() => handleDownloadExcel('Sales Reports')}
                   className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                 >
                   <Download className="h-4 w-4" />
@@ -334,41 +478,46 @@ const AdminDashboard = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900">{dashboardStats.propertiesSold}</p>
+                    <p className="text-2xl font-bold text-gray-900">{dataLoading ? "..." : sales.propertiesSold}</p>
                     <p className="text-sm text-gray-600">Properties Sold</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900">${(dashboardStats.revenue / 1000000).toFixed(1)}M</p>
+                    <p className="text-2xl font-bold text-gray-900">{dataLoading ? "..." : `₹${(sales.revenue / 10000000).toFixed(2)}Cr`}</p>
                     <p className="text-sm text-gray-600">Total Revenue</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900">{dashboardStats.agentPerformance}%</p>
+                    <p className="text-2xl font-bold text-gray-900">{dataLoading ? "..." : `${sales.agentPerformance}%`}</p>
                     <p className="text-sm text-gray-600">Agent Performance</p>
                   </div>
                 </div>
-                
+
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Month</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Properties</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Property</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Location</th>
                         <th className="text-left py-3 px-4 font-medium text-gray-900">Revenue</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Top Agent</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Sold Date</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {salesData.map((item, index) => (
+                      {!dataLoading && recentSales.map((item, index) => (
                         <tr key={index} className="border-b border-gray-100">
-                          <td className="py-3 px-4 text-gray-900">{item.month}</td>
-                          <td className="py-3 px-4 text-gray-900">{item.properties}</td>
-                          <td className="py-3 px-4 text-gray-900">${item.revenue.toLocaleString()}</td>
-                          <td className="py-3 px-4 text-gray-900">{item.agent}</td>
+                          <td className="py-3 px-4 text-gray-900 font-medium">{item.title}</td>
+                          <td className="py-3 px-4 text-gray-500">{item.address?.city || 'Unknown'}</td>
+                          <td className="py-3 px-4 text-green-600 font-medium">
+                            {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(item.soldPrice || item.price || 0)}
+                          </td>
+                          <td className="py-3 px-4 justify-start items-center flex text-gray-600">
+                            <Calendar size={14} className="mr-1.5 text-gray-400" />
+                            {item.soldDate ? new Date(item.soldDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -383,22 +532,22 @@ const AdminDashboard = () => {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Report Generation</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <ReportCard
-                title="Price Predictions"
-                description="Generate AI-powered price prediction reports"
-                onDownloadPDF={() => handleDownloadReport('price-predictions-pdf')}
-                onDownloadExcel={() => handleDownloadReport('price-predictions-excel')}
+                title="Detailed Sales Logs"
+                description="Export precise recent transactional records"
+                onDownloadPDF={() => handleDownloadPDF('Detailed Sales')}
+                onDownloadExcel={() => handleDownloadExcel('Detailed Sales')}
               />
               <ReportCard
                 title="Risk Summaries"
                 description="Comprehensive risk analysis reports"
-                onDownloadPDF={() => handleDownloadReport('risk-summaries-pdf')}
-                onDownloadExcel={() => handleDownloadReport('risk-summaries-excel')}
+                onDownloadPDF={() => handleDownloadPDF('Risk Summaries')}
+                onDownloadExcel={() => handleDownloadExcel('Risk Summaries')}
               />
               <ReportCard
                 title="Market Trends"
                 description="Latest market trends and insights"
-                onDownloadPDF={() => handleDownloadReport('market-trends-pdf')}
-                onDownloadExcel={() => handleDownloadReport('market-trends-excel')}
+                onDownloadPDF={() => handleDownloadPDF('Market Trends')}
+                onDownloadExcel={() => handleDownloadExcel('Market Trends')}
               />
             </div>
           </div>
@@ -409,9 +558,9 @@ const AdminDashboard = () => {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-6">
                 <div className="space-y-4">
-                  {alerts.map((alert) => (
+                  {smartAlerts.length > 0 ? smartAlerts.map((alert) => (
                     <AlertItem key={alert.id} alert={alert} />
-                  ))}
+                  )) : !dataLoading && <p className="text-gray-500 text-sm">No smart alerts available.</p>}
                 </div>
               </div>
             </div>
@@ -436,49 +585,45 @@ const AdminDashboard = () => {
                   <div className="flex space-x-2">
                     <button
                       onClick={() => setNewsFilter('all')}
-                      className={`px-3 py-1 rounded-md text-sm font-medium ${
-                        newsFilter === 'all' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
-                      }`}
+                      className={`px-3 py-1 rounded-md text-sm font-medium ${newsFilter === 'all' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
+                        }`}
                     >
                       All
                     </button>
                     <button
                       onClick={() => setNewsFilter('pending')}
-                      className={`px-3 py-1 rounded-md text-sm font-medium ${
-                        newsFilter === 'pending' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
-                      }`}
+                      className={`px-3 py-1 rounded-md text-sm font-medium ${newsFilter === 'pending' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
+                        }`}
                     >
                       Pending
                     </button>
                     <button
                       onClick={() => setNewsFilter('approved')}
-                      className={`px-3 py-1 rounded-md text-sm font-medium ${
-                        newsFilter === 'approved' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
-                      }`}
+                      className={`px-3 py-1 rounded-md text-sm font-medium ${newsFilter === 'approved' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
+                        }`}
                     >
                       Approved
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
-                  {marketNews
-                    .filter(news => newsFilter === 'all' || news.status === newsFilter)
-                    .map((news) => (
-                      <div key={news.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  {!dataLoading && news.length > 0 ? news
+                    .filter(n => newsFilter === 'all' || n.status === newsFilter)
+                    .map((n) => (
+                      <div key={n.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                         <div className="flex-1">
-                          <h3 className="font-medium text-gray-900">{news.title}</h3>
-                          <p className="text-sm text-gray-600">By {news.author} • {news.date}</p>
+                          <h3 className="font-medium text-gray-900">{n.title}</h3>
+                          <p className="text-sm text-gray-600">By {n.author} • {n.date}</p>
                         </div>
                         <div className="flex items-center space-x-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            news.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {news.status}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${n.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                            {n.status}
                           </span>
-                          {news.status === 'pending' && (
+                          {n.status === 'pending' && (
                             <button
-                              onClick={() => handleApproveNews(news.id)}
+                              onClick={() => handleApproveNews(n.id)}
                               className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
                             >
                               Approve
@@ -486,7 +631,7 @@ const AdminDashboard = () => {
                           )}
                         </div>
                       </div>
-                    ))}
+                    )) : !dataLoading && <p className="text-gray-500 text-sm">No news found.</p>}
                 </div>
               </div>
             </div>
@@ -504,7 +649,7 @@ const AdminDashboard = () => {
                 <span>Add New Property</span>
               </button>
             </div>
-            
+
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Agent Management</h3>
               <div className="space-y-3">

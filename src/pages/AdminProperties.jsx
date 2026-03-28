@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { propertyAPI } from '../services/api';
+import Swal from 'sweetalert2';
 import MinimalSidebar from '../components/MinimalSidebar';
 import VisitSlotManager from '../components/VisitSlotManager';
 import RiskBadge from '../components/RiskBadge';
@@ -67,11 +68,11 @@ const AdminProperties = () => {
         if (response.success) {
           setProperties(properties.filter(p => p._id !== propertyId));
         } else {
-          alert('Failed to delete property');
+          Swal.fire('Failed to delete property');
         }
       } catch (error) {
         console.error('Error deleting property:', error);
-        alert('Failed to delete property');
+        Swal.fire('Failed to delete property');
       }
     }
   };

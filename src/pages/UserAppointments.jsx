@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Swal from 'sweetalert2';
 import { visitAPI } from '../services/api';
 import ContactNavbar from '../components/ContactNavbar';
 
@@ -36,7 +37,7 @@ const UserAppointments = () => {
         closeEdit();
         await load('pending');
       }
-    } catch (e) { alert('Failed to reschedule'); }
+    } catch (e) { Swal.fire('Failed to reschedule'); }
   };
 
   const cancel = async (id) => {
@@ -45,7 +46,7 @@ const UserAppointments = () => {
       if (res.success) {
         setVisits(prev => prev.filter(v => v._id !== id));
       }
-    } catch (e) { alert('Failed to cancel'); }
+    } catch (e) { Swal.fire('Failed to cancel'); }
   };
 
   // Get the display heading based on selected tab

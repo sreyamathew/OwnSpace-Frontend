@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Plus, Building, User, MapPin, Bed, Bath, Square, CheckCircle, X, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AgentSidebar from '../components/AgentSidebar';
+import Swal from 'sweetalert2';
 import { propertyAPI, visitAPI } from '../services/api';
 import OfferRequestsSection from '../components/OfferRequestsSection';
 import NotificationDropdown from '../components/NotificationDropdown';
@@ -12,7 +13,7 @@ const ActionCard = ({ icon: Icon, title, description, onClick }) => {
     <button
       onClick={onClick}
       className="group w-full text-left bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-green-500"
-    
+
     >
       <div className="flex items-center">
         <div className="w-10 h-10 rounded-lg bg-green-50 text-green-600 flex items-center justify-center mr-4">
@@ -96,9 +97,9 @@ const AgentDashboard = () => {
       const res = await visitAPI.updateVisitStatus(id, 'approved');
       if (res.success) {
         setVisitRequests(prev => prev.filter(v => v._id !== id));
-        alert('Visit approved. Share your contact details with the requester.');
+        Swal.fire('Visit approved.');
       }
-    } catch (e) { alert('Failed to approve'); }
+    } catch (e) { Swal.fire('Failed to approve'); }
   };
 
   const rejectVisit = async (id) => {
@@ -106,9 +107,9 @@ const AgentDashboard = () => {
       const res = await visitAPI.updateVisitStatus(id, 'rejected');
       if (res.success) {
         setVisitRequests(prev => prev.filter(v => v._id !== id));
-        alert('Visit rejected.');
+        Swal.fire('Visit rejected.');
       }
-    } catch (e) { alert('Failed to reject'); }
+    } catch (e) { Swal.fire('Failed to reject'); }
   };
 
   const formatPrice = (price) => {
@@ -283,15 +284,15 @@ const AgentDashboard = () => {
             </div>
           </div>
 
-        {/* Pending Purchase Requests */}
-        <div id="purchase-requests" className="mt-10">
-          <div className="sticky top-0 bg-gray-50 z-10 pb-2">
-            <h2 className="text-xl font-semibold text-gray-900">Purchase Requests</h2>
+          {/* Pending Purchase Requests */}
+          <div id="purchase-requests" className="mt-10">
+            <div className="sticky top-0 bg-gray-50 z-10 pb-2">
+              <h2 className="text-xl font-semibold text-gray-900">Purchase Requests</h2>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <OfferRequestsSection showOnlyPending={true} />
+            </div>
           </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <OfferRequestsSection showOnlyPending={true} />
-          </div>
-        </div>
         </main>
       </div>
 

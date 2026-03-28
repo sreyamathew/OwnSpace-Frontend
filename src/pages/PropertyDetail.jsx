@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -111,7 +112,7 @@ const PropertyDetail = () => {
   const toggleSaveProperty = async () => {
     if (!user) {
       // Redirect to login or show login modal
-      alert('Please login to save properties');
+      Swal.fire('Please login to save properties');
       return;
     }
 
@@ -167,7 +168,7 @@ const PropertyDetail = () => {
 
   const openScheduleModal = async () => {
     if (!user) {
-      alert('Please login to schedule a visit');
+      Swal.fire('Please login to schedule a visit');
       return;
     }
     if (!property) return;
@@ -261,19 +262,19 @@ const PropertyDetail = () => {
   const submitSchedule = async () => {
     try {
       if (!scheduling.date || !scheduling.time) {
-        alert('Please select an available date and time');
+        Swal.fire('Please select an available date and time');
         return;
       }
       // Prevent past selections (local system time)
       const scheduledAt = new Date(`${scheduling.date}T${scheduling.time}:00`);
       const now = new Date();
       if (scheduledAt.getTime() <= now.getTime()) {
-        alert('Cannot schedule a visit in the past or present. Please select a future time.');
+        Swal.fire('Cannot schedule a visit in the past or present. Please select a future time.');
         return;
       }
       const res = await visitAPI.createVisitRequest({ propertyId: property._id, scheduledAt, note: scheduling.note });
       if (res.success) {
-        alert('Visit request sent for approval');
+        Swal.fire('Visit request sent for approval');
         try {
           const key = `recentlyViewed_${user.id}`;
           const raw = localStorage.getItem(key) || '[]';
@@ -295,7 +296,7 @@ const PropertyDetail = () => {
       }
     } catch (e) {
       console.error('Failed to create visit request', e);
-      alert('Failed to send request');
+      Swal.fire('Failed to send request');
     }
   };
 
@@ -597,7 +598,7 @@ const PropertyDetail = () => {
                     <>
                       <button
                         onClick={() => {
-                          if (!user) { alert('Please login first'); return; }
+                          if (!user) { Swal.fire('Please login first'); return; }
                           setOfferOpen(true);
                         }}
                         className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"

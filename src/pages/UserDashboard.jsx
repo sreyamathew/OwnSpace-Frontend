@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import { 
   Home, 
@@ -155,18 +156,18 @@ const UserDashboard = () => {
     if (!scheduling.property) return;
     try {
       if (!scheduling.date || !scheduling.time) {
-        alert('Please select date and time');
+        Swal.fire('Please select date and time');
         return;
       }
       const scheduledAt = new Date(`${scheduling.date}T${scheduling.time}:00`);
       const res = await visitAPI.createVisitRequest({ propertyId: scheduling.property._id, scheduledAt, note: scheduling.note });
       if (res.success) {
-        alert('Visit request sent for approval');
+        Swal.fire('Visit request sent for approval');
         closeScheduleModal();
       }
     } catch (e) {
       console.error('Failed to create visit request', e);
-      alert('Failed to send request');
+      Swal.fire('Failed to send request');
     }
   };
 

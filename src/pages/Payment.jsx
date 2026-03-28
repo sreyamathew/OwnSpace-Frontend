@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import Swal from 'sweetalert2';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import ContactNavbar from '../components/ContactNavbar';
 import Footer from '../components/Footer';
@@ -63,11 +64,11 @@ const Payment = () => {
               signature: response.razorpay_signature,
               method: 'razorpay'
             });
-            alert('Advance payment successful.');
+            Swal.fire('Advance payment successful.');
             navigate(-1);
           } catch (e) {
             console.error('Failed to record advance payment', e);
-            alert('Payment captured, but recording failed. We will reconcile shortly.');
+            Swal.fire('Payment captured, but recording failed. We will reconcile shortly.');
             navigate(-1);
           }
         },

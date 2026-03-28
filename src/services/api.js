@@ -921,6 +921,56 @@ export const preferenceAPI = {
 };
 
 
+// Admin API
+export const adminAPI = {
+  getDashboardStats: async () => {
+    try {
+      return await apiRequest('/admin/dashboard-stats', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  getSalesReports: async () => {
+    try {
+      return await apiRequest('/admin/sales-reports', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  getSmartAlerts: async () => {
+    try {
+      return await apiRequest('/admin/smart-alerts', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  getMarketNews: async () => {
+    try {
+      return await apiRequest('/admin/market-news', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  createMarketNews: async (data) => {
+    try {
+      return await apiRequest('/admin/market-news', {
+        method: 'POST',
+        includeAuth: true,
+        body: JSON.stringify(data),
+      });
+    } catch (e) { throw e; }
+  },
+  updateMarketNewsStatus: async (id, status) => {
+    try {
+      return await apiRequest(`/admin/market-news/${id}/status`, {
+        method: 'PUT',
+        includeAuth: true,
+        body: JSON.stringify({ status }),
+      });
+    } catch (e) { throw e; }
+  },
+  deleteMarketNews: async (id) => {
+    try {
+      return await apiRequest(`/admin/market-news/${id}`, {
+        method: 'DELETE',
+        includeAuth: true,
+      });
+    } catch (e) { throw e; }
+  },
+};
+
 // Export default API object
 const api = {
   auth: authAPI,
@@ -932,6 +982,7 @@ const api = {
   analytics: analyticsAPI,
   reports: reportAPI,
   preferences: preferenceAPI,
+  admin: adminAPI,
   healthCheck,
 };
 

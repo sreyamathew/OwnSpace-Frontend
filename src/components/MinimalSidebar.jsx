@@ -32,8 +32,7 @@ const MinimalSidebar = ({ onClose }) => {
     { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
     { label: 'Reports', icon: FileText, path: '/admin/reports' },
     { label: 'Property Requests', icon: FileCheck, path: '/admin/property-requests' },
-    { label: 'Purchase Management', icon: ShoppingCart, path: '/admin/purchase-requests' },
-    { label: 'Settings', icon: Settings, path: '/admin/settings' }
+    { label: 'Purchase Management', icon: ShoppingCart, path: '/admin/purchase-requests' }
   ];
 
   const isActive = (path) => {
