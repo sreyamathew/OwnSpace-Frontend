@@ -1010,6 +1010,44 @@ export const adminAPI = {
   },
 };
 
+// News API functions
+export const newsAPI = {
+  createNews: async (newsData) => {
+    try {
+      return await apiRequest('/news', {
+        method: 'POST',
+        body: JSON.stringify(newsData),
+        includeAuth: true
+      });
+    } catch (e) { throw e; }
+  },
+  getAllNews: async () => {
+    try {
+      return await apiRequest('/news', {
+        method: 'GET',
+        includeAuth: true
+      });
+    } catch (e) { throw e; }
+  },
+  updateNewsStatus: async (newsId, status) => {
+    try {
+      return await apiRequest(`/news/${newsId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status }),
+        includeAuth: true
+      });
+    } catch (e) { throw e; }
+  },
+  getApprovedNews: async () => {
+    try {
+      return await apiRequest('/news/approved', {
+        method: 'GET',
+        includeAuth: true
+      });
+    } catch (e) { throw e; }
+  }
+};
+
 // Export default API object
 const api = {
   auth: authAPI,
@@ -1022,6 +1060,7 @@ const api = {
   reports: reportAPI,
   preferences: preferenceAPI,
   admin: adminAPI,
+  news: newsAPI,
   healthCheck,
 };
 

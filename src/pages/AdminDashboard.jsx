@@ -31,6 +31,7 @@ import {
   Settings,
   Shield,
   Newspaper,
+  ChevronRight,
   Clock,
   Check,
   XCircle,
@@ -564,61 +565,17 @@ const AdminDashboard = () => {
           {/* Market News Feed Management */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Market News Management</h2>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => setNewsFilter('all')}
-                      className={`px-3 py-1 rounded-md text-sm font-medium ${newsFilter === 'all' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                    >
-                      All
-                    </button>
-                    <button
-                      onClick={() => setNewsFilter('pending')}
-                      className={`px-3 py-1 rounded-md text-sm font-medium ${newsFilter === 'pending' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                    >
-                      Pending
-                    </button>
-                    <button
-                      onClick={() => setNewsFilter('approved')}
-                      className={`px-3 py-1 rounded-md text-sm font-medium ${newsFilter === 'approved' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                    >
-                      Approved
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {!dataLoading && news.length > 0 ? news
-                    .filter(n => newsFilter === 'all' || n.status === newsFilter)
-                    .map((n) => (
-                      <div key={n.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-900">{n.title}</h3>
-                          <p className="text-sm text-gray-600">By {n.author} • {n.date}</p>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${n.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                            }`}>
-                            {n.status}
-                          </span>
-                          {n.status === 'pending' && (
-                            <button
-                              onClick={() => handleApproveNews(n.id)}
-                              className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                            >
-                              Approve
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )) : !dataLoading && <p className="text-gray-500 text-sm">No news found.</p>}
-                </div>
-              </div>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+              <Newspaper className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Market Insight Control</h3>
+              <p className="text-gray-600 mb-6 max-w-sm mx-auto">Review, approve, and manage the latest market news and updates submitted by real estate agents.</p>
+              <button 
+                onClick={() => navigate('/manage-news')}
+                className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                <span>Manage Market News</span>
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
           </div>
 

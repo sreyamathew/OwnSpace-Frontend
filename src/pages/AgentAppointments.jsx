@@ -41,7 +41,6 @@ const AgentAppointments = () => {
       if (res.success) {
         // Backend already filtered: approved + future
         setVisits(res.data || []);
-        setPastVisits([]);
       }
     } catch (e) { 
       setError('Failed to load appointments'); 
@@ -300,7 +299,7 @@ const AgentAppointments = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
                               <div><strong>Date & Time:</strong> {new Date(v.scheduledAt).toLocaleString()}</div>
                               <div><strong>Requester:</strong> {v.requester?.name || 'Unknown User'}</div>
-                              <div><strong>Property Address:</strong> {v.property?.address || 'Address not available'}</div>
+                              <div><strong>Property Address:</strong> {v.property?.address ? `${v.property.address.street}, ${v.property.address.city}, ${v.property.address.state}` : 'Address not available'}</div>
                               <div><strong>Contact:</strong> {v.requester?.email || 'Email not available'}</div>
                               {v.note && <div className="md:col-span-2"><strong>Note:</strong> {v.note}</div>}
                             </div>

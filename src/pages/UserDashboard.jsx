@@ -18,7 +18,8 @@ import {
   Star,
   ChevronRight,
   Building,
-  Calendar
+  Calendar,
+  Newspaper
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { propertyAPI, visitAPI } from '../services/api';
@@ -323,6 +324,13 @@ const UserDashboard = () => {
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     >
                       Purchase Details
+                    </button>
+                    <button
+                      onClick={() => { setProfileOpen(false); navigate('/market-news'); }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                    >
+                      <Newspaper className="h-4 w-4" />
+                      <span>Market News</span>
                     </button>
                     <button
                       onClick={() => { setProfileOpen(false); try { logout(); } catch (e) {} navigate('/'); }}

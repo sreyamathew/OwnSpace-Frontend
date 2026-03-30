@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Home, Building, Users, Phone, LogIn, UserPlus, Info, Settings, LogOut, LayoutDashboard, User, Heart, History, ChevronDown, Calendar, Eye, Receipt, Cpu } from 'lucide-react';
+import { Menu, X, Home, Building, Users, Phone, LogIn, UserPlus, Info, Settings, LogOut, LayoutDashboard, User, Heart, History, ChevronDown, Calendar, Eye, Receipt, Cpu, Newspaper } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationDropdown from './NotificationDropdown';
 
@@ -184,6 +184,14 @@ const ContactNavbar = () => {
                             <History className="h-4 w-4" />
                             <span>Purchase History</span>
                           </Link>
+                          <Link
+                            to="/market-news"
+                            onClick={() => setIsProfileOpen(false)}
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-t border-gray-100 mt-1"
+                          >
+                            <Newspaper className="h-4 w-4" />
+                            <span>Market News</span>
+                          </Link>
                           <div className="border-t border-gray-100"></div>
                           <button
                             onClick={() => {
@@ -355,6 +363,14 @@ const ContactNavbar = () => {
                       >
                         <History className="h-5 w-5" />
                         <span>Purchase History</span>
+                      </Link>
+                      <Link
+                        to="/market-news"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center space-x-3 mx-3 px-3 py-2 rounded-sm text-base font-light text-gray-600 hover:text-black hover:bg-gray-50 transition-colors duration-200"
+                      >
+                        <Newspaper className="h-5 w-5" />
+                        <span>Market News</span>
                       </Link>
                     </>
                   )}

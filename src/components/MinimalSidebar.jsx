@@ -14,7 +14,8 @@ import {
   Calendar,
   ShoppingCart,
   ClipboardList,
-  FileCheck
+  FileCheck,
+  Newspaper
 } from 'lucide-react';
 
 const MinimalSidebar = ({ onClose }) => {
@@ -32,7 +33,8 @@ const MinimalSidebar = ({ onClose }) => {
     { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
     { label: 'Reports', icon: FileText, path: '/admin/reports' },
     { label: 'Property Requests', icon: FileCheck, path: '/admin/property-requests' },
-    { label: 'Purchase Management', icon: ShoppingCart, path: '/admin/purchase-requests' }
+    { label: 'Purchase Management', icon: ShoppingCart, path: '/admin/purchase-requests' },
+    { label: 'Market News', icon: Newspaper, path: '/manage-news' }
   ];
 
   const isActive = (path) => {

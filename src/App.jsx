@@ -20,6 +20,7 @@ import UserProfiles from './pages/UserProfiles';
 import AgentDashboard from './pages/AgentDashboard';
 import AgentAppointments from './pages/AgentAppointments';
 import AgentClients from './pages/AgentClients';
+import AgentReports from './pages/AgentReports';
 import UserDashboard from './pages/UserDashboard';
 import AddProperty from './pages/AddProperty';
 import AdminProperties from './pages/AdminProperties';
@@ -49,6 +50,9 @@ import PayAdvance from './pages/PayAdvance';
 import BuyerDetails from './pages/BuyerDetails';
 import PurchaseHistory from './pages/PurchaseHistory';
 import SmartValuation from './pages/SmartValuation';
+import AddNews from './pages/AddNews';
+import ManageNews from './pages/ManageNews';
+import NewsPage from './pages/NewsPage';
 
 const AppContent = () => {
   return (
@@ -225,6 +229,11 @@ const AppContent = () => {
           <PropertyRequestManagement />
         </ProtectedRoute>
       } />
+      <Route path="/manage-news" element={
+        <ProtectedRoute requireAdmin={true}>
+          <ManageNews />
+        </ProtectedRoute>
+      } />
 
       {/* Agent Routes */}
       <Route path="/agent/dashboard" element={
@@ -265,6 +274,16 @@ const AppContent = () => {
       <Route path="/agent/purchase-requests" element={
         <ProtectedRoute requireAgent={true}>
           <PurchaseRequestManagement />
+        </ProtectedRoute>
+      } />
+      <Route path="/agent/reports" element={
+        <ProtectedRoute requireAgent={true}>
+          <AgentReports />
+        </ProtectedRoute>
+      } />
+      <Route path="/add-news" element={
+        <ProtectedRoute requireAgent={true}>
+          <AddNews />
         </ProtectedRoute>
       } />
 
@@ -327,6 +346,11 @@ const AppContent = () => {
       <Route path="/make-admin" element={
         <ProtectedRoute>
           <MakeAdmin />
+        </ProtectedRoute>
+      } />
+      <Route path="/market-news" element={
+        <ProtectedRoute>
+          <NewsPage />
         </ProtectedRoute>
       } />
 

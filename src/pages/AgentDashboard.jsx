@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Building, User, MapPin, Bed, Bath, Square, CheckCircle, X, LogOut } from 'lucide-react';
+import { Plus, Building, User, MapPin, Bed, Bath, Square, CheckCircle, X, LogOut, Newspaper } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AgentSidebar from '../components/AgentSidebar';
 import Swal from 'sweetalert2';
@@ -194,6 +194,12 @@ const AgentDashboard = () => {
                 title="Profile"
                 description="View and edit your profile"
                 onClick={() => navigate('/agent/profile')}
+              />
+              <ActionCard
+                icon={Newspaper}
+                title="Add Market News"
+                description="Submit a new market update"
+                onClick={() => navigate('/add-news')}
               />
             </div>
 
