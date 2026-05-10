@@ -771,6 +771,16 @@ export const offerAPI = {
       return response;
     } catch (e) { throw e; }
   },
+  // Admin/agent: email buyer owner contact + balance amount
+  sendBalancePaymentEmail: async (offerId) => {
+    try {
+      const response = await apiRequest(`/offers/${offerId}/send-balance-email`, {
+        method: 'POST',
+        includeAuth: true
+      });
+      return response;
+    } catch (e) { throw e; }
+  },
   // Get all offers (Admin only)
   getAllOffers: async () => {
     try {

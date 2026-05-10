@@ -27,6 +27,7 @@ const PurchaseManagement = () => {
   const [advancePaidLoading, setAdvancePaidLoading] = useState(true);
   const [advancePaidError, setAdvancePaidError] = useState('');
   const [markingSold, setMarkingSold] = useState({});
+  const [sendingEmail, setSendingEmail] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'advance_paid', 'sold'
 
@@ -70,6 +71,30 @@ const PurchaseManagement = () => {
       setAdvancePaidError('Failed to mark property as sold.');
     } finally {
       setMarkingSold(prev => {
+        const next = { ...prev };
+        delete next[offerId];
+        return next;
+      });
+    }
+  }, [fetchAdvancePaidOffers]);
+
+  const handleSendBalanceEmail = useCallback(async (offerId) => {
+    if (!offerId) return;
+    setSendingEmail(prev => ({ ...prev, [offerId]: true }));
+    try {
+      const res = await offerAPI.sendBalancePaymentEmail(offerId);
+      if (res?.success) {
+        setAdvancePaidError('');
+        // Light refresh so UI stays up to date
+        await fetchAdvancePaidOffers();
+      } else {
+        setAdvancePaidError(res?.message || 'Failed to send email to buyer.');
+      }
+    } catch (error) {
+      console.error('Error sending balance payment email:', error);
+      setAdvancePaidError(error?.message || 'Failed to send email to buyer.');
+    } finally {
+      setSendingEmail(prev => {
         const next = { ...prev };
         delete next[offerId];
         return next;
@@ -368,6 +393,25 @@ const PurchaseManagement = () => {
                                     <CheckCircle className="h-4 w-4" />
                                     Mark as Sold
                                   </>
+                                )}
+                              </button>
+
+                              <button
+                                onClick={() => handleSendBalanceEmail(offer._id)}
+                                disabled={sendingEmail[offer._id]}
+                                className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors border ${
+                                  sendingEmail[offer._id]
+                                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200'
+                                    : 'bg-white text-blue-700 hover:bg-blue-50 border-blue-200'
+                                }`}
+                              >
+                                {sendingEmail[offer._id] ? (
+                                  <span className="flex items-center gap-2">
+                                    <span className="h-4 w-4 animate-spin rounded-full border-b-2 border-gray-600" />
+                                    Sending...
+                                  </span>
+                                ) : (
+                                  'Email Owner Details'
                                 )}
                               </button>
                               
