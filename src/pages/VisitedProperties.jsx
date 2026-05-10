@@ -5,7 +5,7 @@ import Footer from '../components/Footer';
 import { visitAPI } from '../services/api';
 import OfferForm from '../components/OfferForm';
 import { useAuth } from '../contexts/AuthContext';
-import { MapPin, User as UserIcon, Calendar as CalendarIcon, Home as HomeIcon } from 'lucide-react';
+import { MapPin, User as UserIcon, Calendar as CalendarIcon, Home as HomeIcon, Trash2 } from 'lucide-react';
 
 const VisitedProperties = () => {
   const navigate = useNavigate();
@@ -14,6 +14,7 @@ const VisitedProperties = () => {
   const [items, setItems] = useState([]);
   const [error, setError] = useState('');
   const [offerFor, setOfferFor] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -37,6 +38,20 @@ const VisitedProperties = () => {
 
   const formatDate = (iso) => new Date(iso).toLocaleDateString();
   const formatTime = (iso) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const handleRemoveVisit = async (visitId) => {
+    if (!window.confirm('Remove this property from your visited list? This cannot be undone.')) return;
+    try {
+      setDeletingId(visitId);
+      await visitAPI.cancel(visitId);
+      setItems((prev) => prev.filter((i) => i._id !== visitId));
+    } catch (e) {
+      const msg = e?.message?.replace(/^\d+:/, '') || 'Could not remove this visit';
+      window.alert(msg);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <div className="App min-h-screen bg-gray-50">
@@ -97,18 +112,29 @@ const VisitedProperties = () => {
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       <button
+                        type="button"
                         onClick={() => setOfferFor(it)}
                         className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
                       >
                         Interest in Buying
                       </button>
                       <button
+                        type="button"
                         onClick={() => navigate(`/property/${it.property?._id}`)}
                         className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
                       >
                         View Details
                       </button>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveVisit(it._id)}
+                      disabled={deletingId === it._id}
+                      className="mt-2 w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm border border-red-200 text-red-700 bg-red-50 rounded-md hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 className="h-4 w-4 shrink-0" />
+                      {deletingId === it._id ? 'Removing…' : 'Remove from list'}
+                    </button>
                   </div>
                 </div>
               ))}

@@ -41,7 +41,12 @@ const PurchaseDetails = () => {
       const res = await offerAPI.getMyOffers();
       console.log('Offers response:', res);
       const list = res?.offers || res?.data?.offers || [];
-      setOffers(Array.isArray(list) ? list : []);
+      const sorted = (Array.isArray(list) ? list : []).slice().sort((a, b) => {
+        const aT = a?.createdAt || a?.updatedAt || a?.timestamp || 0;
+        const bT = b?.createdAt || b?.updatedAt || b?.timestamp || 0;
+        return new Date(bT).getTime() - new Date(aT).getTime();
+      });
+      setOffers(sorted);
       setError('');
       setLastUpdated(new Date());
     } catch (e) {

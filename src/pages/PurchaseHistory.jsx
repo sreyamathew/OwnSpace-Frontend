@@ -18,7 +18,13 @@ const PurchaseHistory = () => {
       const res = await offerAPI.getMyOffers();
       const list = res?.offers || res?.data?.offers || [];
       // Purchased if advancePaid or any paymentRef exists
-      const purchased = list.filter(o => Boolean(o?.advancePaid) || (o?.paymentRef && (o.paymentRef.orderId || o.paymentRef.paymentId)));
+      const purchased = list
+        .filter(o => Boolean(o?.advancePaid) || (o?.paymentRef && (o.paymentRef.orderId || o.paymentRef.paymentId)))
+        .sort((a, b) => {
+          const aPaid = a?.advancePaidAt || a?.updatedAt || a?.createdAt || 0;
+          const bPaid = b?.advancePaidAt || b?.updatedAt || b?.createdAt || 0;
+          return new Date(bPaid).getTime() - new Date(aPaid).getTime();
+        });
       setOffers(purchased);
       setError('');
     } catch (e) {
