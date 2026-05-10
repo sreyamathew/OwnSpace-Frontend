@@ -38,40 +38,40 @@ const About = () => {
 
   const team = [
     {
-      name: 'Alex Johnson',
-      role: 'CEO & Founder',
-      bio: 'Former real estate executive with 15+ years of experience in property investment and market analysis.',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300',
+      name: 'Sreya Elizabeth Mathew',
+      role: 'CEO',
+      bio: 'Leads OwnSpace vision and growth with a strong focus on trusted real estate innovation.',
+      image: '/team/sreya-elizabeth-mathew.png',
       social: {
         linkedin: '#',
         twitter: '#'
       }
     },
     {
-      name: 'Sarah Chen',
+      name: 'Sarnya Maria Johnson',
       role: 'CTO',
-      bio: 'AI/ML expert with PhD in Computer Science, specializing in predictive analytics and machine learning.',
-      image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=300',
+      bio: 'Drives the technology roadmap, platform architecture, and AI-powered product capabilities.',
+      image: '/team/sarnya-maria-johnson.png',
       social: {
         linkedin: '#',
         twitter: '#'
       }
     },
     {
-      name: 'Michael Rodriguez',
+      name: 'Angel Joseph',
       role: 'Head of Product',
-      bio: 'Product strategist with extensive experience in fintech and proptech solutions.',
-      image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300',
+      bio: 'Shapes product strategy and user experience to deliver practical, high-impact real estate solutions.',
+      image: '/team/angel-joseph.png',
       social: {
         linkedin: '#',
         twitter: '#'
       }
     },
     {
-      name: 'Emily Davis',
+      name: 'Shervin Thomas',
       role: 'Head of Data Science',
-      bio: 'Data scientist with expertise in real estate analytics and predictive modeling.',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300',
+      bio: 'Leads data science initiatives for predictive modeling, analytics, and smarter property insights.',
+      image: '/team/shervin-thomas.png',
       social: {
         linkedin: '#',
         twitter: '#'
@@ -317,4 +317,4 @@ const About = () => {
   );
 };
 
-export default About;
+export default About;
