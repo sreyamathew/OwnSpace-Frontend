@@ -15,7 +15,8 @@ import {
   ShoppingCart,
   ClipboardList,
   FileCheck,
-  Newspaper
+  Newspaper,
+  MessageSquare
 } from 'lucide-react';
 
 const MinimalSidebar = ({ onClose }) => {
@@ -34,6 +35,7 @@ const MinimalSidebar = ({ onClose }) => {
     { label: 'Reports', icon: FileText, path: '/admin/reports' },
     { label: 'Property Requests', icon: FileCheck, path: '/admin/property-requests' },
     { label: 'Purchase Management', icon: ShoppingCart, path: '/admin/purchase-requests' },
+    { label: 'Messages', icon: MessageSquare, path: '/admin/messages' },
     { label: 'Market News', icon: Newspaper, path: '/manage-news' }
   ];
 

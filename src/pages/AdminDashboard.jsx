@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Users,
   ShoppingCart,
@@ -51,6 +51,7 @@ import 'jspdf-autotable';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout, user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -72,7 +73,7 @@ const AdminDashboard = () => {
         adminAPI.getSalesReports(),
         adminAPI.getSmartAlerts(),
         adminAPI.getMarketNews(),
-        reportAPI.getSoldList()
+        reportAPI.getSoldList(),
       ]);
       
       if (statsRes.success) setStats(statsRes.data);
@@ -90,6 +91,8 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  // Keep useLocation import for other dashboard navigation patterns (future-safe).
 
 
 

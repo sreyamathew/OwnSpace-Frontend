@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertTriangle, ShieldCheck, AlertCircle, Info } from 'lucide-react';
 
-const RiskBadge = ({ category, score, explanation, showExplanation = true }) => {
+const RiskBadge = ({ category, score, explanation, showExplanation = true, showDisclaimer = true }) => {
     const getRiskDetails = (cat) => {
         switch (cat?.toUpperCase()) {
             case 'LOW':
@@ -42,6 +42,11 @@ const RiskBadge = ({ category, score, explanation, showExplanation = true }) => 
             {showExplanation && explanation && (
                 <p className="text-xs text-gray-500 mt-1 italic">
                     {explanation}
+                </p>
+            )}
+            {showDisclaimer && (
+                <p className="text-xs text-amber-700 mt-1">
+                    AI estimate only - verify with local market comparables, property condition, and legal checks before final purchase.
                 </p>
             )}
         </div>

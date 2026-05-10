@@ -30,6 +30,7 @@ import SavedProperties from './pages/SavedProperties';
 import PropertyHistory from './pages/PropertyHistory';
 import UserAppointments from './pages/UserAppointments';
 import AdminProfile from './pages/AdminProfile';
+import AdminMessages from './pages/AdminMessages';
 import AgentProfile from './pages/AgentProfile';
 import ValidationTest from './pages/ValidationTest';
 import OtpVerification from './pages/OtpVerification';
@@ -154,6 +155,11 @@ const AppContent = () => {
       <Route path="/admin/dashboard" element={
         <ProtectedRoute requireAdmin={true}>
           <AdminDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/messages" element={
+        <ProtectedRoute requireAdmin={true}>
+          <AdminMessages />
         </ProtectedRoute>
       } />
       <Route path="/admin/appointments" element={

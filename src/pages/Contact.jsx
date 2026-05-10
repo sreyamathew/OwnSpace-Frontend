@@ -11,6 +11,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import SimpleMap from '../components/SimpleMap';
+import { contactAPI } from '../services/api';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -23,6 +24,8 @@ const Contact = () => {
   });
 
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -32,24 +35,34 @@ const Contact = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log('Form submitted:', formData);
-    setIsSubmitted(true);
-    
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        message: '',
-        userType: ''
-      });
-    }, 3000);
+    setSubmitError('');
+    setIsSubmitting(true);
+
+    try {
+      const response = await contactAPI.sendMessage(formData);
+      if (!response?.success) {
+        throw new Error(response?.message || 'Failed to send message');
+      }
+
+      setIsSubmitted(true);
+      setTimeout(() => {
+        setIsSubmitted(false);
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: '',
+          userType: ''
+        });
+      }, 3000);
+    } catch (error) {
+      setSubmitError(error?.message || 'Unable to send your message right now');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const contactInfo = [
@@ -178,8 +191,8 @@ const Contact = () => {
                   <p className="text-green-700">Thank you for contacting us. We'll get back to you soon.</p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                       <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                         Full Name *
@@ -212,7 +225,7 @@ const Contact = () => {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                       <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                         Phone Number
@@ -240,13 +253,17 @@ const Contact = () => {
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
                       >
                         <option value="">Select your role</option>
-                        <option value="investor">Investor/Buyer</option>
-                        <option value="agent">Real Estate Agent</option>
-                        <option value="admin">Admin/Manager</option>
-                        <option value="other">Other</option>
+                        <option value="buyer">Buyer</option>
+                        <option value="agent">Agent</option>
                       </select>
                     </div>
                   </div>
+
+                  {submitError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <p className="text-sm text-red-700">{submitError}</p>
+                    </div>
+                  )}
                   
                   <div>
                     <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
@@ -282,10 +299,11 @@ const Contact = () => {
                   
                   <button
                     type="submit"
-                    className="w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-800 transition-all duration-200 flex items-center justify-center"
+                    disabled={isSubmitting}
+                    className="w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-500 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
                   >
                     <Send className="h-5 w-5 mr-2" />
-                    Send Message
+                    {isSubmitting ? 'Sending...' : 'Send Message'}
                   </button>
                 </form>
               )}
@@ -451,4 +469,4 @@ const Contact = () => {
   );
 };
 
-export default Contact;
+export default Contact;

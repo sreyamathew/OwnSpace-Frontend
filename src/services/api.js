@@ -490,6 +490,18 @@ export const propertyAPI = {
     }
   },
 
+  // Get public model performance metrics for valuation confidence band
+  getModelPerformance: async () => {
+    try {
+      const response = await apiRequest('/properties/model-performance', {
+        method: 'GET',
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Get similar properties
   getSimilarHomes: async (data) => {
     try {
@@ -870,6 +882,21 @@ export const notificationAPI = {
   }
 };
 
+// Contact API
+export const contactAPI = {
+  sendMessage: async (data) => {
+    try {
+      const response = await apiRequest('/contact/messages', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+};
+
 // Analytics API
 export const analyticsAPI = {
   getStats: async () => {
@@ -977,6 +1004,20 @@ export const adminAPI = {
       return await apiRequest('/admin/smart-alerts', { method: 'GET', includeAuth: true });
     } catch (e) { throw e; }
   },
+  getMessages: async () => {
+    try {
+      return await apiRequest('/admin/messages', { method: 'GET', includeAuth: true });
+    } catch (e) { throw e; }
+  },
+  replyToMessage: async (messageId, payload) => {
+    try {
+      return await apiRequest(`/admin/messages/${messageId}/reply`, {
+        method: 'POST',
+        includeAuth: true,
+        body: JSON.stringify(payload || {}),
+      });
+    } catch (e) { throw e; }
+  },
   getMarketNews: async () => {
     try {
       return await apiRequest('/admin/market-news', { method: 'GET', includeAuth: true });
@@ -1056,6 +1097,7 @@ const api = {
   offer: offerAPI,
   payment: paymentAPI,
   notifications: notificationAPI,
+  contact: contactAPI,
   analytics: analyticsAPI,
   reports: reportAPI,
   preferences: preferenceAPI,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TrendingUp, Activity, FileText, Cpu, MapPin, Maximize, Bed, Bath, Hash } from 'lucide-react';
 import { propertyAPI } from '../services/api';
 
@@ -7,6 +7,24 @@ const SmartValuation = () => {
     const [prediction, setPrediction] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [mae, setMae] = useState(100000);
+
+    useEffect(() => {
+        const loadModelPerformance = async () => {
+            try {
+                const perfRes = await propertyAPI.getModelPerformance();
+                const maeValue = perfRes?.data?.metrics?.mae;
+                if (typeof maeValue === 'number' && Number.isFinite(maeValue) && maeValue > 0) {
+                    setMae(maeValue);
+                }
+            } catch (err) {
+                // Keep fallback MAE if metrics API is unavailable.
+                console.warn('Could not fetch model performance metrics:', err?.message || err);
+            }
+        };
+
+        loadModelPerformance();
+    }, []);
 
     const handlePredict = async (e) => {
         e.preventDefault();
@@ -42,11 +60,11 @@ const SmartValuation = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto space-y-8">
+        <div className="min-h-screen bg-gray-50 py-8 sm:py-12 px-3 sm:px-6 lg:px-8">
+            <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8">
                 {/* Header */}
                 <div className="text-center">
-                    <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight flex items-center justify-center space-x-3">
+                    <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight flex items-center justify-center space-x-3">
                         <Cpu className="h-10 w-10 text-blue-600" />
                         <span>AI Smart Valuation</span>
                     </h1>
@@ -55,10 +73,10 @@ const SmartValuation = () => {
                     </p>
                 </div>
 
-                <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 flex flex-col md:flex-row gap-8">
+                <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-2xl shadow-xl border border-gray-100 flex flex-col lg:flex-row gap-6 lg:gap-8">
                     
                     {/* Input Form */}
-                    <div className="w-full md:w-1/2 space-y-6">
+                    <div className="w-full lg:w-1/2 space-y-6">
                         <form onSubmit={handlePredict} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
@@ -67,7 +85,7 @@ const SmartValuation = () => {
                                 </label>
                                 <textarea
                                     name="description"
-                                    rows="10"
+                                    rows="9"
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     placeholder="Example: I have a 1200 sqft apartment in Kochi, 2 bedrooms, near metro, fully furnished, with 2 bathrooms and parking..."
@@ -103,7 +121,7 @@ const SmartValuation = () => {
                     </div>
 
                     {/* Results Panel */}
-                    <div className="w-full md:w-1/2 bg-gray-50 p-6 rounded-2xl border border-gray-200 relative overflow-hidden flex flex-col">
+                    <div className="w-full lg:w-1/2 bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-200 relative overflow-hidden flex flex-col">
                         {!prediction && !loading ? (
                             <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-8 text-center space-y-4">
                                 <div className="p-4 bg-white rounded-full shadow-sm">
@@ -134,6 +152,17 @@ const SmartValuation = () => {
                                             ₹{prediction.predicted_price.toLocaleString('en-IN')}
                                         </span>
                                     </div>
+                                    <p className="text-xs text-gray-500 mt-2 font-medium">
+                                        Typical market error band (MAE): 
+                                        {' '}
+                                        <span className="font-bold text-gray-700">
+                                            ₹{Math.max(0, Math.round(prediction.predicted_price - mae)).toLocaleString('en-IN')}
+                                        </span>
+                                        {' '}to{' '}
+                                        <span className="font-bold text-gray-700">
+                                            ₹{Math.round(prediction.predicted_price + mae).toLocaleString('en-IN')}
+                                        </span>
+                                    </p>
                                     <p className="text-xs text-gray-400 mt-1 font-medium">
                                         {prediction.risk_category === 'High' ? 'Confidence: Low (R² ≈ 0.70)' : 
                                          prediction.risk_category === 'Medium' ? 'Confidence: Moderate (R² ≈ 0.85)' : 
@@ -141,7 +170,7 @@ const SmartValuation = () => {
                                     </p>
                                 </div>
                                 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Investment Risk</p>
                                         <p className={`text-lg font-bold mt-1 ${
@@ -150,8 +179,8 @@ const SmartValuation = () => {
                                         }`}>{prediction.risk_category || 'Low'}</p>
                                     </div>
                                     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">detected City</p>
-                                        <p className="text-lg font-bold mt-1 text-gray-700 capitalize">{prediction.extracted_features?.location || 'Unknown'}</p>
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Detected City</p>
+                                        <p className="text-lg font-bold mt-1 text-gray-700">{prediction.extracted_features?.location || 'Unknown'}</p>
                                     </div>
                                 </div>
 
@@ -160,7 +189,7 @@ const SmartValuation = () => {
                                         <Hash className="h-3 w-3 mr-2" />
                                         Extracted Structured Data
                                     </h4>
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
                                         <div className="text-center">
                                             <p className="text-[10px] text-indigo-400 font-bold uppercase">Size</p>
                                             <p className="font-bold text-indigo-900">{prediction.extracted_features?.size} <span className="text-[10px]">sqft</span></p>
@@ -194,6 +223,12 @@ const SmartValuation = () => {
                                     )}
                                     <p className="text-[10px] text-gray-400 mt-4 leading-relaxed italic">
                                         * The AI engine has parsed your natural language input into a semantic vector and extracted parameters to satisfy the XGBoost model's feature requirements.
+                                    </p>
+                                </div>
+
+                                <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl">
+                                    <p className="text-xs leading-relaxed">
+                                        AI estimate only - verify with local market comparables, property condition, and legal checks before final purchase.
                                     </p>
                                 </div>
                             </div>
