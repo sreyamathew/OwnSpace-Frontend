@@ -1,64 +1,80 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Search,
-  MapPin,
   Star,
   ArrowRight,
   ChevronDown,
   Bed,
   Bath,
-  Square,
   Heart,
   Home as HomeIcon
 } from 'lucide-react';
+import { propertyAPI } from '../services/api';
 
 const Home = () => {
+  const navigate = useNavigate();
   const [searchData, setSearchData] = useState({
-    location: '123Street',
-    propertyType: 'Villa',
-    priceRange: '₹ 950,000.00'
+    location: '',
+    propertyType: '',
+    priceRange: ''
   });
-
-  const featuredProperties = [
-    {
-      id: 1,
-      title: 'Ocean Breeze Villa',
-      location: 'Vintage Road, Alappuzha, KERALA',
-      price: '₹9100000.00',
-      bedrooms: 4,
-      bathrooms: 2,
-      area: '2500 sq ft',
-      image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80',
-      featured: true
-    },
-    {
-      id: 2,
-      title: 'Jackson House',
-      location: 'Hill Top Avenue, Munnar, KERALA',
-      price: '₹7500000.00',
-      bedrooms: 3,
-      bathrooms: 2,
-      area: '2200 sq ft',
-      image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2075&q=80',
-      featured: false
-    },
-    {
-      id: 3,
-      title: 'Lakeside Cottage',
-      location: 'Vembanad Lake, Kumarakom, KERALA',
-      price: '₹5400000.00',
-      bedrooms: 3,
-      bathrooms: 1,
-      area: '1800 sq ft',
-      image: 'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2084&q=80',
-      featured: false
-    }
-  ];
+  const [availableLocations, setAvailableLocations] = useState([]);
+  const [featuredProperties, setFeaturedProperties] = useState([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
 
   const handleSearch = () => {
-    // Handle search functionality
-    console.log('Searching with:', searchData);
+    const queryParams = new URLSearchParams();
+    if (searchData.location) queryParams.set('location', searchData.location);
+    if (searchData.propertyType) queryParams.set('propertyType', searchData.propertyType);
+    if (searchData.priceRange) queryParams.set('priceRange', searchData.priceRange);
+
+    navigate(`/properties?${queryParams.toString()}`);
+  };
+
+  useEffect(() => {
+    const loadAvailableLocations = async () => {
+      try {
+        const response = await propertyAPI.getAllProperties({ limit: 200 });
+        if (response?.success) {
+          const cities = (response.data?.properties || [])
+            .map((property) => property?.address?.city)
+            .filter(Boolean);
+
+          const uniqueSortedCities = [...new Set(cities)].sort((a, b) => a.localeCompare(b));
+          setAvailableLocations(uniqueSortedCities);
+        }
+      } catch (error) {
+        console.error('Failed to load locations for home search:', error);
+      }
+    };
+
+    loadAvailableLocations();
+  }, []);
+
+  useEffect(() => {
+    const loadFeaturedProperties = async () => {
+      try {
+        setFeaturedLoading(true);
+        const response = await propertyAPI.getAllProperties({ limit: 6 });
+        if (response?.success) {
+          setFeaturedProperties(response.data?.properties || []);
+        }
+      } catch (error) {
+        console.error('Failed to load featured properties:', error);
+      } finally {
+        setFeaturedLoading(false);
+      }
+    };
+
+    loadFeaturedProperties();
+  }, []);
+
+  const formatPrice = (price) => {
+    if (typeof price !== 'number') return 'Price on request';
+    if (price >= 10000000) return `₹${(price / 10000000).toFixed(1)}Cr`;
+    if (price >= 100000) return `₹${(price / 100000).toFixed(1)}L`;
+    return `₹${price.toLocaleString()}`;
   };
 
   return (
@@ -89,18 +105,23 @@ const Home = () => {
 
               {/* Search Bar */}
               <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-2xl">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
                     <div className="relative">
-                      <input
-                        type="text"
+                      <select
                         value={searchData.location}
                         onChange={(e) => setSearchData({...searchData, location: e.target.value})}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black/50 focus:border-transparent text-gray-900"
-                        placeholder="Enter city or area"
-                      />
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black/50 focus:border-transparent text-gray-900 appearance-none"
+                      >
+                        <option value="">Any Location</option>
+                        {availableLocations.map((city) => (
+                          <option key={city} value={city}>
+                            {city}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                     </div>
                   </div>
 
@@ -112,28 +133,39 @@ const Home = () => {
                         onChange={(e) => setSearchData({...searchData, propertyType: e.target.value})}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black/50 focus:border-transparent text-gray-900 appearance-none"
                       >
-                        <option>Villa</option>
-                        <option>Apartment</option>
-                        <option>House</option>
-                        <option>Cottage</option>
-                        <option>Plot</option>
-                        <option>Commercial</option>
+                        <option value="">Any Type</option>
+                        <option value="Villa">Villa</option>
+                        <option value="Apartment">Apartment</option>
+                        <option value="House">House</option>
+                        <option value="Condo">Condo</option>
+                        <option value="Townhouse">Townhouse</option>
+                        <option value="Commercial">Commercial</option>
+                        <option value="Land">Land</option>
+                        <option value="Other">Other</option>
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Price</label>
                     <div className="relative">
-                      <input
-                        type="text"
+                      <select
                         value={searchData.priceRange}
                         onChange={(e) => setSearchData({...searchData, priceRange: e.target.value})}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                        placeholder="₹ 950,000.00"
-                      />
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black/50 focus:border-transparent text-gray-900 appearance-none"
+                      >
+                        <option value="">Any Budget</option>
+                        <option value="0-500000">₹0 - ₹5L</option>
+                        <option value="500000-1000000">₹5L - ₹10L</option>
+                        <option value="1000000-2500000">₹10L - ₹25L</option>
+                        <option value="2500000-5000000">₹25L - ₹50L</option>
+                        <option value="5000000-10000000">₹50L - ₹1Cr</option>
+                        <option value="10000000-25000000">₹1Cr - ₹2.5Cr</option>
+                        <option value="25000000-50000000">₹2.5Cr - ₹5Cr</option>
+                        <option value="50000000-999999999">₹5Cr+</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                     </div>
                   </div>
 
@@ -163,14 +195,21 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {featuredLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : featuredProperties.length === 0 ? (
+            <div className="text-center py-12 text-gray-600">No properties available right now.</div>
+          ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
             {featuredProperties.map((property) => (
-              <div key={property.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+              <div key={property._id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
                 <div className="relative">
                   <img
-                    src={property.image}
+                    src={property.images?.[0]?.url || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=80'}
                     alt={property.title}
-                    className="w-full h-64 object-cover"
+                    className="w-full h-52 sm:h-56 lg:h-64 object-cover"
                   />
                   <button className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors duration-200">
                     <Heart className="h-5 w-5 text-gray-600" />
@@ -179,20 +218,22 @@ const Home = () => {
 
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm text-gray-500">{property.location}</p>
+                    <p className="text-sm text-gray-500 truncate pr-2">
+                      {[property.address?.street, property.address?.city, property.address?.state].filter(Boolean).join(', ') || 'Location unavailable'}
+                    </p>
                     <div className="flex items-center space-x-1">
                       <Bed className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm text-gray-600">{property.bedrooms}</span>
+                      <span className="text-sm text-gray-600">{property.bedrooms || '-'}</span>
                       <Bath className="h-4 w-4 text-gray-400 ml-2" />
-                      <span className="text-sm text-gray-600">{property.bathrooms}</span>
+                      <span className="text-sm text-gray-600">{property.bathrooms || '-'}</span>
                     </div>
                   </div>
 
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{property.title}</h3>
-                  <p className="text-2xl font-bold text-blue-600 mb-4">{property.price}</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2 truncate">{property.title}</h3>
+                  <p className="text-2xl font-bold text-blue-600 mb-4">{formatPrice(property.price)}</p>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500">{property.area}</span>
+                    <span className="text-sm text-gray-500">{property.area ? `${property.area} sq ft` : 'Area N/A'}</span>
                     <div className="flex items-center">
                       <Star className="h-4 w-4 text-yellow-400 fill-current" />
                       <span className="text-sm text-gray-600 ml-1">4.8</span>
@@ -202,6 +243,7 @@ const Home = () => {
               </div>
             ))}
           </div>
+          )}
 
           {/* Pagination dots */}
           <div className="flex justify-center mt-12 space-x-2">
@@ -272,4 +314,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Home;

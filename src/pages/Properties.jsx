@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Search,
   Filter,
@@ -21,6 +21,7 @@ import Pagination from '../components/Pagination';
 
 const Properties = () => {
   const navigate = useNavigate();
+  const routerLocation = useLocation();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
@@ -44,11 +45,41 @@ const Properties = () => {
   const minDate = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
 
   useEffect(() => {
-    fetchProperties();
+    const params = new URLSearchParams(routerLocation.search);
+    const hasQueryFilters = Boolean(
+      params.get('location') || params.get('propertyType') || params.get('priceRange')
+    );
+
+    // Avoid overwriting query-based search results with unfiltered data.
+    if (!hasQueryFilters) {
+      fetchProperties();
+    }
+  }, [routerLocation.search]);
+
+  useEffect(() => {
     if (user) {
       fetchSavedProperties();
     }
   }, [user]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(routerLocation.search);
+    const queryLocation = params.get('location') || '';
+    const queryPropertyType = params.get('propertyType') || '';
+    const queryPriceRange = params.get('priceRange') || '';
+
+    if (!queryLocation && !queryPropertyType && !queryPriceRange) return;
+
+    const initialFilters = {
+      propertyType: queryPropertyType,
+      priceRange: queryPriceRange,
+      bedrooms: '',
+      location: queryLocation
+    };
+
+    setFilters(initialFilters);
+    handleSearchWithFilters(initialFilters);
+  }, [routerLocation.search]);
 
   const fetchSavedProperties = async () => {
     try {
